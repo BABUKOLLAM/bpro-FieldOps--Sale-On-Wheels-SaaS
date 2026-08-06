@@ -10,6 +10,7 @@ staticfiles/
 media/
 backend/.env
 backend/**/migrations/__pycache__/
+backend/celerybeat-schedule
 
 # Node / Next.js / React Native
 node_modules/
