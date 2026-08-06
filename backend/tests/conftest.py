@@ -1,0 +1,49 @@
+from decimal import Decimal
+
+import pytest
+
+from apps.accounts.constants import ROLE_VAN_SALESMAN
+from apps.accounts.models import Role, User, UserRole
+from apps.catalog.models import Item, ItemCategory, UOM
+from apps.company.models import Company, GSTRegistration
+from apps.customers.models import Customer
+from apps.inventory.models import Godown, StockLedgerEntry
+from apps.inventory.services import post_stock_movement
+
+
+@pytest.fixture
+def company(db):
+    company = Company.objects.create(legal_name="Test Distributors")
+    gst = GSTRegistration.objects.create(
+        company=company, state="MH", gstin="27ABCDE1234F1Z5",
+        address_line1="Test Address", city="Mumbai", pincode="400001", is_default=True,
+    )
+    return company, gst
+
+
+@pytest.fixture
+def agent(db):
+    Role.seed_defaults()
+    role = Role.objects.get(name=ROLE_VAN_SALESMAN)
+    user = User.objects.create_user(username="agent@test.local", password="testpass123", is_field_agent=True)
+    UserRole.objects.create(user=user, role=role)
+    return user
+
+
+@pytest.fixture
+def van_godown(agent):
+    return Godown.objects.create(name="Test Van", godown_type=Godown.TYPE_VAN, assigned_agent=agent)
+
+
+@pytest.fixture
+def item(van_godown):
+    uom = UOM.objects.create(code="PCS", name="Pieces")
+    category = ItemCategory.objects.create(name="Test Category")
+    item = Item.objects.create(sku="SKU-TEST", name="Test Item", base_uom=uom, category=category, gst_rate=Decimal("18.00"))
+    post_stock_movement(godown=van_godown, item=item, qty=Decimal("50"), txn_type=StockLedgerEntry.TXN_VAN_LOAD)
+    return item
+
+
+@pytest.fixture
+def customer(db):
+    return Customer.objects.create(code="CUST-TEST", name="Test Customer", credit_limit=Decimal("10000"), credit_days=15)

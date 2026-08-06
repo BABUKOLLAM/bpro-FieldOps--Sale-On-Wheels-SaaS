@@ -1,0 +1,54 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+*.sqlite3
+staticfiles/
+media/
+backend/.env
+backend/**/migrations/__pycache__/
+
+# Node / Next.js / React Native
+node_modules/
+.next/
+out/
+dist/
+build/
+*.log
+npm-debug.log*
+.expo/
+.expo-shared/
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+android/build/
+*.jsbundle
+.watchmanconfig
+
+# Env files
+.env
+.env.local
+.env.*.local
+!.env.example
+!admin-web/.env.example
+!mobile/.env.example
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Docker
+infra/postgres-data/
+infra/redis-data/
+
+# Test / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
