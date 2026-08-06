@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ACCESS_COOKIE } from "@/lib/api";
 
+// "/" is the public marketing/pricing landing page — open to everyone.
+// Everything else in the (dashboard) route group requires a session.
+const PUBLIC_PATHS = new Set(["/", "/login"]);
+
 export function proxy(request: NextRequest) {
   const isAuthenticated = Boolean(request.cookies.get(ACCESS_COOKIE)?.value);
   const { pathname } = request.nextUrl;
 
-  if (!isAuthenticated && pathname !== "/login") {
+  if (!isAuthenticated && !PUBLIC_PATHS.has(pathname)) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -16,5 +20,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Skip API routes, Next internals, and any path with a file extension —
+  // covers favicon.ico, manifest.webmanifest, sw.js, /icons/*.png, and
+  // the bpro logo assets, none of which should ever redirect to /login.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
 };
