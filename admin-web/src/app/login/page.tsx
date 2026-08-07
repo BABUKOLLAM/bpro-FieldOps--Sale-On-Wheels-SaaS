@@ -7,7 +7,7 @@ import BrandLogo from "@/components/BrandLogo";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin@demo.local");
+  const [username, setUsername] = useState("tech@bpropms.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -96,7 +96,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-xs text-slate-400">
-            Demo: admin@demo.local / DemoPass123! (after running seed_demo_data)
+            Admin: tech@bpropms.com / Bpro#1234
           </p>
         </div>
       </div>
