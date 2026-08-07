@@ -25,6 +25,10 @@ export default class Trip extends Model {
   @field('end_odometer') endOdometer!: number;
   @text('sync_status') localSyncStatus!: string;
   @text('sync_error') syncError!: string;
+  @field('start_latitude') startLatitude!: number;
+  @field('start_longitude') startLongitude!: number;
+  @field('end_latitude') endLatitude!: number;
+  @field('end_longitude') endLongitude!: number;
 
   @children('trip_checkpoints') checkpoints!: Query<TripCheckpoint>;
 }

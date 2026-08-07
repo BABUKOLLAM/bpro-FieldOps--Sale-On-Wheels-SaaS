@@ -1,6 +1,9 @@
 import { apiGet } from "@/lib/api";
 import CustomerForm from "./CustomerForm";
 import ItemForm from "./ItemForm";
+import BeatForm from "./BeatForm";
+import BeatStopForm from "./BeatStopForm";
+import RemoveStopButton from "./RemoveStopButton";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -27,13 +30,33 @@ type Item = {
 type Category = { id: string; name: string };
 type UOM = { id: string; code: string; name: string };
 
+type User = { id: string; username: string; first_name: string; is_field_agent: boolean };
+
+type BeatStop = {
+  id: string;
+  customer: string;
+  customer_detail: Customer;
+  visit_sequence: number;
+};
+
+type Beat = {
+  id: string;
+  name: string;
+  assigned_agent: string | null;
+  is_active: boolean;
+  stops: BeatStop[];
+};
+
 export default async function MasterDataPage() {
-  const [customers, items, categories, uoms] = await Promise.all([
+  const [customers, items, categories, uoms, beats, users] = await Promise.all([
     apiGet<Paginated<Customer>>("/api/customers/customers/"),
     apiGet<Paginated<Item>>("/api/catalog/items/"),
     apiGet<Paginated<Category>>("/api/catalog/categories/"),
     apiGet<Paginated<UOM>>("/api/catalog/uoms/"),
+    apiGet<Paginated<Beat>>("/api/customers/beats/"),
+    apiGet<Paginated<User>>("/api/users/"),
   ]);
+  const agents = users.results.filter((u) => u.is_field_agent);
 
   return (
     <div className="space-y-10">
@@ -96,6 +119,47 @@ export default async function MasterDataPage() {
           </table>
         </div>
         <ItemForm categories={categories.results} uoms={uoms.results} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Routes / Beats ({beats.count})</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Assign each agent an ordered list of outlets to visit (FR-15 / AR-08). Feeds the Live Map's route-adherence view.
+        </p>
+        <div className="space-y-4">
+          {beats.results.map((beat) => {
+            const agent = agents.find((a) => a.id === beat.assigned_agent);
+            return (
+              <div key={beat.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{beat.name}</h3>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {agent ? agent.first_name || agent.username : "Unassigned"}
+                  </span>
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                  {[...beat.stops].sort((a, b) => a.visit_sequence - b.visit_sequence).map((stop) => (
+                    <li key={stop.id} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-700 dark:text-slate-300">
+                        <span className="mr-2 text-xs text-slate-400">#{stop.visit_sequence}</span>
+                        {stop.customer_detail?.name}
+                      </span>
+                      <RemoveStopButton stopId={stop.id} />
+                    </li>
+                  ))}
+                  {beat.stops.length === 0 && <li className="text-xs text-slate-400">No stops yet.</li>}
+                </ul>
+                <div className="mt-3">
+                  <BeatStopForm beatId={beat.id} customers={customers.results} />
+                </div>
+              </div>
+            );
+          })}
+          {beats.results.length === 0 && (
+            <p className="text-sm text-slate-400">No routes yet — add one below.</p>
+          )}
+        </div>
+        <BeatForm agents={agents} />
       </section>
     </div>
   );

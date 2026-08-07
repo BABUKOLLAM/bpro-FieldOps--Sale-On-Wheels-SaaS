@@ -5,8 +5,8 @@ from rest_framework.filters import SearchFilter
 from apps.accounts.constants import PERM_CUSTOMERS_MANAGE, PERM_CUSTOMERS_VIEW
 from apps.accounts.permissions import HasRolePermission
 
-from .models import Beat, Customer, CustomerCategory
-from .serializers import BeatSerializer, CustomerCategorySerializer, CustomerSerializer
+from .models import Beat, BeatCustomer, Customer, CustomerCategory
+from .serializers import BeatCustomerSerializer, BeatSerializer, CustomerCategorySerializer, CustomerSerializer
 
 
 class CustomersPermission(HasRolePermission):
@@ -44,3 +44,15 @@ class BeatViewSet(viewsets.ModelViewSet):
     permission_classes = [CustomersPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["assigned_agent", "is_active"]
+
+
+class BeatCustomerViewSet(viewsets.ModelViewSet):
+    """Manages individual stops on a route/beat (AR-08) — add a customer
+    at a given visit sequence, remove one. Beat itself (name, assigned
+    agent) is managed via BeatViewSet above."""
+
+    queryset = BeatCustomer.objects.select_related("beat", "customer").all()
+    serializer_class = BeatCustomerSerializer
+    permission_classes = [CustomersPermission]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["beat", "customer"]

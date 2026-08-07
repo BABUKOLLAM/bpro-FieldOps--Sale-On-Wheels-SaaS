@@ -1,13 +1,15 @@
 import io
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone as dt_timezone
 from decimal import Decimal
 
 import pytest
 from rest_framework.test import APIClient
 
 from apps.catalog.models import Scheme, SchemeSlab
+from apps.customers.models import Beat, BeatCustomer
 from apps.expenses.models import Expense
+from apps.fleet.models import LocationPing, Trip
 from apps.sales.models import Invoice, InvoiceLine
 from apps.sales.services import best_scheme_discount, finalize_invoice
 
@@ -179,3 +181,70 @@ def test_invoice_signature_upload_via_multipart_patch(company, agent, van_godown
     # The rest of the invoice must be untouched by a signature-only PATCH.
     assert invoice.lines.count() == 1
     assert invoice.grand_total == Decimal("11.80")
+
+
+@pytest.mark.django_db
+def test_location_ping_push_is_idempotent(agent):
+    from apps.accounts.models import Device
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    Device.objects.create(user=agent, device_id="test-device-gps", platform="android")
+
+    ping_id = str(uuid.uuid4())
+    payload = {
+        "items": [
+            {
+                "entity_type": "location_ping",
+                "payload": {
+                    "id": ping_id, "latitude": "19.123456", "longitude": "72.654321",
+                    "recorded_at": "2026-08-07T10:30:00Z",
+                },
+            }
+        ]
+    }
+
+    response1 = client.post("/api/sync/push/", payload, format="json")
+    assert response1.status_code == 200
+    assert response1.data["results"][0]["status"] == "applied"
+    assert LocationPing.objects.filter(id=ping_id).count() == 1
+
+    response2 = client.post("/api/sync/push/", payload, format="json")
+    assert response2.status_code == 200
+    assert LocationPing.objects.filter(id=ping_id).count() == 1  # no duplicate
+
+    ping = LocationPing.objects.get(id=ping_id)
+    assert ping.agent_id == agent.id  # forced server-side
+
+
+@pytest.mark.django_db
+def test_live_map_returns_active_agent_with_location_and_beat_progress(agent, supervisor, customer):
+    beat = Beat.objects.create(name="Route 1", assigned_agent=agent)
+    BeatCustomer.objects.create(beat=beat, customer=customer, visit_sequence=1)
+
+    trip = Trip.objects.create(
+        agent=agent, beat=beat, status=Trip.STATUS_IN_PROGRESS,
+        start_time=datetime(2026, 8, 7, 9, 0, tzinfo=dt_timezone.utc),
+        start_latitude=Decimal("19.100000"), start_longitude=Decimal("72.900000"),
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.200000"), longitude=Decimal("72.800000"),
+        recorded_at=datetime(2026, 8, 7, 10, 0, tzinfo=dt_timezone.utc),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=supervisor)
+    response = client.get("/api/reporting/live-map/")
+    assert response.status_code == 200, response.data
+
+    agents = response.data["agents"]
+    assert len(agents) == 1
+    entry = agents[0]
+    assert entry["agent_id"] == agent.id
+    assert entry["trip_id"] == trip.id
+    # The most recent LocationPing wins over the trip's own start location.
+    assert Decimal(str(entry["last_location"]["latitude"])) == Decimal("19.200000")
+    assert entry["beat_name"] == "Route 1"
+    assert len(entry["stops"]) == 1
+    assert entry["stops"][0]["customer_id"] == customer.id
+    assert entry["stops"][0]["status"] == "pending"  # no checkpoint recorded yet

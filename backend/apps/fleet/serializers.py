@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.core.serializers import ClientGeneratedIdMixin
 
 from .models import (
-    FuelLog, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint, Vehicle,
+    FuelLog, LocationPing, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint, Vehicle,
 )
 
 
@@ -54,6 +54,13 @@ class TripSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
 
     def get_distance_travelled(self, obj):
         return obj.distance_travelled
+
+
+class LocationPingSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
+    class Meta:
+        model = LocationPing
+        fields = ["id", "agent", "vehicle", "trip", "latitude", "longitude", "recorded_at"]
+        extra_kwargs = {"agent": {"required": False}}
 
 
 class OdometerLogSerializer(serializers.ModelSerializer):

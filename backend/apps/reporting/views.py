@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.constants import PERM_REPORTING_DASHBOARD_VIEW
 from apps.accounts.permissions import HasRolePermission
-from apps.fleet.models import Trip
+from apps.fleet.models import LocationPing, Trip, TripCheckpoint
 from apps.integrations.models import SyncLogEntry
 from apps.sales.models import Invoice, Receipt
 
@@ -56,6 +56,75 @@ class DashboardView(APIView):
             ),
         }
         return Response(data)
+
+
+class LiveMapView(APIView):
+    """AR-03 Real-Time Activity Tracking: for every agent currently on an
+    in-progress trip, their latest known location, trip status, and
+    beat-stop visit progress — the server does the joins so admin-web's
+    map doesn't have to stitch together multiple calls, same approach as
+    DashboardView."""
+
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
+
+    def get(self, request):
+        active_trips = (
+            Trip.objects.filter(status=Trip.STATUS_IN_PROGRESS)
+            .select_related("agent", "vehicle", "beat")
+            .prefetch_related("beat__stops__customer__addresses")
+        )
+
+        agents_data = []
+        for trip in active_trips:
+            last_ping = (
+                LocationPing.objects.filter(trip=trip).order_by("-recorded_at").first()
+                or LocationPing.objects.filter(agent=trip.agent).order_by("-recorded_at").first()
+            )
+            if last_ping:
+                last_location = {
+                    "latitude": last_ping.latitude, "longitude": last_ping.longitude,
+                    "recorded_at": last_ping.recorded_at,
+                }
+            elif trip.start_latitude is not None and trip.start_longitude is not None:
+                last_location = {
+                    "latitude": trip.start_latitude, "longitude": trip.start_longitude,
+                    "recorded_at": trip.start_time,
+                }
+            else:
+                last_location = None
+
+            visited_customer_ids = set(
+                TripCheckpoint.objects.filter(trip=trip, check_in_time__isnull=False).values_list(
+                    "customer_id", flat=True
+                )
+            )
+
+            stops = []
+            if trip.beat:
+                for stop in trip.beat.stops.all():
+                    address = stop.customer.addresses.first()
+                    stops.append({
+                        "customer_id": stop.customer_id,
+                        "customer_name": stop.customer.name,
+                        "visit_sequence": stop.visit_sequence,
+                        "latitude": address.latitude if address else None,
+                        "longitude": address.longitude if address else None,
+                        "status": "visited" if stop.customer_id in visited_customer_ids else "pending",
+                    })
+
+            agents_data.append({
+                "agent_id": trip.agent_id,
+                "agent_name": trip.agent.get_full_name() or trip.agent.username,
+                "trip_id": trip.id,
+                "trip_status": trip.status,
+                "vehicle_reg_no": trip.vehicle.reg_no if trip.vehicle else None,
+                "last_location": last_location,
+                "beat_name": trip.beat.name if trip.beat else None,
+                "stops": stops,
+            })
+
+        return Response({"agents": agents_data})
 
 
 class TargetViewSet(viewsets.ModelViewSet):

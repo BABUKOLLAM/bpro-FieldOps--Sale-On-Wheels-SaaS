@@ -1,6 +1,6 @@
 # Architecture
 
-Phase 1 MVP + Phase 2 slice 1 of the Field Sales / Van Sales SaaS
+Phase 1 MVP + Phase 2 slices 1-2 of the Field Sales / Van Sales SaaS
 platform. This document covers what's implemented, the key design
 decisions, and what's deliberately deferred beyond this build.
 
@@ -148,14 +148,44 @@ Added on top of the Phase 1 MVP:
   scan-to-cart is a pure offline local-DB lookup with zero backend
   round-trip.
 
+## Phase 2, slice 2: GPS tracking + route/beat planning
+
+Added on top of slice 1:
+
+- **GPS point capture** (FR-05, FM-02): `fleet.Trip` and
+  `fleet.TripCheckpoint` already had lat/lng columns from Phase 1 — this
+  slice is the mobile app actually populating them, at trip start/end and
+  outlet check-in/out, best-effort (a location failure never blocks the
+  action, same principle as offline credit checks).
+- **Foreground periodic breadcrumb tracking**: new `fleet.LocationPing`
+  model (client-generated UUID PK, same idempotency pattern as every
+  other mobile-pushed entity), populated by
+  `mobile/src/sync/locationTracking.ts` on a 3-minute interval while a
+  trip is in progress and the app is foregrounded. **Not** a background
+  service — true always-on tracking needs native project configuration
+  (Android foreground service + notification, iOS background location
+  mode) not attempted here; see `mobile/README.md`. Deliberately
+  unpartitioned — a production deployment at scale should partition this
+  table by month and define a retention policy (noted in the model, not
+  built).
+- **Route/beat planning UI** (AR-08): `customers.Beat`/`BeatCustomer`
+  already existed as models from Phase 1 with no admin-web screen to
+  manage them (Django admin only). Added `BeatCustomerViewSet` (stop
+  CRUD) and a Routes section on admin-web's Master Data page.
+- **Live map** (AR-03): new `reporting.LiveMapView` joins each in-progress
+  trip's agent, latest `LocationPing` (falling back to the trip's own
+  start location), and beat-stop visit status server-side, rendered on a
+  new admin-web `/live-map` page with `react-leaflet` + OpenStreetMap
+  tiles (no Google Maps API key/billing account required).
+
 ## What's deliberately out of scope for this build
 
 Beyond the BRD's own Phase 1/Phase 2 slice boundaries (Section 18):
 
-- Real-time GPS breadcrumb tracking, route optimization, geofencing (Phase 2/3/Section 20 items)
-- OTP-based proof of delivery, multi-language UI
+- Route optimization, geofencing (Phase 3/Section 20 items)
+- True background GPS tracking (native project config not attempted here — see slice 2 above), OTP-based proof of delivery, multi-language UI
 - Busy/Marg connectors (the connector interface is ready; only Tally is implemented)
 - Full WatermelonDB per-table sync protocol (the pull endpoint is a pragmatic fixed-collection version)
 - Automated central client registry (see `docs/PROVISIONING.md` — provisioning is manual/scripted per client for now)
 - Payment gateway integration, e-way bill generation, WhatsApp integration (Section 20 future roadmap)
-- Fleet expansion (maintenance, GPS/telematics integration, route optimization, reverse logistics, fleet dashboard/MIS) and Busy/Marg — separate Phase 2 slices, not started
+- Fleet expansion (maintenance, GPS/telematics integration beyond LocationPing, reverse logistics, fleet dashboard/MIS) and Busy/Marg — separate Phase 2 slices, not started

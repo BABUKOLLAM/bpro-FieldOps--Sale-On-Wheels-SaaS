@@ -6,16 +6,37 @@ backend's `apps.mobile_sync` pull/push endpoints. See
 [`../docs/architecture.md`](../docs/architecture.md) for the full design.
 
 **Implemented in this reference build**: login, device PIN setup/unlock,
-pull sync (customers/items/price lists/GST/van stock/beats), Spot Billing
-(fully offline, FR-01), Trip Start/End with outlet check-in/out (fully
-offline, FR-08/FM-01), Expense capture (FR-06), barcode-scan-to-cart
+pull sync (customers/items/price lists/GST/van stock/beats/routes), Spot
+Billing (fully offline, FR-01), Trip Start/End with outlet check-in/out
+(fully offline, FR-08/FM-01), Expense capture (FR-06), barcode-scan-to-cart
 (FR-13, a pure local lookup against the synced `items` table — no
 backend round-trip), post-sale signature capture (FR-12, uploaded via a
-separate multipart step once the parent record has synced), and push
-sync with retry-safe idempotency. Receipt/Return/Order screens follow
-the identical WatermelonDB + sync pattern used by Spot Billing — see
+separate multipart step once the parent record has synced), GPS point
+capture at trip start/end and outlet check-in/out plus foreground
+periodic breadcrumb tracking while a trip is active (FR-05/FM-02 — see
+"Native permissions required" below for what real background tracking
+would additionally need), and push sync with retry-safe idempotency.
+Receipt/Return/Order screens follow the identical WatermelonDB + sync
+pattern used by Spot Billing — see
 `src/screens/billing/SpotBillingScreen.tsx` as the template for adding
 them.
+
+## Native permissions required
+
+Once `ios/`/`android/` are generated, these entries need adding (not yet
+possible in this environment — no native projects exist here to edit):
+
+- **Location** (`src/location/geo.ts`, `src/sync/locationTracking.ts`):
+  Android `ACCESS_FINE_LOCATION` in `AndroidManifest.xml`; iOS
+  `NSLocationWhenInUseUsageDescription` in `Info.plist`. Foreground
+  tracking only — always-on background tracking would additionally need
+  Android's foreground-service + notification setup and iOS's background
+  location capability, neither of which this build attempts (see the
+  scope note in `locationTracking.ts`).
+- **Camera** (`react-native-camera-kit` for barcode scanning,
+  `react-native-image-picker` for expense receipt photos): Android
+  `CAMERA` permission; iOS `NSCameraUsageDescription` (and
+  `NSPhotoLibraryUsageDescription` for the gallery-picker path).
 
 ## Native project setup
 
@@ -96,6 +117,11 @@ build, which made two real checks possible for the first time:
   backend accepts the exact multipart PATCH `sync/synchronize.ts`'s
   `uploadPendingAttachments()` sends, with no dedicated upload endpoint
   needed.
+- `test_location_ping_push_is_idempotent` — same idempotency guarantee
+  for the new GPS breadcrumb push flow from `locationTracking.ts`.
+
+`npm run typecheck`/`npm run lint` were re-run clean after the GPS/route
+work (Phase 2 slice 2) with no new issues.
 
 All of the above pass as of this build. What's still unverified is
 anything that only exists once the app is actually running on a device —

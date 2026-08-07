@@ -4,7 +4,7 @@ from apps.catalog.serializers import ItemSerializer, PriceListSerializer, Scheme
 from apps.company.serializers import GSTRegistrationSerializer
 from apps.customers.serializers import BeatSerializer, CustomerSerializer
 from apps.expenses.serializers import ExpenseSerializer
-from apps.fleet.serializers import TripCheckpointSerializer, TripSerializer
+from apps.fleet.serializers import LocationPingSerializer, TripCheckpointSerializer, TripSerializer
 from apps.inventory.serializers import VanStockSerializer
 from apps.sales.serializers import InvoiceSerializer
 
@@ -27,7 +27,7 @@ class PushItemSerializer(serializers.Serializer):
     supported set — Receipt/CreditNote/SalesOrder follow the identical
     pattern and are the natural next extension of this same list."""
 
-    entity_type = serializers.ChoiceField(choices=["invoice", "trip", "trip_checkpoint", "expense"])
+    entity_type = serializers.ChoiceField(choices=["invoice", "trip", "trip_checkpoint", "expense", "location_ping"])
     payload = serializers.JSONField()
 
 
@@ -40,4 +40,5 @@ PUSH_HANDLERS = {
     "trip": TripSerializer,
     "trip_checkpoint": TripCheckpointSerializer,
     "expense": ExpenseSerializer,
+    "location_ping": LocationPingSerializer,
 }

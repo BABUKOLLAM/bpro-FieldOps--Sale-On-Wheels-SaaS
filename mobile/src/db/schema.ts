@@ -15,7 +15,7 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
  * change-tracking — see src/sync/synchronize.ts.
  */
 export const schema = appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({
       name: 'customers',
@@ -132,6 +132,12 @@ export const schema = appSchema({
         { name: 'end_odometer', type: 'number' },
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },
+        // GPS point capture (FR-05/FM-02) — best-effort, never blocks
+        // starting/ending a trip if location isn't available.
+        { name: 'start_latitude', type: 'number' },
+        { name: 'start_longitude', type: 'number' },
+        { name: 'end_latitude', type: 'number' },
+        { name: 'end_longitude', type: 'number' },
       ],
     }),
     tableSchema({
@@ -145,6 +151,10 @@ export const schema = appSchema({
         { name: 'check_out_time', type: 'number' },
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },
+        { name: 'check_in_latitude', type: 'number' },
+        { name: 'check_in_longitude', type: 'number' },
+        { name: 'check_out_latitude', type: 'number' },
+        { name: 'check_out_longitude', type: 'number' },
       ],
     }),
     tableSchema({
@@ -160,6 +170,19 @@ export const schema = appSchema({
         { name: 'receipt_uploaded', type: 'boolean' },
         { name: 'status', type: 'string' },
         { name: 'device_created_at', type: 'number' },
+        { name: 'sync_status', type: 'string', isIndexed: true },
+        { name: 'sync_error', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'location_pings',
+      columns: [
+        { name: 'server_id', type: 'string', isIndexed: true },
+        { name: 'trip_local_id', type: 'string', isIndexed: true },
+        { name: 'trip_server_id', type: 'string' },
+        { name: 'latitude', type: 'number' },
+        { name: 'longitude', type: 'number' },
+        { name: 'recorded_at', type: 'number' },
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },
       ],

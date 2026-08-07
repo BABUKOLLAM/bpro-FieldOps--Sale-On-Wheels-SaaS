@@ -125,6 +125,33 @@ class MaintenanceSchedule(BaseModel):
         return f"{self.vehicle} — {self.description}"
 
 
+class LocationPing(BaseModel):
+    """A single GPS breadcrumb (FR-05 real-time field tracking, FM-02
+    vehicle tracking). Client-generated UUID PK — same idempotency
+    rationale as every other mobile-pushed entity.
+
+    Deliberately minimal: at scale (hundreds of agents pinging every few
+    minutes across a working day) this table grows fast, and a production
+    deployment should partition it by month and define a retention/
+    archival policy. Not built here — an intentional MVP simplification,
+    flagged rather than silently skipped, matching the original
+    architecture notes for this feature (see docs/architecture.md)."""
+
+    agent = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="location_pings")
+    vehicle = models.ForeignKey(Vehicle, null=True, blank=True, on_delete=models.SET_NULL, related_name="location_pings")
+    trip = models.ForeignKey(Trip, null=True, blank=True, on_delete=models.SET_NULL, related_name="location_pings")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    recorded_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-recorded_at"]
+        indexes = [models.Index(fields=["agent", "-recorded_at"])]
+
+    def __str__(self):
+        return f"{self.agent} @ {self.latitude},{self.longitude} ({self.recorded_at:%Y-%m-%d %H:%M})"
+
+
 class MaintenanceRecord(BaseModel):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="maintenance_records")
     schedule = models.ForeignKey(

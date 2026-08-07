@@ -11,6 +11,7 @@ import InvoiceLine from '../db/models/InvoiceLine';
 import Trip from '../db/models/Trip';
 import TripCheckpoint from '../db/models/TripCheckpoint';
 import Expense from '../db/models/Expense';
+import LocationPing from '../db/models/LocationPing';
 
 /**
  * Custom sync client matching the backend's apps.mobile_sync pull/push
@@ -213,6 +214,10 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       end_time: trip.endTime ? new Date(trip.endTime).toISOString() : null,
       start_odometer: trip.startOdometer || null,
       end_odometer: trip.endOdometer || null,
+      start_latitude: trip.startLatitude ?? null,
+      start_longitude: trip.startLongitude ?? null,
+      end_latitude: trip.endLatitude ?? null,
+      end_longitude: trip.endLongitude ?? null,
     };
     const ok = await pushItem('trip', payload);
     await database.write(async () => {
@@ -257,6 +262,10 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       check_out_time: checkpoint.checkOutTime
         ? new Date(checkpoint.checkOutTime).toISOString()
         : null,
+      check_in_latitude: checkpoint.checkInLatitude ?? null,
+      check_in_longitude: checkpoint.checkInLongitude ?? null,
+      check_out_latitude: checkpoint.checkOutLatitude ?? null,
+      check_out_longitude: checkpoint.checkOutLongitude ?? null,
     });
     await database.write(async () => {
       await checkpoint.update((rec) => {
@@ -286,6 +295,28 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
     const ok = await pushItem('expense', payload);
     await database.write(async () => {
       await expense.update((rec) => {
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+      });
+    });
+    ok ? pushed++ : failed++;
+  }
+
+  const pendingPings = await database
+    .get<LocationPing>('location_pings')
+    .query(Q.where('sync_status', Q.oneOf([SYNC_PENDING, SYNC_FAILED])))
+    .fetch();
+
+  for (const ping of pendingPings) {
+    const payload = {
+      id: ping.serverId,
+      trip: ping.tripServerId || null,
+      latitude: ping.latitude,
+      longitude: ping.longitude,
+      recorded_at: new Date(ping.recordedAt).toISOString(),
+    };
+    const ok = await pushItem('location_ping', payload);
+    await database.write(async () => {
+      await ping.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
       });
     });

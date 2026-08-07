@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (
-    FuelLog, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint, Vehicle,
+    FuelLog, LocationPing, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint, Vehicle,
 )
 
 
@@ -41,3 +41,9 @@ class MaintenanceScheduleAdmin(admin.ModelAdmin):
 @admin.register(MaintenanceRecord)
 class MaintenanceRecordAdmin(admin.ModelAdmin):
     list_display = ("vehicle", "description", "service_date", "odometer_reading", "cost")
+
+
+@admin.register(LocationPing)
+class LocationPingAdmin(admin.ModelAdmin):
+    list_display = ("agent", "vehicle", "trip", "latitude", "longitude", "recorded_at")
+    list_filter = ("agent",)

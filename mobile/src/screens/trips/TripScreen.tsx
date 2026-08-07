@@ -19,6 +19,8 @@ import Trip, { TRIP_COMPLETED, TRIP_IN_PROGRESS } from '../../db/models/Trip';
 import TripCheckpoint from '../../db/models/TripCheckpoint';
 import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
+import { startTracking, stopTracking } from '../../sync/locationTracking';
+import { getCurrentLocation } from '../../location/geo';
 import { colors } from '../../theme/colors';
 
 type Stop = {
@@ -44,6 +46,13 @@ export default function TripScreen() {
       .fetch();
     const active = trips[0] || null;
     setTrip(active);
+    // Resume foreground GPS tracking if the screen (re)focuses mid-trip —
+    // e.g. after the app was backgrounded and reopened.
+    if (active) {
+      startTracking(active);
+    } else {
+      stopTracking();
+    }
 
     const beats = await database.get<Beat>('beats').query().fetch();
     const beat = beats[0];
@@ -91,17 +100,26 @@ export default function TripScreen() {
   );
 
   async function startTrip() {
-    await database.write(async () => {
-      await database.get<Trip>('trips').create((rec) => {
+    // Best-effort — a missing/denied location must never block starting a
+    // trip, same principle as offline credit checks never blocking a sale.
+    const coords = await getCurrentLocation();
+
+    const created = await database.write(async () => {
+      return database.get<Trip>('trips').create((rec) => {
         rec.serverId = uuidv4();
         rec.status = TRIP_IN_PROGRESS;
         rec.startTime = Date.now();
         rec.startOdometer = Number(odometer) || 0;
         rec.localSyncStatus = SYNC_PENDING;
         rec.syncError = '';
+        if (coords) {
+          rec.startLatitude = coords.latitude;
+          rec.startLongitude = coords.longitude;
+        }
       });
     });
     setOdometer('');
+    startTracking(created);
     await load();
     synchronize().catch(() => {});
   }
@@ -110,12 +128,19 @@ export default function TripScreen() {
     if (!trip) {
       return;
     }
+    const coords = await getCurrentLocation();
+    stopTracking();
+
     await database.write(async () => {
       await trip.update((rec) => {
         rec.status = TRIP_COMPLETED;
         rec.endTime = Date.now();
         rec.endOdometer = Number(odometer) || rec.startOdometer;
         rec.localSyncStatus = SYNC_PENDING;
+        if (coords) {
+          rec.endLatitude = coords.latitude;
+          rec.endLongitude = coords.longitude;
+        }
       });
     });
     setOdometer('');
@@ -128,6 +153,8 @@ export default function TripScreen() {
     if (!trip || !stop.customer) {
       return;
     }
+    const coords = await getCurrentLocation();
+
     await database.write(async () => {
       if (!stop.checkpoint) {
         await database.get<TripCheckpoint>('trip_checkpoints').create((rec) => {
@@ -138,11 +165,19 @@ export default function TripScreen() {
           rec.checkInTime = Date.now();
           rec.localSyncStatus = SYNC_PENDING;
           rec.syncError = '';
+          if (coords) {
+            rec.checkInLatitude = coords.latitude;
+            rec.checkInLongitude = coords.longitude;
+          }
         });
       } else if (!stop.checkpoint.checkOutTime) {
         await stop.checkpoint.update((rec) => {
           rec.checkOutTime = Date.now();
           rec.localSyncStatus = SYNC_PENDING;
+          if (coords) {
+            rec.checkOutLatitude = coords.latitude;
+            rec.checkOutLongitude = coords.longitude;
+          }
         });
       }
     });

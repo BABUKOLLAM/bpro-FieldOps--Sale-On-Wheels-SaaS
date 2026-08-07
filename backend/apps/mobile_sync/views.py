@@ -27,8 +27,9 @@ _PUSH_PERMISSION_REQUIRED = {
     "trip": PERM_FLEET_TRIP_MANAGE_OWN,
     "trip_checkpoint": PERM_FLEET_TRIP_MANAGE_OWN,
     "expense": PERM_EXPENSES_CREATE_OWN,
+    "location_ping": PERM_FLEET_TRIP_MANAGE_OWN,
 }
-_FORCE_AGENT_FIELD = {"invoice", "trip", "expense"}
+_FORCE_AGENT_FIELD = {"invoice", "trip", "expense", "location_ping"}
 
 
 class PullView(APIView):
