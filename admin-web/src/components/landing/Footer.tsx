@@ -14,12 +14,12 @@ export default function Footer() {
           </div>
 
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <a href="#features" className="hover:text-violet-600 dark:hover:text-violet-400">Features</a>
-            <a href="#pricing" className="hover:text-violet-600 dark:hover:text-violet-400">Pricing</a>
-            <a href="mailto:tech@bpropms.com" className="hover:text-violet-600 dark:hover:text-violet-400">
+            <a href="#features" className="hover:text-green-600 dark:hover:text-green-400">Features</a>
+            <a href="#pricing" className="hover:text-green-600 dark:hover:text-green-400">Pricing</a>
+            <a href="mailto:tech@bpropms.com" className="hover:text-green-600 dark:hover:text-green-400">
               Contact
             </a>
-            <Link href="/login" className="hover:text-violet-600 dark:hover:text-violet-400">Sign In</Link>
+            <Link href="/login" className="hover:text-green-600 dark:hover:text-green-400">Sign In</Link>
           </nav>
         </div>
 

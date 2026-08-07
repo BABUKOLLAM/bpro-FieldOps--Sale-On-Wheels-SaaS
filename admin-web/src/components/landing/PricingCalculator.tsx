@@ -15,7 +15,7 @@ export default function PricingCalculator() {
       <div className="grid gap-0 lg:grid-cols-5">
         {/* Inputs */}
         <div className="lg:col-span-2 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
             Estimate your price
           </h3>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -36,7 +36,7 @@ export default function PricingCalculator() {
               max={300}
               value={agents}
               onChange={(e) => setAgents(Number(e.target.value))}
-              className="mt-3 w-full accent-violet-600"
+              className="mt-3 w-full accent-green-600"
             />
             <div className="mt-2 flex justify-between text-xs text-slate-400">
               <span>1</span>
@@ -61,8 +61,8 @@ export default function PricingCalculator() {
                   onClick={() => setTier(t)}
                   className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                     tier === t
-                      ? "border-transparent bg-linear-to-r from-indigo-600 to-violet-600 text-white"
-                      : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-violet-400"
+                      ? "border-transparent bg-linear-to-r from-yellow-600 to-green-600 text-white"
+                      : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-green-400"
                   }`}
                 >
                   {t}
@@ -85,7 +85,7 @@ export default function PricingCalculator() {
               </p>
               <a
                 href="mailto:tech@bpropms.com?subject=Enterprise%20quote%20request%20-%20Van%20Sales"
-                className="mt-5 rounded-md bg-linear-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-indigo-500 hover:to-violet-500"
+                className="mt-5 rounded-md bg-linear-to-r from-yellow-600 to-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-yellow-500 hover:to-green-500"
               >
                 Request enterprise quote
               </a>
@@ -93,7 +93,7 @@ export default function PricingCalculator() {
           ) : (
             <>
               <div className="flex items-center gap-2">
-                <span className="rounded-full bg-violet-100 dark:bg-violet-900/40 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                <span className="rounded-full bg-green-100 dark:bg-green-900/40 px-2.5 py-1 text-xs font-semibold text-green-700 dark:text-green-300">
                   {result.band} deployment
                 </span>
                 <span className="text-sm text-slate-500 dark:text-slate-400">

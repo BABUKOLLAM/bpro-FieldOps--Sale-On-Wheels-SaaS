@@ -7,11 +7,11 @@ export default function Hero() {
         className="pointer-events-none absolute inset-0 -z-10 opacity-40 dark:opacity-30"
         style={{
           background:
-            "radial-gradient(600px circle at 15% -10%, rgba(99,102,241,0.25), transparent 60%), radial-gradient(500px circle at 90% 10%, rgba(139,92,246,0.20), transparent 55%)",
+            "radial-gradient(600px circle at 15% -10%, rgba(234,179,8,0.20), transparent 60%), radial-gradient(500px circle at 90% 10%, rgba(34,197,94,0.20), transparent 55%)",
         }}
       />
       <div className="mx-auto max-w-6xl px-5 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-20 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 dark:border-violet-900 bg-violet-50 dark:bg-violet-950/50 px-3 py-1 text-xs font-medium text-violet-700 dark:text-violet-300">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/50 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-300">
           Offline-first · GST-ready · Tally Prime sync
         </span>
 
@@ -27,7 +27,7 @@ export default function Hero() {
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
             href="#calculator"
-            className="w-full sm:w-auto rounded-lg bg-linear-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:from-indigo-500 hover:to-violet-500"
+            className="w-full sm:w-auto rounded-lg bg-linear-to-r from-yellow-600 to-green-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:from-yellow-500 hover:to-green-500"
           >
             Estimate your price
           </a>

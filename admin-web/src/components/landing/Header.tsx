@@ -14,20 +14,20 @@ export default function Header({ authenticated }: { authenticated: boolean }) {
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300 md:flex">
-          <a href="#features" className="hover:text-violet-600 dark:hover:text-violet-400">
+          <a href="#features" className="hover:text-green-600 dark:hover:text-green-400">
             Features
           </a>
-          <a href="#pricing" className="hover:text-violet-600 dark:hover:text-violet-400">
+          <a href="#pricing" className="hover:text-green-600 dark:hover:text-green-400">
             Pricing
           </a>
-          <a href="#calculator" className="hover:text-violet-600 dark:hover:text-violet-400">
+          <a href="#calculator" className="hover:text-green-600 dark:hover:text-green-400">
             Calculator
           </a>
         </nav>
 
         <Link
           href={authenticated ? "/dashboard" : "/login"}
-          className="rounded-md bg-linear-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white hover:from-indigo-500 hover:to-violet-500"
+          className="rounded-md bg-linear-to-r from-yellow-600 to-green-600 px-4 py-2 text-sm font-semibold text-white hover:from-yellow-500 hover:to-green-500"
         >
           {authenticated ? "Go to Dashboard" : "Sign In"}
         </Link>

@@ -57,7 +57,7 @@ export default function Features() {
             key={title}
             className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/60 text-green-600 dark:text-green-400">
               <Icon />
             </div>
             <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">{title}</h3>

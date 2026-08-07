@@ -20,9 +20,9 @@ const PHASES = [
 ];
 
 const METRICS = [
-  { value: "Minutes, not days", label: "Field sales reflected in Tally", color: "text-violet-600 dark:text-violet-400" },
-  { value: "99%", label: "Billing accuracy, errors designed out", color: "text-emerald-600 dark:text-emerald-400" },
-  { value: "Lower DSO", label: "Outstanding tracked and collected faster", color: "text-sky-600 dark:text-sky-400" },
+  { value: "Minutes, not days", label: "Field sales reflected in Tally", color: "text-green-600 dark:text-green-400" },
+  { value: "99%", label: "Billing accuracy, errors designed out", color: "text-yellow-600 dark:text-yellow-400" },
+  { value: "Lower DSO", label: "Outstanding tracked and collected faster", color: "text-red-600 dark:text-red-400" },
 ];
 
 export default function Roadmap() {
@@ -45,14 +45,14 @@ export default function Roadmap() {
             key={phase.label}
             className={`rounded-xl border p-6 ${
               phase.current
-                ? "border-violet-300 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20"
+                ? "border-green-300 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20"
                 : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
             }`}
           >
             <span
               className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                 phase.current
-                  ? "bg-violet-600 text-white"
+                  ? "bg-green-600 text-white"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
               }`}
             >
@@ -62,7 +62,7 @@ export default function Roadmap() {
             <ul className="mt-3 space-y-1.5">
               {phase.items.map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
                   {item}
                 </li>
               ))}

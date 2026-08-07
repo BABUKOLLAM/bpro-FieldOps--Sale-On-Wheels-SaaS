@@ -31,18 +31,18 @@ export default function ProblemSolution() {
 
       <div className="mt-12 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
         <div className="grid grid-cols-2 bg-slate-50 dark:bg-slate-900 text-sm font-semibold text-slate-500 dark:text-slate-400">
-          <div className="px-5 py-3 border-r border-slate-200 dark:border-slate-800">Without a system</div>
-          <div className="px-5 py-3 text-emerald-600 dark:text-emerald-400">With this platform</div>
+          <div className="px-5 py-3 border-r border-slate-200 dark:border-slate-800 text-red-600 dark:text-red-400">Without a system</div>
+          <div className="px-5 py-3 text-green-600 dark:text-green-400">With this platform</div>
         </div>
         {ROWS.map((row, i) => (
           <div
             key={i}
             className={`grid grid-cols-2 text-sm ${i > 0 ? "border-t border-slate-200 dark:border-slate-800" : ""}`}
           >
-            <div className="px-5 py-4 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
+            <div className="px-5 py-4 border-r border-slate-200 dark:border-slate-800 bg-red-50/40 dark:bg-red-950/20 text-slate-800 dark:text-slate-100">
               {row.problem}
             </div>
-            <div className="px-5 py-4 bg-emerald-50/40 dark:bg-emerald-950/20 text-slate-800 dark:text-slate-100">
+            <div className="px-5 py-4 bg-green-50/40 dark:bg-green-950/20 text-slate-800 dark:text-slate-100">
               {row.solution}
             </div>
           </div>
