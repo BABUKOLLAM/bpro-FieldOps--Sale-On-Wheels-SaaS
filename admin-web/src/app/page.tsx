@@ -1,9 +1,12 @@
 import { isAuthenticated } from "@/lib/api";
 import Header from "@/components/landing/Header";
 import Hero from "@/components/landing/Hero";
+import ProblemSolution from "@/components/landing/ProblemSolution";
 import Features from "@/components/landing/Features";
+import TallySync from "@/components/landing/TallySync";
 import PricingTiers from "@/components/landing/PricingTiers";
 import PricingCalculator from "@/components/landing/PricingCalculator";
+import Roadmap from "@/components/landing/Roadmap";
 import Footer from "@/components/landing/Footer";
 
 export default async function Home() {
@@ -14,7 +17,9 @@ export default async function Home() {
       <Header authenticated={authenticated} />
       <main>
         <Hero />
+        <ProblemSolution />
         <Features />
+        <TallySync />
 
         <section id="pricing" className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24">
           <div className="mx-auto max-w-2xl text-center">
@@ -44,6 +49,8 @@ export default async function Home() {
             <PricingCalculator />
           </div>
         </section>
+
+        <Roadmap />
       </main>
       <Footer />
     </div>
