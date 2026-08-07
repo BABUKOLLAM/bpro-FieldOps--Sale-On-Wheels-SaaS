@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.attendance.serializers import AttendanceSerializer
 from apps.catalog.serializers import ItemSerializer, PriceListSerializer, SchemeSerializer
 from apps.company.serializers import GSTRegistrationSerializer
 from apps.customers.serializers import BeatSerializer, CustomerSerializer
@@ -27,7 +28,9 @@ class PushItemSerializer(serializers.Serializer):
     supported set — Receipt/CreditNote/SalesOrder follow the identical
     pattern and are the natural next extension of this same list."""
 
-    entity_type = serializers.ChoiceField(choices=["invoice", "trip", "trip_checkpoint", "expense", "location_ping"])
+    entity_type = serializers.ChoiceField(
+        choices=["invoice", "trip", "trip_checkpoint", "expense", "location_ping", "attendance"]
+    )
     payload = serializers.JSONField()
 
 
@@ -41,4 +44,5 @@ PUSH_HANDLERS = {
     "trip_checkpoint": TripCheckpointSerializer,
     "expense": ExpenseSerializer,
     "location_ping": LocationPingSerializer,
+    "attendance": AttendanceSerializer,
 }

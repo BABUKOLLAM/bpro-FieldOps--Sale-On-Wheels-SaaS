@@ -14,6 +14,7 @@ import Beat from '../db/models/Beat';
 import BeatCustomer from '../db/models/BeatCustomer';
 import Customer from '../db/models/Customer';
 import Trip, { TRIP_IN_PROGRESS } from '../db/models/Trip';
+import Attendance from '../db/models/Attendance';
 import { synchronize } from '../sync/synchronize';
 import { useAuth } from '../auth/AuthContext';
 import { colors } from '../theme/colors';
@@ -24,6 +25,7 @@ export default function HomeScreen({ navigation }: any) {
   const { user, logout } = useAuth();
   const [stops, setStops] = useState<Stop[]>([]);
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
+  const [checkedIn, setCheckedIn] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
@@ -53,6 +55,12 @@ export default function HomeScreen({ navigation }: any) {
       .query(Q.where('status', TRIP_IN_PROGRESS))
       .fetch();
     setActiveTrip(trips[0] || null);
+
+    const openAttendance = await database
+      .get<Attendance>('attendance')
+      .query(Q.where('check_out_at', null))
+      .fetch();
+    setCheckedIn(openAttendance.length > 0);
   }, []);
 
   useFocusEffect(
@@ -92,6 +100,23 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.logout}>Sign out</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={[
+          styles.attendanceButton,
+          checkedIn && styles.attendanceButtonActive,
+        ]}
+        onPress={() => navigation.navigate('Attendance')}
+      >
+        <Text
+          style={[
+            styles.attendanceButtonText,
+            checkedIn && styles.attendanceButtonTextActive,
+          ]}
+        >
+          {checkedIn ? 'Checked in — Check Out' : 'Check In'}
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.tripButton}
@@ -166,6 +191,24 @@ const styles = StyleSheet.create({
   greeting: { color: colors.textPrimary, fontSize: 20, fontWeight: '700' },
   role: { color: colors.textSecondary, fontSize: 13 },
   logout: { color: colors.danger, fontSize: 14 },
+  attendanceButton: {
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  attendanceButtonActive: {
+    backgroundColor: colors.success,
+    borderColor: colors.success,
+  },
+  attendanceButtonText: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  attendanceButtonTextActive: { color: '#fff' },
   tripButton: {
     backgroundColor: colors.primary,
     borderRadius: 10,

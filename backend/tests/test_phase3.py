@@ -2,10 +2,12 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.constants import ROLE_VAN_SALESMAN
 from apps.accounts.models import Role
+from apps.attendance.models import Attendance
 from apps.reporting.models import Target
 
 
@@ -129,3 +131,96 @@ def test_target_achieved_amount_computed_from_invoices(agent, van_godown, custom
     assert response.status_code == 200
     results = response.data["results"] if isinstance(response.data, dict) and "results" in response.data else response.data
     assert Decimal(results[0]["achieved_amount"]) == Decimal("2500")
+
+
+@pytest.mark.django_db
+def test_attendance_check_in_via_api_forces_agent(agent):
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    response = client.post(
+        "/api/attendance/", {"check_in_at": timezone.now().isoformat(), "check_in_latitude": "19.076000", "check_in_longitude": "72.877700"}, format="json"
+    )
+    assert response.status_code == 201, response.data
+    assert str(response.data["agent"]) == str(agent.id)
+    assert response.data["check_out_at"] is None
+
+
+@pytest.mark.django_db
+def test_attendance_duplicate_check_in_rejected(agent):
+    Attendance.objects.create(agent=agent, check_in_at=timezone.now())
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    response = client.post("/api/attendance/", {"check_in_at": timezone.now().isoformat()}, format="json")
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_attendance_check_out_sets_duration(agent):
+    record = Attendance.objects.create(agent=agent, check_in_at=timezone.now() - timezone.timedelta(hours=2))
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    response = client.post(f"/api/attendance/{record.id}/check_out/", {"latitude": "19.08", "longitude": "72.88"}, format="json")
+    assert response.status_code == 200, response.data
+    assert response.data["check_out_at"] is not None
+    assert response.data["duration_minutes"] >= 119
+
+
+@pytest.mark.django_db
+def test_attendance_open_returns_current_record(agent):
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    assert client.get("/api/attendance/open/").data is None
+
+    record = Attendance.objects.create(agent=agent, check_in_at=timezone.now())
+    resp = client.get("/api/attendance/open/")
+    assert resp.data["id"] == str(record.id)
+
+
+@pytest.mark.django_db
+def test_attendance_agent_cannot_see_others_but_supervisor_can(agent, supervisor):
+    Attendance.objects.create(agent=agent, check_in_at=timezone.now())
+
+    agent_client = APIClient()
+    agent_client.force_authenticate(user=agent)
+    assert len(agent_client.get("/api/attendance/").data["results"]) == 1
+
+    other_client = APIClient()
+    other = agent.__class__.objects.create_user(username="other-agent@test.local", password="x", is_field_agent=True)
+    other_client.force_authenticate(user=other)
+    assert len(other_client.get("/api/attendance/").data["results"]) == 0
+
+    supervisor_client = APIClient()
+    supervisor_client.force_authenticate(user=supervisor)
+    assert len(supervisor_client.get("/api/attendance/").data["results"]) == 1
+
+
+@pytest.mark.django_db
+def test_attendance_push_is_idempotent(agent):
+    import uuid
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    record_id = str(uuid.uuid4())
+    payload = {
+        "items": [
+            {"entity_type": "attendance", "payload": {"id": record_id, "check_in_at": timezone.now().isoformat()}}
+        ]
+    }
+    first = client.post("/api/sync/push/", payload, format="json")
+    assert first.status_code == 200, first.data
+    assert first.data["results"][0]["status"] == "applied"
+
+    second = client.post("/api/sync/push/", payload, format="json")
+    assert second.status_code == 200
+    assert second.data["results"][0]["status"] == "applied"
+    assert Attendance.objects.filter(id=record_id).count() == 1
+
+
+@pytest.mark.django_db
+def test_report_export_attendance(admin, agent):
+    Attendance.objects.create(agent=agent, check_in_at=timezone.now())
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get("/api/reporting/export/attendance/?filetype=xlsx")
+    assert response.status_code == 200
+    assert response.content[:2] == b"PK"

@@ -2,10 +2,6 @@
 builder returns (title, headers, rows) — the same shape exports.py renders
 to Excel/PDF. Kept separate from views.py/exports.py so adding a report is
 a one-function change in one place.
-
-Deliberately not covered: an "attendance" report (AR-02 lists one) — there
-is no Attendance model yet (FR-16 isn't built), so a report for it would
-have nothing real to show.
 """
 
 from datetime import timedelta
@@ -86,6 +82,21 @@ def expenses_report():
         for e in Expense.objects.select_related("agent").order_by("-expense_date")[:1000]
     ]
     return "Expense Report", ["Date", "Agent", "Category", "Amount", "Description", "Status"], rows
+
+
+def attendance_report():
+    from apps.attendance.models import Attendance
+
+    rows = []
+    for a in Attendance.objects.select_related("agent").order_by("-check_in_at")[:1000]:
+        duration = a.duration_minutes()
+        rows.append([
+            a.check_in_at.date(), a.agent.get_full_name() or a.agent.username,
+            a.check_in_at.strftime("%H:%M"), a.check_out_at.strftime("%H:%M") if a.check_out_at else "—",
+            f"{duration // 60}h {duration % 60}m" if duration is not None else "—",
+            "Yes" if a.check_in_latitude is not None else "No",
+        ])
+    return "Attendance Report", ["Date", "Agent", "Check-In", "Check-Out", "Duration", "Geo-Tagged"], rows
 
 
 def stock_movement_report():
@@ -208,6 +219,7 @@ REPORT_BUILDERS = {
     "outstanding": outstanding_report,
     "returns": returns_report,
     "expenses": expenses_report,
+    "attendance": attendance_report,
     "stock_movement": stock_movement_report,
     "fleet_utilization": fleet_utilization_report,
     "fleet_fuel_trend": fleet_fuel_trend_report,
@@ -222,6 +234,7 @@ REPORT_LABELS = {
     "outstanding": "Outstanding & Credit",
     "returns": "Returns & Replacements",
     "expenses": "Expenses",
+    "attendance": "Attendance",
     "stock_movement": "Stock Movement",
     "fleet_utilization": "Fleet Utilization",
     "fleet_fuel_trend": "Fleet Fuel Cost Trend",

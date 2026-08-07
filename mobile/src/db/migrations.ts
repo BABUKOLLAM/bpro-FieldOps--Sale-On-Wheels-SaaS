@@ -11,6 +11,8 @@ import {
  * v2 -> v3 (Phase 2 slice 2): GPS point-capture columns on trips/
  * trip_checkpoints, plus the new location_pings breadcrumb table.
  *
+ * v3 -> v4 (BRD completion — FR-16): the new attendance table.
+ *
  * Real migrations (not a dev-only schema bump) so an already-installed
  * app upgrades in place without losing local data — see
  * docs/architecture.md for why that matters here specifically: an
@@ -78,6 +80,26 @@ export default schemaMigrations({
             { name: 'latitude', type: 'number' },
             { name: 'longitude', type: 'number' },
             { name: 'recorded_at', type: 'number' },
+            { name: 'sync_status', type: 'string', isIndexed: true },
+            { name: 'sync_error', type: 'string' },
+          ],
+        }),
+      ],
+    },
+    {
+      toVersion: 4,
+      steps: [
+        createTable({
+          name: 'attendance',
+          columns: [
+            { name: 'server_id', type: 'string', isIndexed: true },
+            { name: 'check_in_at', type: 'number' },
+            { name: 'check_in_latitude', type: 'number' },
+            { name: 'check_in_longitude', type: 'number' },
+            { name: 'check_out_at', type: 'number' },
+            { name: 'check_out_latitude', type: 'number' },
+            { name: 'check_out_longitude', type: 'number' },
+            { name: 'device_created_at', type: 'number' },
             { name: 'sync_status', type: 'string', isIndexed: true },
             { name: 'sync_error', type: 'string' },
           ],

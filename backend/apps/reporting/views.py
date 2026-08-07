@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.constants import PERM_REPORTING_DASHBOARD_VIEW
 from apps.accounts.permissions import HasRolePermission
+from apps.attendance.models import Attendance
 from apps.fleet.models import LocationPing, Trip, TripCheckpoint
 from apps.integrations.models import SyncLogEntry
 from apps.sales.models import Invoice, Receipt
@@ -39,6 +40,7 @@ class DashboardView(APIView):
             "todays_sales_count": todays_invoices.count(),
             "todays_collections_total": todays_receipts.aggregate(t=Sum("amount"))["t"] or Decimal("0"),
             "active_trips_count": Trip.objects.filter(status=Trip.STATUS_IN_PROGRESS).count(),
+            "checked_in_today_count": Attendance.objects.filter(check_in_at__date=today).count(),
             "pending_credit_review_count": Invoice.objects.filter(
                 credit_check_status=Invoice.CREDIT_PENDING_REVIEW
             ).count(),

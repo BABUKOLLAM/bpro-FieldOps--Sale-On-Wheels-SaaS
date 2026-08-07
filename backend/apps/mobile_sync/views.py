@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.constants import (
-    PERM_EXPENSES_CREATE_OWN, PERM_FLEET_TRIP_MANAGE_OWN, PERM_SALES_INVOICE_CREATE,
+    PERM_ATTENDANCE_CREATE_OWN, PERM_EXPENSES_CREATE_OWN, PERM_FLEET_TRIP_MANAGE_OWN, PERM_SALES_INVOICE_CREATE,
 )
 from apps.catalog.models import Item, PriceList, Scheme
 from apps.company.models import GSTRegistration
@@ -28,8 +28,9 @@ _PUSH_PERMISSION_REQUIRED = {
     "trip_checkpoint": PERM_FLEET_TRIP_MANAGE_OWN,
     "expense": PERM_EXPENSES_CREATE_OWN,
     "location_ping": PERM_FLEET_TRIP_MANAGE_OWN,
+    "attendance": PERM_ATTENDANCE_CREATE_OWN,
 }
-_FORCE_AGENT_FIELD = {"invoice", "trip", "expense", "location_ping"}
+_FORCE_AGENT_FIELD = {"invoice", "trip", "expense", "location_ping", "attendance"}
 
 
 class PullView(APIView):

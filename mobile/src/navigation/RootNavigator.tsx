@@ -10,6 +10,7 @@ import HomeScreen from '../screens/HomeScreen';
 import SpotBillingScreen from '../screens/billing/SpotBillingScreen';
 import TripScreen from '../screens/trips/TripScreen';
 import ExpenseScreen from '../screens/expenses/ExpenseScreen';
+import AttendanceScreen from '../screens/attendance/AttendanceScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -80,6 +81,11 @@ export default function RootNavigator() {
               name="Expense"
               component={ExpenseScreen}
               options={{ title: 'Expense' }}
+            />
+            <Stack.Screen
+              name="Attendance"
+              component={AttendanceScreen}
+              options={{ title: 'Attendance' }}
             />
           </>
         )}

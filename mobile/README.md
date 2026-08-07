@@ -15,8 +15,14 @@ separate multipart step once the parent record has synced), GPS point
 capture at trip start/end and outlet check-in/out plus foreground
 periodic breadcrumb tracking while a trip is active (FR-05/FM-02 — see
 "Native permissions required" below for what real background tracking
-would additionally need), and push sync with retry-safe idempotency.
-Receipt/Return/Order screens follow the identical WatermelonDB + sync
+would additionally need), daily attendance check-in/check-out with a
+geo-tag (FR-16 — check-in is offline-first like everything else above;
+check-out is a direct online call, deliberately not routed through the
+offline push queue, since re-pushing an update through it would silently
+no-op against the backend's push-idempotency log — see the note in
+`sync/synchronize.ts`; selfie capture is explicitly "(optional)" in the
+BRD's own wording and isn't built here), and push sync with retry-safe
+idempotency. Receipt/Return/Order screens follow the identical WatermelonDB + sync
 pattern used by Spot Billing — see
 `src/screens/billing/SpotBillingScreen.tsx` as the template for adding
 them.

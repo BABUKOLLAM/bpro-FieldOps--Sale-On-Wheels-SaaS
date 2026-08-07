@@ -12,6 +12,7 @@ import Trip from '../db/models/Trip';
 import TripCheckpoint from '../db/models/TripCheckpoint';
 import Expense from '../db/models/Expense';
 import LocationPing from '../db/models/LocationPing';
+import Attendance from '../db/models/Attendance';
 
 /**
  * Custom sync client matching the backend's apps.mobile_sync pull/push
@@ -317,6 +318,36 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
     const ok = await pushItem('location_ping', payload);
     await database.write(async () => {
       await ping.update((rec) => {
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+      });
+    });
+    ok ? pushed++ : failed++;
+  }
+
+  // Attendance check-in only — check-out is a direct online action against
+  // an existing record (see AttendanceScreen), not a second push of the
+  // same id: the backend's push idempotency log treats any repeat push of
+  // an id as an already-applied no-op, so re-pushing an updated payload
+  // would silently never reach the database (the same trap Trip's
+  // start/end update-via-repush pattern has — avoided here on purpose).
+  const pendingAttendance = await database
+    .get<Attendance>('attendance')
+    .query(Q.where('sync_status', Q.oneOf([SYNC_PENDING, SYNC_FAILED])))
+    .fetch();
+
+  for (const record of pendingAttendance) {
+    const payload = {
+      id: record.serverId,
+      check_in_at: new Date(record.checkInAt).toISOString(),
+      check_in_latitude: record.checkInLatitude ?? null,
+      check_in_longitude: record.checkInLongitude ?? null,
+      device_created_at: record.deviceCreatedAt
+        ? new Date(record.deviceCreatedAt).toISOString()
+        : null,
+    };
+    const ok = await pushItem('attendance', payload);
+    await database.write(async () => {
+      await record.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
       });
     });

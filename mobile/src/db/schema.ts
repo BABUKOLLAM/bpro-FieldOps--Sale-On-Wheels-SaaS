@@ -15,7 +15,7 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
  * change-tracking — see src/sync/synchronize.ts.
  */
 export const schema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: 'customers',
@@ -183,6 +183,25 @@ export const schema = appSchema({
         { name: 'latitude', type: 'number' },
         { name: 'longitude', type: 'number' },
         { name: 'recorded_at', type: 'number' },
+        { name: 'sync_status', type: 'string', isIndexed: true },
+        { name: 'sync_error', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'attendance',
+      columns: [
+        // check-in is created offline like invoices/trips; check-out is a
+        // direct online action against the record's id once it exists
+        // server-side (see src/screens/attendance/AttendanceScreen.tsx) —
+        // so only check-in fields need a sync_status.
+        { name: 'server_id', type: 'string', isIndexed: true },
+        { name: 'check_in_at', type: 'number' },
+        { name: 'check_in_latitude', type: 'number' },
+        { name: 'check_in_longitude', type: 'number' },
+        { name: 'check_out_at', type: 'number' },
+        { name: 'check_out_latitude', type: 'number' },
+        { name: 'check_out_longitude', type: 'number' },
+        { name: 'device_created_at', type: 'number' },
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },
       ],

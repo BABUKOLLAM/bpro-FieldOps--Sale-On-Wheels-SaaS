@@ -6,6 +6,7 @@ type DashboardData = {
   todays_sales_count: number;
   todays_collections_total: number;
   active_trips_count: number;
+  checked_in_today_count: number;
   pending_credit_review_count: number;
   sync_failure_count: number;
   recent_invoices: {
@@ -69,6 +70,7 @@ export default async function DashboardPage() {
         <StatCard label="Invoices Today" value={data.todays_sales_count} />
         <StatCard label="Collections Today" value={`₹${Number(data.todays_collections_total).toLocaleString("en-IN")}`} />
         <StatCard label="Active Trips" value={data.active_trips_count} />
+        <StatCard label="Checked In Today" value={data.checked_in_today_count} />
         <StatCard label="Pending Credit Review" value={data.pending_credit_review_count} tone={data.pending_credit_review_count > 0 ? "warn" : undefined} />
         <StatCard label="Sync Failures" value={data.sync_failure_count} tone={data.sync_failure_count > 0 ? "danger" : undefined} />
       </div>

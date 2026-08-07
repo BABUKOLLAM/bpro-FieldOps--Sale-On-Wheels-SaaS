@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.inventory",
     "apps.fleet",
     "apps.expenses",
+    "apps.attendance",
     "apps.integrations",
     "apps.mobile_sync",
     "apps.reporting",

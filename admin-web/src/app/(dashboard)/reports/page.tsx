@@ -9,6 +9,7 @@ const DESCRIPTIONS: Record<string, string> = {
   outstanding: "Current outstanding balance and credit status per customer.",
   returns: "Sales returns and replacements with reason codes.",
   expenses: "Field expense claims with category and approval status.",
+  attendance: "Daily check-in/check-out times, duration, and whether each was geo-tagged.",
   stock_movement: "The stock ledger — van loads/unloads, sales, transfers, adjustments.",
   fleet_utilization: "Vehicle trips, distance, fuel cost, and efficiency — last 30 days.",
   fleet_fuel_trend: "Fuel cost by month — last 6 months.",

@@ -75,6 +75,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { code: "expenses.approve", label: "Approve/reject expenses" },
     ],
   },
+  {
+    domain: "Attendance",
+    permissions: [
+      { code: "attendance.create_own", label: "Check in / check out" },
+      { code: "attendance.view_all", label: "View all attendance records" },
+    ],
+  },
 ];
 
 export const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap((g) => g.permissions);
