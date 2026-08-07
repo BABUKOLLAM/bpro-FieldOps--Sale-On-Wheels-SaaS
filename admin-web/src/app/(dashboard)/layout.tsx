@@ -24,6 +24,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link href="/approvals" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
                 Approvals &amp; Sync
               </Link>
+              <Link href="/targets" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
+                Targets
+              </Link>
+              <Link href="/users" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
+                Users
+              </Link>
+              <Link href="/roles" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
+                Roles
+              </Link>
             </nav>
           </div>
           <LogoutButton />

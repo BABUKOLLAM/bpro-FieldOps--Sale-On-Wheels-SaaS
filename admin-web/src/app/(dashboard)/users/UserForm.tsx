@@ -1,0 +1,162 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+type Role = { id: string; name: string };
+
+const ROLE_LABELS: Record<string, string> = {
+  van_salesman: "Van Salesman / Field Sales Executive",
+  pre_sales_order_booker: "Pre-Sales / Order Booker",
+  sales_supervisor: "Sales Supervisor / Area Sales Manager",
+  back_office_admin: "Back-Office / Admin User",
+  finance_accounts: "Finance / Accounts User",
+  fleet_manager: "Fleet / Transport Manager",
+  system_it_admin: "System / IT Administrator",
+};
+
+export default function UserForm({ roles }: { roles: Role[] }) {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [employeeCode, setEmployeeCode] = useState("");
+  const [isFieldAgent, setIsFieldAgent] = useState(false);
+  const [password, setPassword] = useState("");
+  const [roleId, setRoleId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const userResponse = await fetch("/api/proxy/users", {
+        method: "POST",
+        body: JSON.stringify({
+          username,
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          employee_code: employeeCode || null,
+          is_field_agent: isFieldAgent,
+          password,
+        }),
+      });
+      const userData = await userResponse.json().catch(() => ({}));
+      if (!userResponse.ok) throw new Error(JSON.stringify(userData));
+
+      if (roleId) {
+        const roleResponse = await fetch("/api/proxy/user-roles", {
+          method: "POST",
+          body: JSON.stringify({ user: userData.id, role: roleId }),
+        });
+        if (!roleResponse.ok) throw new Error(JSON.stringify(await roleResponse.json().catch(() => ({}))));
+      }
+
+      setUsername("");
+      setFirstName("");
+      setLastName("");
+      setPhone("");
+      setEmployeeCode("");
+      setIsFieldAgent(false);
+      setPassword("");
+      setRoleId("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create user.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4"
+    >
+      <div>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Username / email</label>
+        <input
+          required
+          type="email"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="mt-1 w-56 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">First name</label>
+        <input
+          required
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          className="mt-1 w-36 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Last name</label>
+        <input
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          className="mt-1 w-36 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Phone</label>
+        <input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Employee code</label>
+        <input
+          value={employeeCode}
+          onChange={(e) => setEmployeeCode(e.target.value)}
+          className="mt-1 w-28 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Initial password</label>
+        <input
+          required
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="mt-1 w-36 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Role</label>
+        <select
+          value={roleId}
+          onChange={(e) => setRoleId(e.target.value)}
+          className="mt-1 w-56 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+        >
+          <option value="">No role yet</option>
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {ROLE_LABELS[r.name] || r.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <label className="flex items-center gap-1.5 pb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+        <input type="checkbox" checked={isFieldAgent} onChange={(e) => setIsFieldAgent(e.target.checked)} />
+        Field agent
+      </label>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+      >
+        {submitting ? "Adding…" : "Add User"}
+      </button>
+      {error && <p className="w-full text-xs text-red-600">{error}</p>}
+    </form>
+  );
+}

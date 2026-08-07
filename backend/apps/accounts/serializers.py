@@ -7,13 +7,14 @@ from .models import Device, Role, User, UserRole
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     permission_codes = serializers.SerializerMethodField()
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True, style={"input_type": "password"})
 
     class Meta:
         model = User
         fields = [
             "id", "username", "first_name", "last_name", "email", "phone",
             "employee_code", "is_field_agent", "reporting_manager", "roles",
-            "permission_codes", "is_active",
+            "permission_codes", "is_active", "password",
         ]
 
     def get_roles(self, obj):
@@ -21,6 +22,24 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_permission_codes(self, obj):
         return sorted(obj.permission_codes())
+
+    def create(self, validated_data):
+        password = validated_data.pop("password", None)
+        user = User(**validated_data)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+            user.save(update_fields=["password"])
+        return user
 
 
 class LoginSerializer(TokenObtainPairSerializer):
