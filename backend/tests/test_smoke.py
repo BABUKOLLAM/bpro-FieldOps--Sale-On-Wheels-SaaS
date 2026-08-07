@@ -20,7 +20,7 @@ def test_seed_demo_data_runs_end_to_end():
 
     from apps.accounts.models import User
 
-    assert User.objects.filter(username="admin@demo.local").exists()
+    assert User.objects.filter(username="tech@bpropms.com").exists()
     assert User.objects.filter(username="agent@demo.local").exists()
 
 

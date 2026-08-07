@@ -33,7 +33,7 @@ docker compose exec backend python manage.py seed_demo_data
 - API schema/docs: http://localhost:8000/api/schema/swagger-ui/
 - Admin web: http://localhost:3000
 
-Demo login (after seeding): `admin@demo.local` / `DemoPass123!`
+Demo login (after seeding): `tech@bpropms.com` / `Bpro#1234`
 
 ## Mobile app
 

@@ -42,11 +42,11 @@ class Command(BaseCommand):
         van_salesman_role = Role.objects.get(name=ROLE_VAN_SALESMAN)
 
         admin_user, created = User.objects.get_or_create(
-            username="admin@demo.local",
-            defaults=dict(email="admin@demo.local", first_name="Demo", last_name="Admin", is_staff=True, is_superuser=True),
+            username="tech@bpropms.com",
+            defaults=dict(email="tech@bpropms.com", first_name="Demo", last_name="Admin", is_staff=True, is_superuser=True),
         )
         if created:
-            admin_user.set_password("DemoPass123!")
+            admin_user.set_password("Bpro#1234")
             admin_user.save()
         UserRole.objects.get_or_create(user=admin_user, role=admin_role)
 
@@ -117,7 +117,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             "\nDemo deployment ready.\n"
-            "  Admin login:  admin@demo.local / DemoPass123!\n"
+            "  Admin login:  tech@bpropms.com / Bpro#1234\n"
             "  Agent login:  agent@demo.local / DemoPass123!\n"
             f"  Company: {company} | GST: {gst_registration.gstin}\n"
             f"  {len(items)} items, {len(customers)} customers, 1 beat, van stock loaded.\n"
