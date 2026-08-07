@@ -15,6 +15,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link href="/live-map" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
                 Live Map
               </Link>
+              <Link href="/fleet" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
+                Fleet
+              </Link>
               <Link href="/master-data" className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
                 Master Data
               </Link>

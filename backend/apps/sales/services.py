@@ -9,7 +9,7 @@ from apps.core.exceptions import DomainError
 from apps.inventory.models import StockLedgerEntry
 from apps.inventory.services import post_stock_movement
 
-from .models import CreditNote, CreditNoteLine, DocumentSequence, Invoice, InvoiceLine, Receipt
+from .models import CreditNote, DocumentSequence, Invoice, InvoiceLine, Receipt
 
 
 def financial_year_for(d: date) -> str:
@@ -200,8 +200,14 @@ def finalize_receipt(receipt: Receipt):
 
 @transaction.atomic
 def finalize_credit_note(credit_note: CreditNote):
-    """Sellable stock returns to the van; damaged/expired stock is tracked
-    but not re-added to sellable inventory (reverse logistics — FM-11)."""
+    """Every returned unit — sellable, damaged, or expired — physically
+    lands back in the van, so every condition posts a stock movement
+    (reverse logistics — FM-11): without this, damaged/expired returns
+    had zero audit trail, silently vanishing from the ledger the moment
+    they were collected. `CreditNoteLine.condition` remains the field
+    downstream reporting (see apps.fleet.views.FleetDashboardView's
+    reverse-logistics reconciliation) reads to tell sellable stock apart
+    from stock still awaiting return to the warehouse."""
     if not credit_note.credit_note_no:
         credit_note.credit_note_no = next_document_number(
             "credit_note", credit_note.original_invoice.gst_registration, credit_note.note_date, "CN"
@@ -213,12 +219,11 @@ def finalize_credit_note(credit_note: CreditNote):
         line.save(update_fields=["line_total"])
         total += line.line_total
 
-        if line.condition == CreditNoteLine.CONDITION_SELLABLE:
-            godown = credit_note.original_invoice.godown
-            post_stock_movement(
-                godown=godown, item=line.item, qty=line.qty, txn_type=StockLedgerEntry.TXN_SALE_RETURN,
-                reference_type="credit_note", reference_id=credit_note.id,
-            )
+        godown = credit_note.original_invoice.godown
+        post_stock_movement(
+            godown=godown, item=line.item, qty=line.qty, txn_type=StockLedgerEntry.TXN_SALE_RETURN,
+            reference_type="credit_note", reference_id=credit_note.id,
+        )
 
     credit_note.grand_total = total
     credit_note.save(update_fields=["credit_note_no", "grand_total"])

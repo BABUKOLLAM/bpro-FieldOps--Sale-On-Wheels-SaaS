@@ -4,6 +4,7 @@ import ItemForm from "./ItemForm";
 import BeatForm from "./BeatForm";
 import BeatStopForm from "./BeatStopForm";
 import RemoveStopButton from "./RemoveStopButton";
+import OptimizeRouteButton from "./OptimizeRouteButton";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -133,9 +134,12 @@ export default async function MasterDataPage() {
               <div key={beat.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{beat.name}</h3>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {agent ? agent.first_name || agent.username : "Unassigned"}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {agent ? agent.first_name || agent.username : "Unassigned"}
+                    </span>
+                    {beat.stops.length > 1 && <OptimizeRouteButton beatId={beat.id} />}
+                  </div>
                 </div>
                 <ul className="mt-3 space-y-1.5">
                   {[...beat.stops].sort((a, b) => a.visit_sequence - b.visit_sequence).map((stop) => (

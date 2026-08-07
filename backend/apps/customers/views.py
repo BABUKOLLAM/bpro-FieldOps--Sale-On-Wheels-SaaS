@@ -1,9 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from rest_framework.response import Response
 
 from apps.accounts.constants import PERM_CUSTOMERS_MANAGE, PERM_CUSTOMERS_VIEW
 from apps.accounts.permissions import HasRolePermission
+from apps.core.geo import haversine_km
 
 from .models import Beat, BeatCustomer, Customer, CustomerCategory
 from .serializers import BeatCustomerSerializer, BeatSerializer, CustomerCategorySerializer, CustomerSerializer
@@ -44,6 +47,51 @@ class BeatViewSet(viewsets.ModelViewSet):
     permission_classes = [CustomersPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["assigned_agent", "is_active"]
+
+    @action(detail=True, methods=["post"], url_path="optimize-route")
+    def optimize_route(self, request, pk=None):
+        """FM-07: nearest-neighbor re-sequencing of this beat's stops by
+        straight-line (Haversine) distance between outlet addresses — a
+        real, useful improvement over an arbitrarily-ordered list, but
+        not a capacity/traffic-aware vehicle-routing solver. Stops whose
+        customer has no address on file can't be routed and are left in
+        their current relative order at the end."""
+        beat = self.get_object()
+        stops = list(beat.stops.select_related("customer").all())
+
+        located, unlocated = [], []
+        for stop in stops:
+            address = stop.customer.addresses.first()
+            if address and address.latitude is not None and address.longitude is not None:
+                located.append((stop, float(address.latitude), float(address.longitude)))
+            else:
+                unlocated.append(stop)
+
+        ordered = []
+        remaining = located[:]
+        if remaining:
+            ordered.append(remaining.pop(0))
+            while remaining:
+                current = ordered[-1]
+                nearest = min(
+                    remaining,
+                    key=lambda s: haversine_km(current[1], current[2], s[1], s[2]),
+                )
+                remaining.remove(nearest)
+                ordered.append(nearest)
+
+        sequence = 1
+        for stop, _, _ in ordered:
+            stop.visit_sequence = sequence
+            stop.save(update_fields=["visit_sequence"])
+            sequence += 1
+        for stop in unlocated:
+            stop.visit_sequence = sequence
+            stop.save(update_fields=["visit_sequence"])
+            sequence += 1
+
+        beat.refresh_from_db()
+        return Response(self.get_serializer(beat).data)
 
 
 class BeatCustomerViewSet(viewsets.ModelViewSet):

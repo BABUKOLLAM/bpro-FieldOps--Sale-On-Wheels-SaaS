@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db.models import Avg
 from django.utils import timezone
 
-from .models import FuelLog, OdometerLog, Trip
+from .models import FuelLog, MaintenanceSchedule, OdometerLog, Trip
 
 
 def start_trip(trip: Trip, *, odometer=None, latitude=None, longitude=None, photo=None):
@@ -93,3 +93,75 @@ def evaluate_fuel_log(fuel_log: FuelLog) -> FuelLog:
         )
         fuel_log.save(update_fields=["flagged_for_review", "flag_reason"])
     return fuel_log
+
+
+# FM-05 maintenance due-alerts: a schedule can key off a calendar date, an
+# odometer distance, or both — whichever is closer to "due" wins.
+STATUS_OK = "ok"
+STATUS_DUE_SOON = "due_soon"
+STATUS_OVERDUE = "overdue"
+_STATUS_RANK = {STATUS_OK: 0, STATUS_DUE_SOON: 1, STATUS_OVERDUE: 2}
+DUE_SOON_DAYS = 14
+DUE_SOON_KM = Decimal("500")
+
+
+def _worse(a: str, b: str) -> str:
+    return a if _STATUS_RANK[a] >= _STATUS_RANK[b] else b
+
+
+def _latest_odometer_reading(vehicle):
+    log = OdometerLog.objects.filter(vehicle=vehicle).order_by("-recorded_at").first()
+    return log.reading if log else None
+
+
+def maintenance_status(schedule: MaintenanceSchedule, current_odometer=None) -> str:
+    """ok / due_soon / overdue for one schedule, given the vehicle's
+    latest known odometer reading (pass None if unknown — the date check
+    still applies on its own)."""
+    status = STATUS_OK
+    today = timezone.localdate()
+
+    if schedule.next_due_date:
+        days_remaining = (schedule.next_due_date - today).days
+        if days_remaining < 0:
+            status = _worse(status, STATUS_OVERDUE)
+        elif days_remaining <= DUE_SOON_DAYS:
+            status = _worse(status, STATUS_DUE_SOON)
+
+    if schedule.next_due_odometer is not None and current_odometer is not None:
+        km_remaining = schedule.next_due_odometer - current_odometer
+        if km_remaining < 0:
+            status = _worse(status, STATUS_OVERDUE)
+        elif km_remaining <= DUE_SOON_KM:
+            status = _worse(status, STATUS_DUE_SOON)
+
+    return status
+
+
+def maintenance_due_alerts(vehicle=None) -> list[dict]:
+    """FM-05: every active schedule that's due_soon or overdue, across the
+    fleet or scoped to one vehicle — so a fleet manager isn't manually
+    eyeballing next_due_date/next_due_odometer on every vehicle."""
+    schedules = MaintenanceSchedule.objects.filter(is_active=True).select_related("vehicle")
+    if vehicle is not None:
+        schedules = schedules.filter(vehicle=vehicle)
+
+    odometer_cache: dict = {}
+    alerts = []
+    for schedule in schedules:
+        if schedule.vehicle_id not in odometer_cache:
+            odometer_cache[schedule.vehicle_id] = _latest_odometer_reading(schedule.vehicle)
+        current_odometer = odometer_cache[schedule.vehicle_id]
+        status = maintenance_status(schedule, current_odometer)
+        if status != STATUS_OK:
+            alerts.append({
+                "schedule_id": schedule.id,
+                "vehicle_id": schedule.vehicle_id,
+                "vehicle_reg_no": schedule.vehicle.reg_no,
+                "description": schedule.description,
+                "next_due_date": schedule.next_due_date,
+                "next_due_odometer": schedule.next_due_odometer,
+                "current_odometer": current_odometer,
+                "status": status,
+            })
+    return alerts

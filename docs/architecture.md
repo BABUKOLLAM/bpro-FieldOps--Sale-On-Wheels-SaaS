@@ -1,6 +1,6 @@
 # Architecture
 
-Phase 1 MVP + Phase 2 slices 1-2 of the Field Sales / Van Sales SaaS
+Phase 1 MVP + Phase 2 slices 1-3 of the Field Sales / Van Sales SaaS
 platform. This document covers what's implemented, the key design
 decisions, and what's deliberately deferred beyond this build.
 
@@ -38,7 +38,7 @@ infra/       docker-compose for local dev (postgres, redis, backend, celery, adm
 | `customers` | Customers (credit limit/outstanding/blocked), beats/routes |
 | `sales` | SalesOrder, Invoice, Receipt, CreditNote — GST calc, credit checks, stock posting |
 | `inventory` | Godowns, the stock ledger (source of truth), van load/unload with variance |
-| `fleet` | Vehicles, trips, checkpoints, odometer/fuel logs, maintenance |
+| `fleet` | Vehicles, trips, checkpoints, odometer/fuel logs, maintenance + due-alerts, GPS breadcrumbs, fleet dashboard |
 | `expenses` | Field expense capture + supervisor approval workflow |
 | `integrations` | Tally/Busy/Marg sync layer: `ERPConnection`, `SyncLogEntry`, connectors, on-prem agent |
 | `mobile_sync` | Offline pull/push protocol, push idempotency |
@@ -178,14 +178,49 @@ Added on top of slice 1:
   new admin-web `/live-map` page with `react-leaflet` + OpenStreetMap
   tiles (no Google Maps API key/billing account required).
 
+## Phase 2, slice 3: fleet expansion
+
+Added on top of slice 2 (FM-05, FM-07, FM-08, FM-11, FM-12, FM-13):
+
+- **Maintenance due-alerts** (FM-05): `fleet.MaintenanceSchedule` already
+  had `next_due_date`/`next_due_odometer` from Phase 1 with nothing
+  computing "is this due" — `fleet.services.maintenance_due_alerts()`
+  fills that gap (ok/due_soon/overdue, by date or odometer, whichever is
+  closer).
+- **Reverse logistics — a real audit-trail bug fix, not just a new
+  feature** (FM-11): `sales.services.finalize_credit_note()` previously
+  posted a `StockLedgerEntry` only for `condition=sellable` returns —
+  damaged/expired returns had **zero record** of ever entering the van.
+  Now posts for every condition; `CreditNoteLine.condition` remains the
+  field downstream reconciliation reads.
+- **Route optimization** (FM-07): `BeatViewSet.optimize_route` —
+  nearest-neighbor stop re-ordering by Haversine (straight-line) distance
+  between `CustomerAddress` coordinates. Explicitly not a capacity/
+  traffic-aware vehicle-routing solver; stops with no address on file are
+  left in their existing order.
+- **Fleet Dashboard** (FM-08, FM-12, FM-13): new `fleet.FleetDashboardView`
+  — per-vehicle trip count/distance/fuel-cost/efficiency (30d, from data
+  already captured in Phase 1: `Trip.distance_travelled`, `FuelLog`),
+  maintenance alerts, a 6-month fuel-cost trend, and a reverse-logistics
+  reconciliation view (damaged/expired credit note lines cross-referenced
+  against van-unload stock transfers as a proxy "returned to warehouse"
+  signal). Rendered on a new admin-web `/fleet` page with CSV export per
+  table (a practical substitute for FM-13's "Excel/PDF and emailable,"
+  which would need real document-generation + email infrastructure this
+  slice doesn't build). "Idle time"/"route-deviation" analytics and FM-16
+  "compliance status" (vehicle document/insurance/PUC expiry — not built)
+  are both omitted rather than faked.
+
 ## What's deliberately out of scope for this build
 
 Beyond the BRD's own Phase 1/Phase 2 slice boundaries (Section 18):
 
-- Route optimization, geofencing (Phase 3/Section 20 items)
-- True background GPS tracking (native project config not attempted here — see slice 2 above), OTP-based proof of delivery, multi-language UI
+- Route optimization beyond the nearest-neighbor heuristic above, geofencing (Phase 3/Section 20 items)
+- True background GPS tracking (native project config not attempted here — see slice 2), idle-time/route-deviation analytics, OTP-based proof of delivery, multi-language UI
+- Third-party GPS/telematics hardware integration (FM-06) and vehicle document/compliance expiry tracking (FM-16) — no vendor hardware/API to integrate with, and FM-16 is a Phase 3 item respectively
 - Busy/Marg connectors (the connector interface is ready; only Tally is implemented)
 - Full WatermelonDB per-table sync protocol (the pull endpoint is a pragmatic fixed-collection version)
 - Automated central client registry (see `docs/PROVISIONING.md` — provisioning is manual/scripted per client for now)
 - Payment gateway integration, e-way bill generation, WhatsApp integration (Section 20 future roadmap)
-- Fleet expansion (maintenance, GPS/telematics integration beyond LocationPing, reverse logistics, fleet dashboard/MIS) and Busy/Marg — separate Phase 2 slices, not started
+- Server-side Excel/PDF report generation + email delivery (CSV export substituted)
+- Busy/Marg integration — the one remaining Phase 2 slice, not started

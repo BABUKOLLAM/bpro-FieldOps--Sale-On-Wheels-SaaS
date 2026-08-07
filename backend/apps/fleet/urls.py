@@ -1,7 +1,8 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    FuelLogViewSet, MaintenanceRecordViewSet, MaintenanceScheduleViewSet,
+    FleetDashboardView, FuelLogViewSet, MaintenanceRecordViewSet, MaintenanceScheduleViewSet,
     TripCheckpointViewSet, TripViewSet, VehicleViewSet,
 )
 
@@ -13,4 +14,7 @@ router.register("fuel-logs", FuelLogViewSet, basename="fuel-log")
 router.register("maintenance-schedules", MaintenanceScheduleViewSet, basename="maintenance-schedule")
 router.register("maintenance-records", MaintenanceRecordViewSet, basename="maintenance-record")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("dashboard/", FleetDashboardView.as_view(), name="fleet-dashboard"),
+    *router.urls,
+]

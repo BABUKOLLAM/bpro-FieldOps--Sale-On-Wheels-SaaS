@@ -1,17 +1,19 @@
 import io
 import uuid
-from datetime import date, datetime, timezone as dt_timezone
+from datetime import date, datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 
 import pytest
 from rest_framework.test import APIClient
 
 from apps.catalog.models import Scheme, SchemeSlab
-from apps.customers.models import Beat, BeatCustomer
+from apps.customers.models import Beat, BeatCustomer, CustomerAddress
 from apps.expenses.models import Expense
-from apps.fleet.models import LocationPing, Trip
-from apps.sales.models import Invoice, InvoiceLine
-from apps.sales.services import best_scheme_discount, finalize_invoice
+from apps.fleet.models import FuelLog, LocationPing, MaintenanceSchedule, Trip, Vehicle
+from apps.fleet.services import STATUS_DUE_SOON, STATUS_OK, STATUS_OVERDUE, maintenance_status
+from apps.inventory.models import StockLedgerEntry
+from apps.sales.models import CreditNote, CreditNoteLine, Invoice, InvoiceLine
+from apps.sales.services import best_scheme_discount, finalize_credit_note, finalize_invoice
 
 
 @pytest.mark.django_db
@@ -248,3 +250,112 @@ def test_live_map_returns_active_agent_with_location_and_beat_progress(agent, su
     assert len(entry["stops"]) == 1
     assert entry["stops"][0]["customer_id"] == customer.id
     assert entry["stops"][0]["status"] == "pending"  # no checkpoint recorded yet
+
+
+@pytest.mark.django_db
+def test_maintenance_status_boundaries():
+    vehicle = Vehicle.objects.create(reg_no="MH-01-TEST-0001")
+    today = date.today()
+
+    overdue_schedule = MaintenanceSchedule.objects.create(
+        vehicle=vehicle, description="Overdue service", next_due_date=today - timedelta(days=1),
+    )
+    due_soon_schedule = MaintenanceSchedule.objects.create(
+        vehicle=vehicle, description="Due soon service", next_due_date=today + timedelta(days=5),
+    )
+    ok_schedule = MaintenanceSchedule.objects.create(
+        vehicle=vehicle, description="Far off service", next_due_date=today + timedelta(days=90),
+    )
+
+    assert maintenance_status(overdue_schedule) == STATUS_OVERDUE
+    assert maintenance_status(due_soon_schedule) == STATUS_DUE_SOON
+    assert maintenance_status(ok_schedule) == STATUS_OK
+
+
+@pytest.mark.django_db
+def test_finalize_credit_note_posts_ledger_entry_for_damaged_condition(company, agent, van_godown, item, customer):
+    """Regression test for the FM-11 audit-trail bug: previously only
+    condition=sellable returns posted a StockLedgerEntry, so damaged/
+    expired returns had zero record of ever entering the van."""
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("5"), rate=Decimal("20.00"))
+    finalize_invoice(invoice)
+
+    credit_note = CreditNote.objects.create(
+        original_invoice=invoice, customer=customer, agent=agent,
+        reason_code="damaged_in_transit", note_date=date.today(),
+    )
+    CreditNoteLine.objects.create(
+        credit_note=credit_note, item=item, qty=Decimal("2"), rate=Decimal("20.00"),
+        condition=CreditNote.CONDITION_DAMAGED,
+    )
+
+    finalize_credit_note(credit_note)
+
+    entries = StockLedgerEntry.objects.filter(reference_type="credit_note", reference_id=credit_note.id)
+    assert entries.count() == 1
+    assert entries.first().qty == Decimal("2")
+
+
+@pytest.mark.django_db
+def test_optimize_route_orders_stops_by_nearest_neighbor(agent):
+    from apps.accounts.models import User
+    from apps.customers.models import Customer
+
+    admin = User.objects.create_user(
+        username="fleet-admin@test.local", password="testpass123", is_superuser=True, is_staff=True,
+    )
+
+    # Three outlets roughly in a line: near (lng 0), mid (lng 5), far (lng 10).
+    c_near = Customer.objects.create(code="C-NEAR", name="Near Outlet")
+    c_far = Customer.objects.create(code="C-FAR", name="Far Outlet")
+    c_mid = Customer.objects.create(code="C-MID", name="Mid Outlet")
+    CustomerAddress.objects.create(customer=c_near, line1="x", city="x", latitude=Decimal("0.0"), longitude=Decimal("0.0"))
+    CustomerAddress.objects.create(customer=c_far, line1="x", city="x", latitude=Decimal("0.0"), longitude=Decimal("10.0"))
+    CustomerAddress.objects.create(customer=c_mid, line1="x", city="x", latitude=Decimal("0.0"), longitude=Decimal("5.0"))
+
+    beat = Beat.objects.create(name="Test Route", assigned_agent=agent)
+    # Deliberately out of geographic order: near, far, mid.
+    BeatCustomer.objects.create(beat=beat, customer=c_near, visit_sequence=1)
+    BeatCustomer.objects.create(beat=beat, customer=c_far, visit_sequence=2)
+    BeatCustomer.objects.create(beat=beat, customer=c_mid, visit_sequence=3)
+
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.post(f"/api/customers/beats/{beat.id}/optimize-route/")
+    assert response.status_code == 200, response.data
+
+    stops = BeatCustomer.objects.filter(beat=beat).order_by("visit_sequence")
+    ordered_names = [s.customer.name for s in stops]
+    # Starting from "near" (the first stop, kept as the anchor), nearest-
+    # neighbor visits "mid" (distance 5) before "far" (distance 10).
+    assert ordered_names == ["Near Outlet", "Mid Outlet", "Far Outlet"]
+
+
+@pytest.mark.django_db
+def test_fleet_dashboard_returns_expected_shape(supervisor, agent):
+    vehicle = Vehicle.objects.create(reg_no="MH-01-TEST-0002", assigned_agent=agent)
+    FuelLog.objects.create(
+        vehicle=vehicle, fuel_qty_litres=Decimal("10"), amount=Decimal("1000"),
+        odometer_reading=Decimal("100"), filled_at=datetime.now(dt_timezone.utc),
+    )
+    MaintenanceSchedule.objects.create(
+        vehicle=vehicle, description="Overdue check", next_due_date=date.today() - timedelta(days=2),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=supervisor)
+    response = client.get("/api/fleet/dashboard/")
+    assert response.status_code == 200, response.data
+
+    assert "vehicles" in response.data
+    assert "maintenance_alerts" in response.data
+    assert "fuel_cost_trend" in response.data
+    assert "reverse_logistics" in response.data
+
+    vehicle_entry = next(v for v in response.data["vehicles"] if v["vehicle_id"] == vehicle.id)
+    assert vehicle_entry["maintenance_status"] == "overdue"
