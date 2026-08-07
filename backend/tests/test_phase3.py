@@ -59,6 +59,56 @@ def test_role_permission_update_via_api(admin):
 
 
 @pytest.mark.django_db
+def test_report_export_returns_xlsx(admin, customer, agent, company, van_godown):
+    from apps.sales.models import Invoice
+
+    _, gst = company
+    Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst,
+        place_of_supply_state=gst.state, invoice_date=date.today(), grand_total=Decimal("1000"),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get("/api/reporting/export/sales/?filetype=xlsx")
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    assert response.content[:2] == b"PK"  # xlsx is a zip archive
+
+
+@pytest.mark.django_db
+def test_report_export_returns_pdf(admin):
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get("/api/reporting/export/expenses/?filetype=pdf")
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert response.content[:4] == b"%PDF"
+
+
+@pytest.mark.django_db
+def test_report_export_unknown_key_404s(admin):
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get("/api/reporting/export/not-a-real-report/")
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_report_email_sends_via_console_backend(admin, mailoutbox):
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.post(
+        "/api/reporting/export/expenses/email/", {"to": "manager@test.local", "filetype": "pdf"}, format="json"
+    )
+    assert response.status_code == 200, response.data
+    assert response.data["status"] == "sent"
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == ["manager@test.local"]
+    assert len(mailoutbox[0].attachments) == 1
+
+
+@pytest.mark.django_db
 def test_target_achieved_amount_computed_from_invoices(agent, van_godown, customer, company):
     from apps.sales.models import Invoice
 

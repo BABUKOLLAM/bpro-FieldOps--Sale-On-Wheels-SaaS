@@ -37,7 +37,16 @@ async function forward(request: NextRequest, path: string[]) {
     const data = await backendResponse.json().catch(() => ({}));
     return NextResponse.json(data, { status: backendResponse.status });
   }
-  return new NextResponse(await backendResponse.text(), { status: backendResponse.status });
+  if (contentType.includes("text/")) {
+    return new NextResponse(await backendResponse.text(), { status: backendResponse.status });
+  }
+  // Binary payloads (xlsx/pdf report downloads, etc.) — .text() would
+  // corrupt these, so read as raw bytes and preserve the filename header.
+  const buffer = await backendResponse.arrayBuffer();
+  const headers = new Headers({ "content-type": contentType || "application/octet-stream" });
+  const disposition = backendResponse.headers.get("content-disposition");
+  if (disposition) headers.set("content-disposition", disposition);
+  return new NextResponse(buffer, { status: backendResponse.status, headers });
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {

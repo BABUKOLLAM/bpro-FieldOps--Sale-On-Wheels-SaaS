@@ -175,6 +175,22 @@ FIELD_ENCRYPTION_KEY = env("FIELD_ENCRYPTION_KEY", default="")
 # ---- Connector agent auth ----
 CONNECTOR_API_KEY = env("CONNECTOR_API_KEY", default="")
 
+# ---- Outbound email (AR-02/FM-13 "emailable" reports) ----
+# No SMTP account is configured out of the box. Without EMAIL_HOST set,
+# mail is written to the console instead of actually sent — visible and
+# testable locally, but not a fake success. Set EMAIL_HOST/PORT/USER/
+# PASSWORD (and EMAIL_USE_TLS) via env once a real SMTP account exists.
+EMAIL_HOST = env("EMAIL_HOST", default="")
+if EMAIL_HOST:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+    EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+    EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+    EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="reports@vansales.local")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

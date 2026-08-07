@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.db.models import Count, Sum
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,7 +13,9 @@ from apps.fleet.models import LocationPing, Trip, TripCheckpoint
 from apps.integrations.models import SyncLogEntry
 from apps.sales.models import Invoice, Receipt
 
+from . import exports
 from .models import Target
+from .report_builders import REPORT_BUILDERS, REPORT_LABELS
 from .serializers import TargetSerializer
 
 
@@ -137,3 +139,68 @@ class TargetViewSet(viewsets.ModelViewSet):
         if user.is_superuser or PERM_REPORTING_DASHBOARD_VIEW in user.permission_codes():
             return self.queryset
         return self.queryset.filter(agent=user)
+
+
+class ReportListView(APIView):
+    """The catalog of exportable reports (AR-02, FM-13) — admin-web builds
+    the Reports screen from this instead of hardcoding report keys."""
+
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
+
+    def get(self, request):
+        return Response([{"key": key, "label": label} for key, label in REPORT_LABELS.items()])
+
+
+class ReportExportView(APIView):
+    """GET /api/reporting/export/<report_key>/?filetype=xlsx|pdf — downloads
+    the same data shown on-screen elsewhere, as a real spreadsheet or PDF.
+
+    The query param is deliberately named "filetype", not "format": DRF
+    reserves "format" as its own content-negotiation override
+    (DefaultContentNegotiation checks it against renderer_classes and
+    raises a 404 for any value it doesn't recognize, e.g. "xlsx") — using
+    it here would 404 before this view's code ever runs."""
+
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
+
+    def get(self, request, report_key):
+        builder = REPORT_BUILDERS.get(report_key)
+        if builder is None:
+            return Response({"detail": f"Unknown report '{report_key}'."}, status=status.HTTP_404_NOT_FOUND)
+        filetype = request.query_params.get("filetype", "xlsx")
+        if filetype not in ("xlsx", "pdf"):
+            return Response({"detail": "filetype must be xlsx or pdf."}, status=status.HTTP_400_BAD_REQUEST)
+        title, headers, rows = builder()
+        filename = f"{report_key}-{timezone.localdate().isoformat()}"
+        return exports.file_response(filetype, filename, title, headers, rows)
+
+
+class ReportEmailView(APIView):
+    """POST /api/reporting/export/<report_key>/email/ {to, filetype} — the
+    "emailable" half of AR-02/FM-13. Without a real SMTP account
+    configured (EMAIL_HOST env var), this writes to the console instead
+    of actually delivering — see config/settings/base.py."""
+
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
+
+    def post(self, request, report_key):
+        builder = REPORT_BUILDERS.get(report_key)
+        if builder is None:
+            return Response({"detail": f"Unknown report '{report_key}'."}, status=status.HTTP_404_NOT_FOUND)
+        to_email = request.data.get("to", "").strip()
+        if not to_email:
+            return Response({"detail": "'to' email address is required."}, status=status.HTTP_400_BAD_REQUEST)
+        filetype = request.data.get("filetype", "xlsx")
+        if filetype not in ("xlsx", "pdf"):
+            return Response({"detail": "filetype must be xlsx or pdf."}, status=status.HTTP_400_BAD_REQUEST)
+
+        title, headers, rows = builder()
+        filename = f"{report_key}-{timezone.localdate().isoformat()}"
+        try:
+            exports.email_report(to_email, filetype, filename, title, headers, rows)
+        except Exception as exc:  # noqa: BLE001 — surface SMTP/config errors to the caller, not a 500 page
+            return Response({"detail": f"Could not send email: {exc}"}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({"status": "sent", "to": to_email})
