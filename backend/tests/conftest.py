@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from apps.accounts.constants import ROLE_VAN_SALESMAN
+from apps.accounts.constants import ROLE_SALES_SUPERVISOR, ROLE_VAN_SALESMAN
 from apps.accounts.models import Role, User, UserRole
 from apps.catalog.models import Item, ItemCategory, UOM
 from apps.company.models import Company, GSTRegistration
@@ -26,6 +26,15 @@ def agent(db):
     Role.seed_defaults()
     role = Role.objects.get(name=ROLE_VAN_SALESMAN)
     user = User.objects.create_user(username="agent@test.local", password="testpass123", is_field_agent=True)
+    UserRole.objects.create(user=user, role=role)
+    return user
+
+
+@pytest.fixture
+def supervisor(db):
+    Role.seed_defaults()
+    role = Role.objects.get(name=ROLE_SALES_SUPERVISOR)
+    user = User.objects.create_user(username="supervisor@test.local", password="testpass123")
     UserRole.objects.create(user=user, role=role)
     return user
 

@@ -43,7 +43,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ItemSerializer
     permission_classes = [CatalogPermission]
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["is_active", "category"]
+    filterset_fields = ["is_active", "category", "barcode"]
     search_fields = ["sku", "name", "barcode"]
 
 

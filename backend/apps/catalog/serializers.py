@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Item, ItemCategory, PriceList, PriceListItem, Scheme, UOM
+from .models import Item, ItemCategory, PriceList, PriceListItem, Scheme, SchemeSlab, UOM
 
 
 class UOMSerializer(serializers.ModelSerializer):
@@ -39,10 +39,37 @@ class PriceListSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "is_default", "is_active", "items"]
 
 
+class SchemeSlabSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SchemeSlab
+        fields = ["id", "scheme", "min_qty", "max_qty", "discount_type", "value"]
+        extra_kwargs = {"scheme": {"required": False}}
+
+
 class SchemeSerializer(serializers.ModelSerializer):
+    slabs = SchemeSlabSerializer(many=True, required=False)
+
     class Meta:
         model = Scheme
         fields = [
             "id", "name", "item", "category", "discount_type", "value",
-            "valid_from", "valid_to", "is_active",
+            "valid_from", "valid_to", "is_active", "slabs",
         ]
+
+    def create(self, validated_data):
+        slabs_data = validated_data.pop("slabs", [])
+        scheme = Scheme.objects.create(**validated_data)
+        for slab in slabs_data:
+            SchemeSlab.objects.create(scheme=scheme, **slab)
+        return scheme
+
+    def update(self, instance, validated_data):
+        slabs_data = validated_data.pop("slabs", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if slabs_data is not None:
+            instance.slabs.all().delete()
+            for slab in slabs_data:
+                SchemeSlab.objects.create(scheme=instance, **slab)
+        return instance

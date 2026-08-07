@@ -8,10 +8,14 @@ backend's `apps.mobile_sync` pull/push endpoints. See
 **Implemented in this reference build**: login, device PIN setup/unlock,
 pull sync (customers/items/price lists/GST/van stock/beats), Spot Billing
 (fully offline, FR-01), Trip Start/End with outlet check-in/out (fully
-offline, FR-08/FM-01), and push sync with retry-safe idempotency.
-Receipt/Return/Order screens follow the identical WatermelonDB + sync
-pattern used by Spot Billing — see `src/screens/billing/SpotBillingScreen.tsx`
-as the template for adding them.
+offline, FR-08/FM-01), Expense capture (FR-06), barcode-scan-to-cart
+(FR-13, a pure local lookup against the synced `items` table — no
+backend round-trip), post-sale signature capture (FR-12, uploaded via a
+separate multipart step once the parent record has synced), and push
+sync with retry-safe idempotency. Receipt/Return/Order screens follow
+the identical WatermelonDB + sync pattern used by Spot Billing — see
+`src/screens/billing/SpotBillingScreen.tsx` as the template for adding
+them.
 
 ## Native project setup
 
@@ -43,31 +47,56 @@ with a different `.env` — see `docs/PROVISIONING.md`.
 
 ## Verification performed in this environment
 
-Neither a native toolchain (Xcode/Android Studio) nor a working `npm
-install` were available in the environment this was built in — `npm
-install` was attempted three times and stalled/failed each time on slow
-registry connectivity, so `npm run typecheck`/`npm run lint` could not be
-run here. **Run them yourself as the first step** once dependencies
-install cleanly in your environment; do not treat this source as verified
-until they pass.
+No native toolchain (Xcode/Android Studio) is available in this
+environment, so **full on-device behavior — WatermelonDB persistence,
+Keychain, navigation, UI rendering, the camera/signature native modules —
+still needs verification on a simulator/device** once `ios/`/`android/`
+are generated. That said, `npm install` *did* succeed as of the Phase 2
+build, which made two real checks possible for the first time:
 
-What *was* verified, from the backend side, since the mobile app has no
-business logic of its own beyond the sync client (the server is always
-the source of truth for money/GST/stock — see `docs/architecture.md`):
-
+- **`npm run typecheck` and `npm run lint` both pass clean.** Getting
+  there caught genuine pre-existing bugs, not just style issues:
+  - `tsconfig.json` was missing `experimentalDecorators`/
+    `useDefineForClassFields`, which WatermelonDB's `@field`/`@text`/
+    `@children` decorators require — every model failed to type-check
+    (masked since `npm install` had never succeeded before to actually
+    run the checker).
+  - Every model's `sync_status` field was named `syncStatus`, which
+    collides with WatermelonDB's own built-in (read-only) `Model.syncStatus`
+    accessor — silently shadowing a framework-reserved property. Renamed
+    to `localSyncStatus` throughout.
+  - `TripScreen.tsx` imported `SYNC_PENDING` from the `Trip` model, which
+    doesn't export it (it's defined on `Invoice`) — this constant was
+    `undefined` at runtime for every trip/checkpoint save, meaning
+    `sync_status` was being set to `undefined` instead of `'pending'`.
+  - The generic `upsertCollection()` sync helper assumed every table has
+    a single `server_id` column; `beat_customers` is a join table with no
+    such column, so every pull-sync of route assignments would have
+    thrown or duplicated rows. Given its own dedicated upsert function
+    matching on `(beat_server_id, customer_server_id)`.
+  - `PinLock.tsx`'s biometric-unlock check wrapped a type guard in
+    `Boolean(...)` in a way that defeated TypeScript's narrowing (masking
+    what would otherwise have been a real crash risk).
+  - No `.prettierrc` existed, so `eslint --fix` was fighting the
+    codebase's actual (consistent, single-quote) style against
+    Prettier's default. Added one.
 - A manual read-through of every file in `src/` against the backend's
-  actual API contracts. This caught and fixed a real bug: the Trip/
-  TripCheckpoint serializers didn't accept a client-generated `id` and
-  marked `status`/`start_time`/`end_time` read-only, which would have
-  silently dropped exactly the fields the offline Trip Start/End flow
-  needs to push (see `apps/fleet/serializers.py`).
+  actual API contracts, from Phase 1. This caught and fixed a real bug:
+  the Trip/TripCheckpoint serializers didn't accept a client-generated
+  `id` and marked `status`/`start_time`/`end_time` read-only, which would
+  have silently dropped exactly the fields the offline Trip Start/End
+  flow needs to push (see `apps/fleet/serializers.py`).
 - `backend/tests/test_smoke.py::test_mobile_push_trip_and_checkpoint` —
   simulates the mobile app's actual push payloads for `trip` and
   `trip_checkpoint` end-to-end against a live test database, asserting
-  the fields round-trip correctly. Passes as of this build.
-- `test_mobile_push_is_idempotent` — same for the Spot Billing invoice
-  push flow.
+  the fields round-trip correctly.
+- `test_mobile_push_is_idempotent` and `test_expense_push_is_idempotent`
+  — same for the Spot Billing invoice and Expense push flows.
+- `test_invoice_signature_upload_via_multipart_patch` — confirms the
+  backend accepts the exact multipart PATCH `sync/synchronize.ts`'s
+  `uploadPendingAttachments()` sends, with no dedicated upload endpoint
+  needed.
 
-Full on-device behavior (WatermelonDB persistence, Keychain, navigation,
-UI rendering) still needs verification on a simulator/device once
-`npm install` and the native projects are in place.
+All of the above pass as of this build. What's still unverified is
+anything that only exists once the app is actually running on a device —
+treat that as the next real step, not this source as fully proven.

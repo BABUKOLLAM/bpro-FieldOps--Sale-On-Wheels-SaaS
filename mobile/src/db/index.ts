@@ -1,6 +1,7 @@
 import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import { schema } from './schema';
+import migrations from './migrations';
 import Customer from './models/Customer';
 import Item from './models/Item';
 import PriceListItem from './models/PriceListItem';
@@ -12,9 +13,11 @@ import Invoice from './models/Invoice';
 import InvoiceLine from './models/InvoiceLine';
 import Trip from './models/Trip';
 import TripCheckpoint from './models/TripCheckpoint';
+import Expense from './models/Expense';
 
 const adapter = new SQLiteAdapter({
   schema,
+  migrations,
   jsi: true,
   onSetUpError: (error) => {
     // A corrupt local DB should never crash a field agent's app silently —
@@ -38,5 +41,6 @@ export const database = new Database({
     InvoiceLine,
     Trip,
     TripCheckpoint,
+    Expense,
   ],
 });

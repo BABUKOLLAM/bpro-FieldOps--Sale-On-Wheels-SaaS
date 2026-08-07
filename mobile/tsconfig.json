@@ -4,7 +4,13 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    // WatermelonDB's @field/@text/@children/@date decorators are legacy
+    // (TC39 Stage 2) decorators. Without this, TS 5's native-decorators
+    // type-checking rejects every one of them (TS1240) — this was missing
+    // from Phase 1 and only surfaced once `npm install` finally succeeded.
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false
   },
   "include": ["src", "App.tsx", "index.js"]
 }

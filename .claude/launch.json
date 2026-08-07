@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vansales-admin-web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd admin-web && npm run dev"],
+      "port": 3001
+    }
+  ]
+}

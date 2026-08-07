@@ -9,7 +9,10 @@ export const TRIP_COMPLETED = 'completed';
 export default class Trip extends Model {
   static table = 'trips';
   static associations = {
-    trip_checkpoints: { type: 'has_many' as const, foreignKey: 'trip_local_id' },
+    trip_checkpoints: {
+      type: 'has_many' as const,
+      foreignKey: 'trip_local_id',
+    },
   };
 
   @text('server_id') serverId!: string;
@@ -20,7 +23,7 @@ export default class Trip extends Model {
   @field('end_time') endTime!: number;
   @field('start_odometer') startOdometer!: number;
   @field('end_odometer') endOdometer!: number;
-  @text('sync_status') syncStatus!: string;
+  @text('sync_status') localSyncStatus!: string;
   @text('sync_error') syncError!: string;
 
   @children('trip_checkpoints') checkpoints!: Query<TripCheckpoint>;

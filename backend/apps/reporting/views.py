@@ -46,7 +46,7 @@ class DashboardView(APIView):
             "recent_invoices": list(
                 todays_invoices.order_by("-created_at")[:10].values(
                     "id", "invoice_no", "customer__name", "agent__username", "grand_total",
-                    "credit_check_status", "sync_status", "created_at",
+                    "credit_check_status", "sync_status", "created_at", "signature_image",
                 )
             ),
             "agents_by_status": list(

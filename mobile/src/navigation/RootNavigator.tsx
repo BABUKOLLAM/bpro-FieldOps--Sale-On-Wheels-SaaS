@@ -9,6 +9,7 @@ import PinGateScreen from '../screens/auth/PinGateScreen';
 import HomeScreen from '../screens/HomeScreen';
 import SpotBillingScreen from '../screens/billing/SpotBillingScreen';
 import TripScreen from '../screens/trips/TripScreen';
+import ExpenseScreen from '../screens/expenses/ExpenseScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -19,7 +20,13 @@ export default function RootNavigator() {
 
   if (authLoading || pinLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          justifyContent: 'center',
+        }}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -40,14 +47,40 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: colors.surface }, headerTintColor: colors.textPrimary }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.textPrimary,
+        }}
+      >
         {!isAuthenticated ? (
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
         ) : (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Van Sales' }} />
-            <Stack.Screen name="SpotBilling" component={SpotBillingScreen} options={{ title: 'Spot Billing' }} />
-            <Stack.Screen name="Trip" component={TripScreen} options={{ title: 'Trip' }} />
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
+              options={{ title: 'Van Sales' }}
+            />
+            <Stack.Screen
+              name="SpotBilling"
+              component={SpotBillingScreen}
+              options={{ title: 'Spot Billing' }}
+            />
+            <Stack.Screen
+              name="Trip"
+              component={TripScreen}
+              options={{ title: 'Trip' }}
+            />
+            <Stack.Screen
+              name="Expense"
+              component={ExpenseScreen}
+              options={{ title: 'Expense' }}
+            />
           </>
         )}
       </Stack.Navigator>

@@ -1,11 +1,16 @@
 import { Q } from '@nozbe/watermelondb';
 import NetInfo from '@react-native-community/netinfo';
 import { database } from '../db';
-import { apiFetch } from '../api/client';
-import Invoice, { SYNC_FAILED, SYNC_PENDING, SYNC_SYNCED } from '../db/models/Invoice';
+import { apiFetch, apiUploadFile } from '../api/client';
+import Invoice, {
+  SYNC_FAILED,
+  SYNC_PENDING,
+  SYNC_SYNCED,
+} from '../db/models/Invoice';
 import InvoiceLine from '../db/models/InvoiceLine';
 import Trip from '../db/models/Trip';
 import TripCheckpoint from '../db/models/TripCheckpoint';
+import Expense from '../db/models/Expense';
 
 /**
  * Custom sync client matching the backend's apps.mobile_sync pull/push
@@ -23,9 +28,13 @@ export async function isOnline(): Promise<boolean> {
 }
 
 export async function pull(): Promise<void> {
-  const query = lastPulledAt ? `?since=${encodeURIComponent(lastPulledAt)}` : '';
+  const query = lastPulledAt
+    ? `?since=${encodeURIComponent(lastPulledAt)}`
+    : '';
   const response = await apiFetch(`/api/sync/pull/${query}`);
-  if (!response.ok) throw new Error(`Pull failed: ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`Pull failed: ${response.status}`);
+  }
   const data = await response.json();
 
   await database.write(async () => {
@@ -55,12 +64,16 @@ export async function pull(): Promise<void> {
       updated_at: Date.parse(i.updated_at),
     }));
 
-    await upsertCollection('gst_registrations', data.gst_registrations, (g) => ({
-      server_id: g.id,
-      state: g.state,
-      gstin: g.gstin,
-      is_default: g.is_default,
-    }));
+    await upsertCollection(
+      'gst_registrations',
+      data.gst_registrations,
+      (g) => ({
+        server_id: g.id,
+        state: g.state,
+        gstin: g.gstin,
+        is_default: g.is_default,
+      })
+    );
 
     await upsertCollection('van_stock', data.van_stock, (v) => ({
       server_id: v.id,
@@ -72,35 +85,67 @@ export async function pull(): Promise<void> {
     }));
 
     for (const priceList of data.price_lists || []) {
-      await upsertCollection('price_list_items', priceList.items || [], (p) => ({
-        server_id: p.id,
-        item_server_id: p.item,
-        rate: Number(p.rate),
-      }));
+      await upsertCollection(
+        'price_list_items',
+        priceList.items || [],
+        (p) => ({
+          server_id: p.id,
+          item_server_id: p.item,
+          rate: Number(p.rate),
+        })
+      );
     }
 
-    await upsertCollection('beats', data.beats, (b) => ({ server_id: b.id, name: b.name }));
+    await upsertCollection('beats', data.beats, (b) => ({
+      server_id: b.id,
+      name: b.name,
+    }));
     for (const beat of data.beats || []) {
-      await upsertCollection('beat_customers', beat.stops || [], (s) => ({
-        beat_server_id: beat.id,
-        customer_server_id: s.customer,
-        visit_sequence: s.visit_sequence,
-      }));
+      await upsertBeatCustomers(beat.id, beat.stops || []);
     }
   });
 
   lastPulledAt = data.server_timestamp;
 }
 
+/** beat_customers is a join table with no server_id of its own — matched
+ * on (beat_server_id, customer_server_id) instead. Kept separate from
+ * upsertCollection(), whose single-key `server_id` match doesn't apply
+ * here (that table has no such column at all — matching on it would
+ * throw against the schema, not just fail to find a row). */
+async function upsertBeatCustomers(beatServerId: string, stops: any[]) {
+  const collection = database.get('beat_customers');
+  for (const stop of stops) {
+    const mapped = {
+      beat_server_id: beatServerId,
+      customer_server_id: stop.customer,
+      visit_sequence: stop.visit_sequence,
+    };
+    const existing = await collection
+      .query(
+        Q.where('beat_server_id', beatServerId),
+        Q.where('customer_server_id', stop.customer)
+      )
+      .fetch();
+    if (existing.length > 0) {
+      await existing[0].update((record: any) => Object.assign(record, mapped));
+    } else {
+      await collection.create((record: any) => Object.assign(record, mapped));
+    }
+  }
+}
+
 async function upsertCollection<T extends { server_id: string }>(
   tableName: string,
   records: any[],
-  mapFn: (r: any) => T,
+  mapFn: (r: any) => T
 ) {
   const collection = database.get(tableName);
   for (const raw of records) {
     const mapped = mapFn(raw);
-    const existing = await collection.query(Q.where('server_id', mapped.server_id)).fetch();
+    const existing = await collection
+      .query(Q.where('server_id', mapped.server_id))
+      .fetch();
     if (existing.length > 0) {
       await existing[0].update((record: any) => Object.assign(record, mapped));
     } else {
@@ -130,12 +175,16 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       gst_registration: invoice.gstRegistrationServerId,
       place_of_supply_state: invoice.placeOfSupplyState,
       invoice_date: invoice.invoiceDate,
-      lines: lines.map((l: InvoiceLine) => ({ item: l.itemServerId, qty: l.qty, rate: l.rate })),
+      lines: lines.map((l: InvoiceLine) => ({
+        item: l.itemServerId,
+        qty: l.qty,
+        rate: l.rate,
+      })),
     };
     const ok = await pushItem('invoice', payload);
     await database.write(async () => {
       await invoice.update((rec) => {
-        rec.syncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
       });
     });
     ok ? pushed++ : failed++;
@@ -158,7 +207,9 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       vehicle: trip.vehicleServerId || null,
       beat: trip.beatServerId || null,
       status: trip.status,
-      start_time: trip.startTime ? new Date(trip.startTime).toISOString() : null,
+      start_time: trip.startTime
+        ? new Date(trip.startTime).toISOString()
+        : null,
       end_time: trip.endTime ? new Date(trip.endTime).toISOString() : null,
       start_odometer: trip.startOdometer || null,
       end_odometer: trip.endOdometer || null,
@@ -166,18 +217,23 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
     const ok = await pushItem('trip', payload);
     await database.write(async () => {
       await trip.update((rec) => {
-        rec.syncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
       });
     });
     ok ? pushed++ : failed++;
-    if (ok) tripsConfirmedOnServer.add(trip.id);
+    if (ok) {
+      tripsConfirmedOnServer.add(trip.id);
+    }
   }
 
   // Push every pending checkpoint whose trip is confirmed on the server —
   // covers both checkpoints from a trip just pushed above, and
   // checkpoints added *after* their trip had already synced in an
   // earlier cycle (which the trip-scoped loop alone would miss).
-  const alreadySyncedTrips = await database.get<Trip>('trips').query(Q.where('sync_status', SYNC_SYNCED)).fetch();
+  const alreadySyncedTrips = await database
+    .get<Trip>('trips')
+    .query(Q.where('sync_status', SYNC_SYNCED))
+    .fetch();
   alreadySyncedTrips.forEach((t) => tripsConfirmedOnServer.add(t.id));
 
   const pendingCheckpoints = await database
@@ -187,33 +243,142 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
 
   for (const checkpoint of pendingCheckpoints) {
     const parentTrip = await checkpoint.trip.fetch();
-    if (!parentTrip || !tripsConfirmedOnServer.has(parentTrip.id)) continue;
+    if (!parentTrip || !tripsConfirmedOnServer.has(parentTrip.id)) {
+      continue;
+    }
 
     const cpOk = await pushItem('trip_checkpoint', {
       id: checkpoint.serverId,
       trip: parentTrip.serverId,
       customer: checkpoint.customerServerId,
-      check_in_time: checkpoint.checkInTime ? new Date(checkpoint.checkInTime).toISOString() : null,
-      check_out_time: checkpoint.checkOutTime ? new Date(checkpoint.checkOutTime).toISOString() : null,
+      check_in_time: checkpoint.checkInTime
+        ? new Date(checkpoint.checkInTime).toISOString()
+        : null,
+      check_out_time: checkpoint.checkOutTime
+        ? new Date(checkpoint.checkOutTime).toISOString()
+        : null,
     });
     await database.write(async () => {
       await checkpoint.update((rec) => {
-        rec.syncStatus = cpOk ? SYNC_SYNCED : SYNC_FAILED;
+        rec.localSyncStatus = cpOk ? SYNC_SYNCED : SYNC_FAILED;
       });
     });
     cpOk ? pushed++ : failed++;
   }
 
+  const pendingExpenses = await database
+    .get<Expense>('expenses')
+    .query(Q.where('sync_status', Q.oneOf([SYNC_PENDING, SYNC_FAILED])))
+    .fetch();
+
+  for (const expense of pendingExpenses) {
+    const payload = {
+      id: expense.serverId,
+      trip: expense.tripServerId || null,
+      category: expense.category,
+      amount: expense.amount,
+      description: expense.description,
+      expense_date: expense.expenseDate,
+      device_created_at: expense.deviceCreatedAt
+        ? new Date(expense.deviceCreatedAt).toISOString()
+        : null,
+    };
+    const ok = await pushItem('expense', payload);
+    await database.write(async () => {
+      await expense.update((rec) => {
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+      });
+    });
+    ok ? pushed++ : failed++;
+  }
+
   return { pushed, failed };
 }
 
-async function pushItem(entityType: string, payload: unknown): Promise<boolean> {
+/**
+ * Uploads any local photo/signature files whose parent record has
+ * already synced (a file can only be attached to a row that exists
+ * server-side). Deliberately separate from push(): these are multipart
+ * requests, not JSON, and a failed upload doesn't affect the underlying
+ * invoice/expense's own sync status — it just retries next cycle.
+ */
+async function uploadPendingAttachments(): Promise<void> {
+  const invoicesNeedingSignature = await database
+    .get<Invoice>('invoices')
+    .query(
+      Q.where('sync_status', SYNC_SYNCED),
+      Q.where('signature_uploaded', false)
+    )
+    .fetch();
+
+  for (const invoice of invoicesNeedingSignature) {
+    if (!invoice.signatureLocalUri) {
+      continue;
+    }
+    try {
+      const response = await apiUploadFile(
+        `/api/sales/invoices/${invoice.serverId}/`,
+        'signature_image',
+        invoice.signatureLocalUri,
+        'signature.png',
+        'image/png'
+      );
+      if (response.ok) {
+        await database.write(async () => {
+          await invoice.update((rec) => {
+            rec.signatureUploaded = true;
+          });
+        });
+      }
+    } catch {
+      // stays pending; picked up by the next sync attempt
+    }
+  }
+
+  const expensesNeedingReceipt = await database
+    .get<Expense>('expenses')
+    .query(
+      Q.where('sync_status', SYNC_SYNCED),
+      Q.where('receipt_uploaded', false)
+    )
+    .fetch();
+
+  for (const expense of expensesNeedingReceipt) {
+    if (!expense.receiptLocalUri) {
+      continue;
+    }
+    try {
+      const response = await apiUploadFile(
+        `/api/expenses/${expense.serverId}/`,
+        'receipt_photo',
+        expense.receiptLocalUri,
+        'receipt.jpg'
+      );
+      if (response.ok) {
+        await database.write(async () => {
+          await expense.update((rec) => {
+            rec.receiptUploaded = true;
+          });
+        });
+      }
+    } catch {
+      // stays pending; picked up by the next sync attempt
+    }
+  }
+}
+
+async function pushItem(
+  entityType: string,
+  payload: unknown
+): Promise<boolean> {
   try {
     const response = await apiFetch('/api/sync/push/', {
       method: 'POST',
       body: JSON.stringify({ items: [{ entity_type: entityType, payload }] }),
     });
-    if (!response.ok) return false;
+    if (!response.ok) {
+      return false;
+    }
     const data = await response.json();
     return data.results?.[0]?.status === 'applied';
   } catch {
@@ -225,9 +390,15 @@ async function pushItem(entityType: string, payload: unknown): Promise<boolean> 
  * soon as possible), then pull (so master data reflects any server-side
  * changes, e.g. a credit-limit update). Call on app foreground, on
  * reconnect, on a timer, and from a manual "Sync Now" button. */
-export async function synchronize(): Promise<{ pushed: number; failed: number }> {
-  if (!(await isOnline())) return { pushed: 0, failed: 0 };
+export async function synchronize(): Promise<{
+  pushed: number;
+  failed: number;
+}> {
+  if (!(await isOnline())) {
+    return { pushed: 0, failed: 0 };
+  }
   const result = await push();
+  await uploadPendingAttachments();
   await pull();
   return result;
 }

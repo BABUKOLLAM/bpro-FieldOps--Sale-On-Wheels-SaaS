@@ -17,8 +17,11 @@ type DashboardData = {
     credit_check_status: string;
     sync_status: string;
     created_at: string;
+    signature_image: string;
   }[];
 };
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 function StatCard({ label, value, tone }: { label: string; value: string | number; tone?: "warn" | "danger" }) {
   const toneClass =
@@ -83,12 +86,13 @@ export default async function DashboardPage() {
               <th className="px-5 py-2 font-medium">Amount</th>
               <th className="px-5 py-2 font-medium">Credit</th>
               <th className="px-5 py-2 font-medium">Sync</th>
+              <th className="px-5 py-2 font-medium">Signature</th>
             </tr>
           </thead>
           <tbody>
             {data.recent_invoices.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-6 text-center text-slate-400">
+                <td colSpan={7} className="px-5 py-6 text-center text-slate-400">
                   No invoices yet today.
                 </td>
               </tr>
@@ -101,6 +105,20 @@ export default async function DashboardPage() {
                 <td className="px-5 py-2 text-slate-700 dark:text-slate-300">₹{Number(inv.grand_total).toLocaleString("en-IN")}</td>
                 <td className="px-5 py-2"><StatusBadge status={inv.credit_check_status} /></td>
                 <td className="px-5 py-2"><StatusBadge status={inv.sync_status} /></td>
+                <td className="px-5 py-2">
+                  {inv.signature_image ? (
+                    <a href={`${API_BASE_URL}/media/${inv.signature_image}`} target="_blank" rel="noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`${API_BASE_URL}/media/${inv.signature_image}`}
+                        alt="Customer signature"
+                        className="h-8 w-14 rounded border border-slate-200 dark:border-slate-700 object-contain bg-white"
+                      />
+                    </a>
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

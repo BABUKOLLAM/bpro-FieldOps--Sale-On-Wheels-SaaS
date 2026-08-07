@@ -64,20 +64,33 @@ class PriceListItem(BaseModel):
 
 
 class Scheme(BaseModel):
-    """MVP scheme engine: a simple flat/percent discount rule, scoped to
-    either a single item or a whole category, valid for a date range.
-    BRD FR-14's fuller "buy X get Y" / slab engine is a Phase 2 extension
-    of this same table (add a `scheme_type` beyond flat/percent)."""
+    """Scheme engine (FR-14): a discount rule scoped to either a single
+    item or a whole category, valid for a date range. Two shapes:
+    flat/percent (a fixed discount regardless of quantity) or slab — a
+    volume/quantity-tiered discount defined by this scheme's `slabs`
+    (e.g. 10-49 units -> 5% off, 50+ units -> 10% off). `value` is unused
+    when `discount_type=slab`; the slabs carry their own value instead.
+
+    BXGY ("buy X get Y") is a materially different mechanic — it adds a
+    free/discounted bonus line to the invoice rather than discounting an
+    existing line — and is intentionally not covered by this table. It's
+    the natural next extension once needed."""
 
     DISCOUNT_FLAT = "flat"
     DISCOUNT_PERCENT = "percent"
-    DISCOUNT_TYPE_CHOICES = [(DISCOUNT_FLAT, "Flat amount off"), (DISCOUNT_PERCENT, "Percent off")]
+    DISCOUNT_SLAB = "slab"
+    DISCOUNT_TYPE_CHOICES = [
+        (DISCOUNT_FLAT, "Flat amount off"), (DISCOUNT_PERCENT, "Percent off"), (DISCOUNT_SLAB, "Volume/slab discount"),
+    ]
 
     name = models.CharField(max_length=100)
     item = models.ForeignKey(Item, null=True, blank=True, on_delete=models.CASCADE, related_name="schemes")
     category = models.ForeignKey(ItemCategory, null=True, blank=True, on_delete=models.CASCADE, related_name="schemes")
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
-    value = models.DecimalField(max_digits=10, decimal_places=2)
+    value = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Discount amount/percent for flat or percent schemes. Unused for slab schemes — see slabs.",
+    )
     valid_from = models.DateField()
     valid_to = models.DateField()
     is_active = models.BooleanField(default=True)
@@ -91,3 +104,28 @@ class Scheme(BaseModel):
         if self.category_id:
             return item.category_id == self.category_id
         return False
+
+
+class SchemeSlab(BaseModel):
+    """One quantity tier of a `discount_type=slab` Scheme. `max_qty` null
+    means "and above" — the open-ended top tier."""
+
+    scheme = models.ForeignKey(Scheme, on_delete=models.CASCADE, related_name="slabs")
+    min_qty = models.DecimalField(max_digits=12, decimal_places=3)
+    max_qty = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
+    discount_type = models.CharField(
+        max_length=10, choices=[(Scheme.DISCOUNT_FLAT, "Flat amount off"), (Scheme.DISCOUNT_PERCENT, "Percent off")],
+    )
+    value = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        ordering = ["min_qty"]
+
+    def __str__(self):
+        upper = self.max_qty if self.max_qty is not None else "+"
+        return f"{self.scheme.name}: {self.min_qty}-{upper}"
+
+    def matches(self, qty) -> bool:
+        if qty < self.min_qty:
+            return False
+        return self.max_qty is None or qty <= self.max_qty

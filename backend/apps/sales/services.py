@@ -31,19 +31,29 @@ def next_document_number(doc_type: str, gst_registration, on_date: date, prefix:
 
 
 def best_scheme_discount(item, qty: Decimal, rate: Decimal, on_date: date) -> Decimal:
-    """MVP scheme engine (FR-14): finds the best applicable flat/percent
-    scheme for this item on this date and returns the discount amount for
-    the full line. Returns 0 if none applies."""
+    """Scheme engine (FR-14): finds the best applicable scheme for this
+    item on this date — flat, percent, or quantity-tiered slab — and
+    returns the discount amount for the full line. Returns 0 if none
+    applies. (BXGY is not a discount-on-a-line at all — see the note on
+    apps.catalog.models.Scheme — so it's out of scope here.)"""
     candidates = Scheme.objects.filter(
         is_active=True, valid_from__lte=on_date, valid_to__gte=on_date,
-    ).filter(models_q_for_item(item))
+    ).filter(models_q_for_item(item)).prefetch_related("slabs")
 
     gross = qty * rate
     best = Decimal("0")
     for scheme in candidates:
         if not scheme.applies_to(item):
             continue
-        if scheme.discount_type == Scheme.DISCOUNT_PERCENT:
+        if scheme.discount_type == Scheme.DISCOUNT_SLAB:
+            slab = next((s for s in scheme.slabs.all() if s.matches(qty)), None)
+            if slab is None:
+                continue
+            if slab.discount_type == Scheme.DISCOUNT_PERCENT:
+                discount = (gross * slab.value / Decimal("100")).quantize(Decimal("0.01"))
+            else:
+                discount = min(slab.value, gross)
+        elif scheme.discount_type == Scheme.DISCOUNT_PERCENT:
             discount = (gross * scheme.value / Decimal("100")).quantize(Decimal("0.01"))
         else:
             discount = min(scheme.value, gross)

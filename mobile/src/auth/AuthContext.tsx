@@ -1,4 +1,11 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import * as Keychain from 'react-native-keychain';
 import { apiPostJson, clearTokens, getTokens, saveTokens } from '../api/client';
 
@@ -35,7 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       const tokens = await getTokens();
       if (tokens) {
-        const stored = await Keychain.getGenericPassword({ service: USER_KEYCHAIN_SERVICE });
+        const stored = await Keychain.getGenericPassword({
+          service: USER_KEYCHAIN_SERVICE,
+        });
         if (stored) {
           try {
             setUser(JSON.parse(stored.password));
@@ -49,7 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    const data = await apiPostJson<LoginResponse>('/api/auth/login/', { username, password });
+    const data = await apiPostJson<LoginResponse>('/api/auth/login/', {
+      username,
+      password,
+    });
     await saveTokens({ access: data.access, refresh: data.refresh });
     await Keychain.setGenericPassword('user', JSON.stringify(data.user), {
       service: USER_KEYCHAIN_SERVICE,
@@ -63,11 +75,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const hasPermission = useCallback((code: string) => Boolean(user?.permission_codes?.includes(code)), [user]);
+  const hasPermission = useCallback(
+    (code: string) => Boolean(user?.permission_codes?.includes(code)),
+    [user]
+  );
 
   const value = useMemo(
-    () => ({ isLoading, isAuthenticated: Boolean(user), user, login, logout, hasPermission }),
-    [isLoading, user, login, logout, hasPermission],
+    () => ({
+      isLoading,
+      isAuthenticated: Boolean(user),
+      user,
+      login,
+      logout,
+      hasPermission,
+    }),
+    [isLoading, user, login, logout, hasPermission]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -75,6 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  if (!ctx) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return ctx;
 }

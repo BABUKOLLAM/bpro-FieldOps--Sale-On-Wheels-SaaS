@@ -11,7 +11,13 @@ const PIN_LENGTH = 4;
  * Biometric unlock (offered below the pad once a PIN exists) is a
  * convenience layered on the same underlying secret — see auth/PinLock. */
 export default function PinGateScreen() {
-  const { hasPinSet, setPin, unlockWithPin, unlockWithBiometrics, biometryType } = usePinLock();
+  const {
+    hasPinSet,
+    setPin,
+    unlockWithPin,
+    unlockWithBiometrics,
+    biometryType,
+  } = usePinLock();
   const [entry, setEntry] = useState('');
   const [confirmStage, setConfirmStage] = useState(false);
   const [firstEntry, setFirstEntry] = useState('');
@@ -20,7 +26,9 @@ export default function PinGateScreen() {
   async function handleDigit(digit: string) {
     const next = (entry + digit).slice(0, PIN_LENGTH);
     setEntry(next);
-    if (next.length !== PIN_LENGTH) return;
+    if (next.length !== PIN_LENGTH) {
+      return;
+    }
 
     if (!hasPinSet) {
       if (!confirmStage) {
@@ -44,7 +52,11 @@ export default function PinGateScreen() {
     }
   }
 
-  const title = !hasPinSet ? (confirmStage ? 'Confirm your PIN' : 'Set a device PIN') : 'Enter your PIN';
+  const title = !hasPinSet
+    ? confirmStage
+      ? 'Confirm your PIN'
+      : 'Set a device PIN'
+    : 'Enter your PIN';
 
   return (
     <View style={styles.container}>
@@ -53,25 +65,37 @@ export default function PinGateScreen() {
 
       <View style={styles.dots}>
         {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-          <View key={i} style={[styles.dot, i < entry.length && styles.dotFilled]} />
+          <View
+            key={i}
+            style={[styles.dot, i < entry.length && styles.dotFilled]}
+          />
         ))}
       </View>
 
       <View style={styles.pad}>
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key, i) => (
-          <TouchableOpacity
-            key={i}
-            style={styles.key}
-            disabled={key === ''}
-            onPress={() => (key === '⌫' ? setEntry(entry.slice(0, -1)) : key && handleDigit(key))}
-          >
-            <Text style={styles.keyText}>{key}</Text>
-          </TouchableOpacity>
-        ))}
+        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map(
+          (key, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.key}
+              disabled={key === ''}
+              onPress={() =>
+                key === '⌫'
+                  ? setEntry(entry.slice(0, -1))
+                  : key && handleDigit(key)
+              }
+            >
+              <Text style={styles.keyText}>{key}</Text>
+            </TouchableOpacity>
+          )
+        )}
       </View>
 
       {hasPinSet && biometryType && (
-        <TouchableOpacity style={styles.biometricButton} onPress={unlockWithBiometrics}>
+        <TouchableOpacity
+          style={styles.biometricButton}
+          onPress={unlockWithBiometrics}
+        >
           <Text style={styles.biometricText}>Use {biometryType}</Text>
         </TouchableOpacity>
       )}
@@ -80,13 +104,36 @@ export default function PinGateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  title: { color: colors.textPrimary, fontSize: 22, fontWeight: '600', marginBottom: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 24,
+  },
   error: { color: colors.danger, marginBottom: 12 },
   dots: { flexDirection: 'row', marginBottom: 32 },
-  dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 1, borderColor: colors.border, marginHorizontal: 8 },
+  dot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginHorizontal: 8,
+  },
   dotFilled: { backgroundColor: colors.primary, borderColor: colors.primary },
-  pad: { flexDirection: 'row', flexWrap: 'wrap', width: 280, justifyContent: 'center' },
+  pad: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: 280,
+    justifyContent: 'center',
+  },
   key: {
     width: 80,
     height: 80,

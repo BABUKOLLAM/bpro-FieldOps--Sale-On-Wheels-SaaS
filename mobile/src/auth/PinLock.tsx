@@ -1,4 +1,11 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import * as Keychain from 'react-native-keychain';
 
 /**
@@ -27,11 +34,14 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasPinSet, setHasPinSet] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [biometryType, setBiometryType] = useState<Keychain.BIOMETRY_TYPE | null>(null);
+  const [biometryType, setBiometryType] =
+    useState<Keychain.BIOMETRY_TYPE | null>(null);
 
   useEffect(() => {
     (async () => {
-      const existing = await Keychain.getGenericPassword({ service: PIN_KEYCHAIN_SERVICE });
+      const existing = await Keychain.getGenericPassword({
+        service: PIN_KEYCHAIN_SERVICE,
+      });
       setHasPinSet(Boolean(existing));
       setBiometryType(await Keychain.getSupportedBiometryType());
       setIsLoading(false);
@@ -48,9 +58,13 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const unlockWithPin = useCallback(async (pin: string) => {
-    const stored = await Keychain.getGenericPassword({ service: PIN_KEYCHAIN_SERVICE });
-    const ok = Boolean(stored) && stored.password === pin;
-    if (ok) setIsUnlocked(true);
+    const stored = await Keychain.getGenericPassword({
+      service: PIN_KEYCHAIN_SERVICE,
+    });
+    const ok = stored !== false && stored.password === pin;
+    if (ok) {
+      setIsUnlocked(true);
+    }
     return ok;
   }, []);
 
@@ -73,8 +87,26 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
   const lock = useCallback(() => setIsUnlocked(false), []);
 
   const value = useMemo(
-    () => ({ isLoading, hasPinSet, isUnlocked, setPin, unlockWithPin, unlockWithBiometrics, lock, biometryType }),
-    [isLoading, hasPinSet, isUnlocked, setPin, unlockWithPin, unlockWithBiometrics, lock, biometryType],
+    () => ({
+      isLoading,
+      hasPinSet,
+      isUnlocked,
+      setPin,
+      unlockWithPin,
+      unlockWithBiometrics,
+      lock,
+      biometryType,
+    }),
+    [
+      isLoading,
+      hasPinSet,
+      isUnlocked,
+      setPin,
+      unlockWithPin,
+      unlockWithBiometrics,
+      lock,
+      biometryType,
+    ]
   );
 
   return <PinContext.Provider value={value}>{children}</PinContext.Provider>;
@@ -82,6 +114,8 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
 
 export function usePinLock(): PinContextValue {
   const ctx = useContext(PinContext);
-  if (!ctx) throw new Error('usePinLock must be used within a PinProvider');
+  if (!ctx) {
+    throw new Error('usePinLock must be used within a PinProvider');
+  }
   return ctx;
 }

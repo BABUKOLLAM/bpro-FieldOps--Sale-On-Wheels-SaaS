@@ -15,7 +15,7 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
  * change-tracking — see src/sync/synchronize.ts.
  */
 export const schema = appSchema({
-  version: 1,
+  version: 2,
   tables: [
     tableSchema({
       name: 'customers',
@@ -103,6 +103,11 @@ export const schema = appSchema({
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },
         { name: 'device_created_at', type: 'number' },
+        // Signature capture (FR-12): the file is written to local storage
+        // at capture time, then uploaded separately via a multipart PATCH
+        // once the invoice's JSON push has succeeded (see sync/synchronize.ts).
+        { name: 'signature_local_uri', type: 'string' },
+        { name: 'signature_uploaded', type: 'boolean' },
       ],
     }),
     tableSchema({
@@ -138,6 +143,23 @@ export const schema = appSchema({
         { name: 'customer_server_id', type: 'string' },
         { name: 'check_in_time', type: 'number' },
         { name: 'check_out_time', type: 'number' },
+        { name: 'sync_status', type: 'string', isIndexed: true },
+        { name: 'sync_error', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'expenses',
+      columns: [
+        { name: 'server_id', type: 'string', isIndexed: true },
+        { name: 'trip_server_id', type: 'string' },
+        { name: 'category', type: 'string' },
+        { name: 'amount', type: 'number' },
+        { name: 'description', type: 'string' },
+        { name: 'expense_date', type: 'string' },
+        { name: 'receipt_local_uri', type: 'string' },
+        { name: 'receipt_uploaded', type: 'boolean' },
+        { name: 'status', type: 'string' },
+        { name: 'device_created_at', type: 'number' },
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },
       ],

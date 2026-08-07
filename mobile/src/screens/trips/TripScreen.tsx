@@ -1,5 +1,13 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Q } from '@nozbe/watermelondb';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,12 +15,17 @@ import { database } from '../../db';
 import Beat from '../../db/models/Beat';
 import BeatCustomer from '../../db/models/BeatCustomer';
 import Customer from '../../db/models/Customer';
-import Trip, { SYNC_PENDING, TRIP_COMPLETED, TRIP_IN_PROGRESS } from '../../db/models/Trip';
+import Trip, { TRIP_COMPLETED, TRIP_IN_PROGRESS } from '../../db/models/Trip';
 import TripCheckpoint from '../../db/models/TripCheckpoint';
+import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
 import { colors } from '../../theme/colors';
 
-type Stop = { beatCustomer: BeatCustomer; customer: Customer | null; checkpoint: TripCheckpoint | null };
+type Stop = {
+  beatCustomer: BeatCustomer;
+  customer: Customer | null;
+  checkpoint: TripCheckpoint | null;
+};
 
 /**
  * Trip Start/End & outlet Check-in/Check-out (BRD FR-08, FM-01) — fully
@@ -25,7 +38,10 @@ export default function TripScreen() {
   const [odometer, setOdometer] = useState('');
 
   const load = useCallback(async () => {
-    const trips = await database.get<Trip>('trips').query(Q.where('status', TRIP_IN_PROGRESS)).fetch();
+    const trips = await database
+      .get<Trip>('trips')
+      .query(Q.where('status', TRIP_IN_PROGRESS))
+      .fetch();
     const active = trips[0] || null;
     setTrip(active);
 
@@ -41,17 +57,29 @@ export default function TripScreen() {
       .fetch();
 
     const nextStops: Stop[] = [];
-    for (const bc of beatCustomers.sort((a, b) => a.visitSequence - b.visitSequence)) {
-      const customers = await database.get<Customer>('customers').query(Q.where('server_id', bc.customerServerId)).fetch();
+    for (const bc of beatCustomers.sort(
+      (a, b) => a.visitSequence - b.visitSequence
+    )) {
+      const customers = await database
+        .get<Customer>('customers')
+        .query(Q.where('server_id', bc.customerServerId))
+        .fetch();
       let checkpoint: TripCheckpoint | null = null;
       if (active) {
         const checkpoints = await database
           .get<TripCheckpoint>('trip_checkpoints')
-          .query(Q.where('trip_local_id', active.id), Q.where('customer_server_id', bc.customerServerId))
+          .query(
+            Q.where('trip_local_id', active.id),
+            Q.where('customer_server_id', bc.customerServerId)
+          )
           .fetch();
         checkpoint = checkpoints[0] || null;
       }
-      nextStops.push({ beatCustomer: bc, customer: customers[0] || null, checkpoint });
+      nextStops.push({
+        beatCustomer: bc,
+        customer: customers[0] || null,
+        checkpoint,
+      });
     }
     setStops(nextStops);
   }, []);
@@ -59,7 +87,7 @@ export default function TripScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load]),
+    }, [load])
   );
 
   async function startTrip() {
@@ -69,7 +97,7 @@ export default function TripScreen() {
         rec.status = TRIP_IN_PROGRESS;
         rec.startTime = Date.now();
         rec.startOdometer = Number(odometer) || 0;
-        rec.syncStatus = SYNC_PENDING;
+        rec.localSyncStatus = SYNC_PENDING;
         rec.syncError = '';
       });
     });
@@ -79,13 +107,15 @@ export default function TripScreen() {
   }
 
   async function endTrip() {
-    if (!trip) return;
+    if (!trip) {
+      return;
+    }
     await database.write(async () => {
       await trip.update((rec) => {
         rec.status = TRIP_COMPLETED;
         rec.endTime = Date.now();
         rec.endOdometer = Number(odometer) || rec.startOdometer;
-        rec.syncStatus = SYNC_PENDING;
+        rec.localSyncStatus = SYNC_PENDING;
       });
     });
     setOdometer('');
@@ -95,7 +125,9 @@ export default function TripScreen() {
   }
 
   async function toggleCheckpoint(stop: Stop) {
-    if (!trip || !stop.customer) return;
+    if (!trip || !stop.customer) {
+      return;
+    }
     await database.write(async () => {
       if (!stop.checkpoint) {
         await database.get<TripCheckpoint>('trip_checkpoints').create((rec) => {
@@ -104,13 +136,13 @@ export default function TripScreen() {
           rec.tripServerId = trip.serverId;
           rec.customerServerId = stop.customer!.serverId;
           rec.checkInTime = Date.now();
-          rec.syncStatus = SYNC_PENDING;
+          rec.localSyncStatus = SYNC_PENDING;
           rec.syncError = '';
         });
       } else if (!stop.checkpoint.checkOutTime) {
         await stop.checkpoint.update((rec) => {
           rec.checkOutTime = Date.now();
-          rec.syncStatus = SYNC_PENDING;
+          rec.localSyncStatus = SYNC_PENDING;
         });
       }
     });
@@ -139,15 +171,24 @@ export default function TripScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Trip in progress</Text>
-      <Text style={styles.subtitle}>Started at odometer {trip.startOdometer}</Text>
+      <Text style={styles.subtitle}>
+        Started at odometer {trip.startOdometer}
+      </Text>
 
       <FlatList
         data={stops}
         keyExtractor={(s) => s.beatCustomer.id}
         renderItem={({ item }) => {
-          const status = !item.checkpoint ? 'Not visited' : !item.checkpoint.checkOutTime ? 'Checked in' : 'Checked out';
+          const status = !item.checkpoint
+            ? 'Not visited'
+            : !item.checkpoint.checkOutTime
+            ? 'Checked in'
+            : 'Checked out';
           return (
-            <TouchableOpacity style={styles.stopRow} onPress={() => toggleCheckpoint(item)}>
+            <TouchableOpacity
+              style={styles.stopRow}
+              onPress={() => toggleCheckpoint(item)}
+            >
               <Text style={styles.stopName}>{item.customer?.name}</Text>
               <Text style={styles.stopStatus}>{status}</Text>
             </TouchableOpacity>
@@ -184,9 +225,19 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginVertical: 12,
   },
-  primaryButton: { backgroundColor: colors.primary, borderRadius: 10, padding: 18, alignItems: 'center' },
+  primaryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    padding: 18,
+    alignItems: 'center',
+  },
   primaryButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  endButton: { backgroundColor: colors.danger, borderRadius: 10, padding: 18, alignItems: 'center' },
+  endButton: {
+    backgroundColor: colors.danger,
+    borderRadius: 10,
+    padding: 18,
+    alignItems: 'center',
+  },
   stopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

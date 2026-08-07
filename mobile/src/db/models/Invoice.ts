@@ -9,7 +9,10 @@ export const SYNC_FAILED = 'failed';
 export default class Invoice extends Model {
   static table = 'invoices';
   static associations = {
-    invoice_lines: { type: 'has_many' as const, foreignKey: 'invoice_local_id' },
+    invoice_lines: {
+      type: 'has_many' as const,
+      foreignKey: 'invoice_local_id',
+    },
   };
 
   @text('server_id') serverId!: string;
@@ -19,9 +22,11 @@ export default class Invoice extends Model {
   @text('place_of_supply_state') placeOfSupplyState!: string;
   @text('invoice_date') invoiceDate!: string;
   @field('grand_total') grandTotal!: number;
-  @text('sync_status') syncStatus!: string;
+  @text('sync_status') localSyncStatus!: string;
   @text('sync_error') syncError!: string;
   @field('device_created_at') deviceCreatedAt!: number;
+  @text('signature_local_uri') signatureLocalUri!: string;
+  @field('signature_uploaded') signatureUploaded!: boolean;
 
   @children('invoice_lines') lines!: Query<InvoiceLine>;
 }

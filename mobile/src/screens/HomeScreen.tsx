@@ -1,5 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Q } from '@nozbe/watermelondb';
 import { database } from '../db';
@@ -36,17 +43,22 @@ export default function HomeScreen({ navigation }: any) {
         allStops.push({ beatCustomer: bc, customer: matches[0] || null });
       }
     }
-    allStops.sort((a, b) => a.beatCustomer.visitSequence - b.beatCustomer.visitSequence);
+    allStops.sort(
+      (a, b) => a.beatCustomer.visitSequence - b.beatCustomer.visitSequence
+    );
     setStops(allStops);
 
-    const trips = await database.get<Trip>('trips').query(Q.where('status', TRIP_IN_PROGRESS)).fetch();
+    const trips = await database
+      .get<Trip>('trips')
+      .query(Q.where('status', TRIP_IN_PROGRESS))
+      .fetch();
     setActiveTrip(trips[0] || null);
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [loadData]),
+    }, [loadData])
   );
 
   async function handleSync() {
@@ -54,7 +66,11 @@ export default function HomeScreen({ navigation }: any) {
     setSyncMessage(null);
     try {
       const result = await synchronize();
-      setSyncMessage(`Synced. ${result.pushed} pushed${result.failed ? `, ${result.failed} failed` : ''}.`);
+      setSyncMessage(
+        `Synced. ${result.pushed} pushed${
+          result.failed ? `, ${result.failed} failed` : ''
+        }.`
+      );
       await loadData();
     } catch {
       setSyncMessage('Sync failed — will retry automatically.');
@@ -67,7 +83,9 @@ export default function HomeScreen({ navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hi, {user?.first_name || user?.username}</Text>
+          <Text style={styles.greeting}>
+            Hi, {user?.first_name || user?.username}
+          </Text>
           <Text style={styles.role}>{user?.roles?.join(', ')}</Text>
         </View>
         <TouchableOpacity onPress={logout}>
@@ -77,15 +95,32 @@ export default function HomeScreen({ navigation }: any) {
 
       <TouchableOpacity
         style={styles.tripButton}
-        onPress={() => navigation.navigate('Trip', { activeTripId: activeTrip?.id })}
+        onPress={() =>
+          navigation.navigate('Trip', { activeTripId: activeTrip?.id })
+        }
       >
         <Text style={styles.tripButtonText}>
           {activeTrip ? 'Trip in progress — Manage Trip' : 'Start Trip'}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.syncButton} onPress={handleSync} disabled={syncing}>
-        {syncing ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.syncButtonText}>Sync Now</Text>}
+      <TouchableOpacity
+        style={styles.expenseButton}
+        onPress={() => navigation.navigate('Expense')}
+      >
+        <Text style={styles.expenseButtonText}>Log Expense</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.syncButton}
+        onPress={handleSync}
+        disabled={syncing}
+      >
+        {syncing ? (
+          <ActivityIndicator color={colors.primary} />
+        ) : (
+          <Text style={styles.syncButtonText}>Sync Now</Text>
+        )}
       </TouchableOpacity>
       {syncMessage && <Text style={styles.syncMessage}>{syncMessage}</Text>}
 
@@ -97,15 +132,24 @@ export default function HomeScreen({ navigation }: any) {
           <TouchableOpacity
             style={styles.stopCard}
             disabled={!item.customer}
-            onPress={() => navigation.navigate('SpotBilling', { customerServerId: item.customer?.serverId })}
+            onPress={() =>
+              navigation.navigate('SpotBilling', {
+                customerServerId: item.customer?.serverId,
+              })
+            }
           >
-            <Text style={styles.stopName}>{item.customer?.name || 'Unknown customer'}</Text>
+            <Text style={styles.stopName}>
+              {item.customer?.name || 'Unknown customer'}
+            </Text>
             <Text style={styles.stopMeta}>
-              {item.customer?.code} · Outstanding ₹{item.customer?.outstandingBalance ?? 0}
+              {item.customer?.code} · Outstanding ₹
+              {item.customer?.outstandingBalance ?? 0}
             </Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No route assigned. Pull to sync.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No route assigned. Pull to sync.</Text>
+        }
       />
     </View>
   );
@@ -113,12 +157,36 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: 20 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   greeting: { color: colors.textPrimary, fontSize: 20, fontWeight: '700' },
   role: { color: colors.textSecondary, fontSize: 13 },
   logout: { color: colors.danger, fontSize: 14 },
-  tripButton: { backgroundColor: colors.primary, borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 12 },
+  tripButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   tripButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  expenseButton: {
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  expenseButtonText: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
   syncButton: {
     borderColor: colors.primary,
     borderWidth: 1,
@@ -128,9 +196,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   syncButtonText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
-  syncMessage: { color: colors.textSecondary, textAlign: 'center', marginBottom: 12, fontSize: 13 },
-  sectionTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: '600', marginTop: 8, marginBottom: 8 },
-  stopCard: { backgroundColor: colors.surface, borderRadius: 10, padding: 16, marginBottom: 10 },
+  syncMessage: {
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 12,
+    fontSize: 13,
+  },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  stopCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 10,
+  },
   stopName: { color: colors.textPrimary, fontSize: 17, fontWeight: '600' },
   stopMeta: { color: colors.textSecondary, fontSize: 13, marginTop: 4 },
   empty: { color: colors.textSecondary, textAlign: 'center', marginTop: 40 },
