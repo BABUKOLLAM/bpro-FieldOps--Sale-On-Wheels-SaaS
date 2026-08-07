@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Header({ authenticated }: { authenticated: boolean }) {
   return (
@@ -25,12 +26,15 @@ export default function Header({ authenticated }: { authenticated: boolean }) {
           </a>
         </nav>
 
-        <Link
-          href={authenticated ? "/dashboard" : "/login"}
-          className="rounded-md bg-linear-to-r from-yellow-600 to-green-600 px-4 py-2 text-sm font-semibold text-white hover:from-yellow-500 hover:to-green-500"
-        >
-          {authenticated ? "Go to Dashboard" : "Sign In"}
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Link
+            href={authenticated ? "/dashboard" : "/login"}
+            className="rounded-md bg-linear-to-r from-yellow-600 to-green-600 px-4 py-2 text-sm font-semibold text-white hover:from-yellow-500 hover:to-green-500"
+          >
+            {authenticated ? "Go to Dashboard" : "Sign In"}
+          </Link>
+        </div>
       </div>
     </header>
   );
