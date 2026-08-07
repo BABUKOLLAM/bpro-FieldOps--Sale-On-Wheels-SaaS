@@ -18,7 +18,7 @@ const TRANSACTIONS_OUT = ["Sales invoices", "Orders", "Receipt vouchers", "Sales
 
 export default function TallySync() {
   return (
-    <section className="bg-slate-50 dark:bg-slate-900/40 py-16 sm:py-24">
+    <section className="py-14 sm:py-20">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -33,7 +33,7 @@ export default function TallySync() {
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {OFFLINE_STEPS.map((step, i) => (
             <div key={step.title} className="relative rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 text-sm font-semibold text-white">
                 {i + 1}
               </span>
               <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">{step.title}</h3>
@@ -52,7 +52,7 @@ export default function TallySync() {
               <ul className="mt-3 space-y-1.5">
                 {MASTERS_IN.map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
                     {item}
                   </li>
                 ))}

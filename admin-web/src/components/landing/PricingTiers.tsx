@@ -11,12 +11,12 @@ export default function PricingTiers() {
             key={tier}
             className={`relative flex flex-col rounded-2xl border p-6 sm:p-7 ${
               popular
-                ? "border-indigo-600 bg-white dark:bg-slate-900 shadow-lg shadow-indigo-600/10 ring-1 ring-indigo-600"
+                ? "border-violet-600 bg-white dark:bg-slate-900 shadow-lg shadow-violet-600/10 ring-1 ring-violet-600"
                 : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
             }`}
           >
             {popular && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-linear-to-r from-indigo-600 to-violet-600 px-3 py-1 text-xs font-semibold text-white">
                 Most popular
               </span>
             )}
@@ -41,7 +41,7 @@ export default function PricingTiers() {
             <ul className="mt-6 space-y-2.5 text-sm text-slate-600 dark:text-slate-300 flex-1">
               {TIER_FEATURES[tier].map((feature) => (
                 <li key={feature} className="flex gap-2">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-4 w-4 shrink-0 text-violet-500">
                     <path
                       fillRule="evenodd"
                       d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
@@ -57,7 +57,7 @@ export default function PricingTiers() {
               href="#calculator"
               className={`mt-6 block rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-colors ${
                 popular
-                  ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                  ? "bg-linear-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-500 hover:to-violet-500"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
               }`}
             >

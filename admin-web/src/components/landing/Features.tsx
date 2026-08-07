@@ -39,7 +39,8 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section id="features" className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24">
+    <section id="features" className="bg-slate-50 dark:bg-slate-900/40 py-14 sm:py-20">
+    <div className="mx-auto max-w-6xl px-5 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
           Built for the way field sales actually works
@@ -56,7 +57,7 @@ export default function Features() {
             key={title}
             className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400">
               <Icon />
             </div>
             <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">{title}</h3>
@@ -64,6 +65,7 @@ export default function Features() {
           </div>
         ))}
       </div>
+    </div>
     </section>
   );
 }

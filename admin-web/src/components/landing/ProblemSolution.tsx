@@ -19,7 +19,7 @@ const ROWS = [
 
 export default function ProblemSolution() {
   return (
-    <section className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24">
+    <section className="mx-auto max-w-6xl px-5 pt-4 pb-14 sm:px-6 sm:pt-6 sm:pb-20">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
           The gap between the field and the books
@@ -32,7 +32,7 @@ export default function ProblemSolution() {
       <div className="mt-12 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
         <div className="grid grid-cols-2 bg-slate-50 dark:bg-slate-900 text-sm font-semibold text-slate-500 dark:text-slate-400">
           <div className="px-5 py-3 border-r border-slate-200 dark:border-slate-800">Without a system</div>
-          <div className="px-5 py-3 text-indigo-600 dark:text-indigo-400">With this platform</div>
+          <div className="px-5 py-3 text-emerald-600 dark:text-emerald-400">With this platform</div>
         </div>
         {ROWS.map((row, i) => (
           <div
@@ -42,7 +42,7 @@ export default function ProblemSolution() {
             <div className="px-5 py-4 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
               {row.problem}
             </div>
-            <div className="px-5 py-4 bg-indigo-50/40 dark:bg-indigo-950/20 text-slate-800 dark:text-slate-100">
+            <div className="px-5 py-4 bg-emerald-50/40 dark:bg-emerald-950/20 text-slate-800 dark:text-slate-100">
               {row.solution}
             </div>
           </div>

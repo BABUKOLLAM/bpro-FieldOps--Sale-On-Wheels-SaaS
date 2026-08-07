@@ -21,7 +21,7 @@ export default async function Home() {
         <Features />
         <TallySync />
 
-        <section id="pricing" className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-24">
+        <section id="pricing" className="mx-auto max-w-6xl px-5 pt-14 pb-14 sm:px-6 sm:pt-20 sm:pb-20">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Simple, size-based pricing
@@ -36,7 +36,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <section id="calculator" className="mx-auto max-w-6xl px-5 pb-16 sm:px-6 sm:pb-24">
+        <section id="calculator" className="mx-auto max-w-6xl px-5 pb-14 sm:px-6 sm:pb-20">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Get an exact number for your fleet
