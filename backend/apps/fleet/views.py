@@ -22,8 +22,8 @@ from .serializers import (
     TripCheckpointSerializer, TripSerializer, VehicleDocumentSerializer, VehicleSerializer,
 )
 from .services import (
-    STATUS_OK, STATUS_OVERDUE, compliance_due_alerts, end_trip, evaluate_fuel_log, geofence_alerts,
-    maintenance_due_alerts, start_trip, trip_route_analytics,
+    STATUS_OK, STATUS_OVERDUE, compliance_due_alerts, driver_safety_scores, end_trip, evaluate_fuel_log,
+    geofence_alerts, maintenance_due_alerts, start_trip, trip_route_analytics,
 )
 
 
@@ -268,4 +268,5 @@ class FleetDashboardView(APIView):
             "compliance_alerts": compliance_due_alerts(),
             "geofence_alerts": geofence_alerts(),
             "route_analytics": trip_route_analytics(),
+            "driver_safety_scores": driver_safety_scores(),
         })

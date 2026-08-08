@@ -329,3 +329,93 @@ def trip_route_analytics(days: int = 30) -> list[dict]:
             "deviation_count": len(deviations),
         })
     return results
+
+
+# FM-15 driver safety score — speeding + idling only, derived from the
+# same GPS breadcrumbs as the analytics above. Harsh braking/acceleration
+# would need an accelerometer stream this app doesn't collect, so it's
+# not attempted here rather than faked with a plausible-looking number.
+SPEED_LIMIT_KMPH = 80
+SAFETY_SCORE_PER_SPEEDING_EVENT = 5
+SAFETY_SCORE_PER_10PCT_IDLE = 5
+
+
+def trip_speeding_events(trip: Trip) -> list[dict]:
+    """Segments between consecutive pings implying an average speed over
+    SPEED_LIMIT_KMPH — an average-speed-over-the-gap proxy from GPS
+    breadcrumbs, not an instantaneous speedometer reading."""
+    pings = list(LocationPing.objects.filter(trip=trip).order_by("recorded_at"))
+    events = []
+    for prev, curr in zip(pings, pings[1:]):
+        seconds = (curr.recorded_at - prev.recorded_at).total_seconds()
+        if seconds <= 0:
+            continue
+        dist_km = haversine_km(float(prev.latitude), float(prev.longitude), float(curr.latitude), float(curr.longitude))
+        speed_kmph = dist_km / (seconds / 3600)
+        if speed_kmph > SPEED_LIMIT_KMPH:
+            events.append({"from": prev.recorded_at, "to": curr.recorded_at, "speed_kmph": round(speed_kmph, 1)})
+    return events
+
+
+def trip_safety_score(trip: Trip) -> dict | None:
+    """100 = nothing flagged. Deducts for speeding events and for the
+    idle-time share of total trip duration. Returns the raw signals
+    alongside the score, not a bare number a supervisor can't
+    interrogate. None if the trip has no start/end time to reason about."""
+    if not trip.start_time or not trip.end_time:
+        return None
+
+    duration_minutes = (trip.end_time - trip.start_time).total_seconds() / 60
+    if duration_minutes <= 0:
+        return None
+
+    speeding_events = trip_speeding_events(trip)
+    idle_minutes = trip_idle_minutes(trip)
+    idle_pct = min(idle_minutes / duration_minutes, 1.0) * 100
+
+    score = 100
+    score -= len(speeding_events) * SAFETY_SCORE_PER_SPEEDING_EVENT
+    score -= (idle_pct // 10) * SAFETY_SCORE_PER_10PCT_IDLE
+    score = max(0, min(100, int(score)))
+
+    return {
+        "trip_id": trip.id,
+        "score": score,
+        "speeding_event_count": len(speeding_events),
+        "idle_minutes": idle_minutes,
+        "idle_pct": round(idle_pct, 1),
+    }
+
+
+def driver_safety_scores(days: int = 30) -> list[dict]:
+    """Average safety score per agent across their completed trips in the
+    last `days`, worst first — a fleet manager's starting point for
+    coaching, not an automated penalty."""
+    since = timezone.now() - timezone.timedelta(days=days)
+    trips = Trip.objects.filter(
+        status=Trip.STATUS_COMPLETED, start_time__gte=since, end_time__isnull=False,
+    ).select_related("agent")
+
+    buckets: dict = {}
+    for trip in trips:
+        result = trip_safety_score(trip)
+        if result is None:
+            continue
+        bucket = buckets.setdefault(trip.agent_id, {"agent": trip.agent, "scores": [], "speeding": 0, "idle": 0})
+        bucket["scores"].append(result["score"])
+        bucket["speeding"] += result["speeding_event_count"]
+        bucket["idle"] += result["idle_minutes"]
+
+    results = []
+    for agent_id, bucket in buckets.items():
+        agent = bucket["agent"]
+        results.append({
+            "agent_id": agent_id,
+            "agent_name": agent.get_full_name() or agent.username,
+            "trip_count": len(bucket["scores"]),
+            "avg_score": round(sum(bucket["scores"]) / len(bucket["scores"]), 1),
+            "total_speeding_events": bucket["speeding"],
+            "total_idle_minutes": bucket["idle"],
+        })
+    results.sort(key=lambda r: r["avg_score"])
+    return results

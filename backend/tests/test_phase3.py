@@ -744,3 +744,136 @@ def test_report_export_fleet_route_analytics(admin):
     response = client.get("/api/reporting/export/fleet_route_analytics/?filetype=xlsx")
     assert response.status_code == 200, response.content[:200]
     assert response.content[:2] == b"PK"
+
+
+@pytest.mark.django_db
+def test_trip_speeding_events_detects_fast_segment(agent):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import trip_speeding_events
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_COMPLETED, start_time=timezone.now())
+    base = timezone.now()
+    # ~11km apart in 2 minutes -> ~330 km/h average, well over the limit.
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"), recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.176000"), longitude=Decimal("72.977700"),
+        recorded_at=base + timezone.timedelta(minutes=2),
+    )
+    events = trip_speeding_events(trip)
+    assert len(events) == 1
+    assert events[0]["speed_kmph"] > 80
+
+
+@pytest.mark.django_db
+def test_trip_speeding_events_empty_within_limit(agent):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import trip_speeding_events
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_COMPLETED, start_time=timezone.now())
+    base = timezone.now()
+    # ~1km apart in 2 minutes -> 30 km/h, well within the limit.
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"), recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.085000"), longitude=Decimal("72.877700"),
+        recorded_at=base + timezone.timedelta(minutes=2),
+    )
+    assert trip_speeding_events(trip) == []
+
+
+@pytest.mark.django_db
+def test_trip_safety_score_deducts_for_speeding_and_idling(agent):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import trip_safety_score
+
+    base = timezone.now()
+    trip = Trip.objects.create(
+        agent=agent, status=Trip.STATUS_COMPLETED, start_time=base, end_time=base + timezone.timedelta(minutes=60),
+    )
+    # A speeding segment...
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"), recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.176000"), longitude=Decimal("72.977700"),
+        recorded_at=base + timezone.timedelta(minutes=2),
+    )
+    # ...then 30 minutes idle (stationary) out of the 60-minute trip.
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.176010"), longitude=Decimal("72.977710"),
+        recorded_at=base + timezone.timedelta(minutes=32),
+    )
+
+    result = trip_safety_score(trip)
+    assert result["speeding_event_count"] == 1
+    assert result["idle_minutes"] == 30
+    # 100 - 5 (one speeding event) - 5*3 (30/60=50% idle -> 5 buckets of 10%) = 70
+    assert result["score"] == 70
+
+
+@pytest.mark.django_db
+def test_trip_safety_score_none_without_end_time(agent):
+    from apps.fleet.models import Trip
+    from apps.fleet.services import trip_safety_score
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_IN_PROGRESS, start_time=timezone.now())
+    assert trip_safety_score(trip) is None
+
+
+@pytest.mark.django_db
+def test_driver_safety_scores_ranks_worst_first(agent, supervisor):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import driver_safety_scores
+
+    base = timezone.now()
+    # agent: one clean trip -> score 100.
+    clean_trip = Trip.objects.create(
+        agent=agent, status=Trip.STATUS_COMPLETED, start_time=base, end_time=base + timezone.timedelta(minutes=30),
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=clean_trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"), recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=clean_trip, latitude=Decimal("19.085000"), longitude=Decimal("72.877700"),
+        recorded_at=base + timezone.timedelta(minutes=15),
+    )
+
+    # supervisor (also a valid trip.agent): one speeding trip -> lower score.
+    speeding_trip = Trip.objects.create(
+        agent=supervisor, status=Trip.STATUS_COMPLETED, start_time=base, end_time=base + timezone.timedelta(minutes=30),
+    )
+    LocationPing.objects.create(
+        agent=supervisor, trip=speeding_trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"),
+        recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=supervisor, trip=speeding_trip, latitude=Decimal("19.176000"), longitude=Decimal("72.977700"),
+        recorded_at=base + timezone.timedelta(minutes=2),
+    )
+
+    scores = driver_safety_scores()
+    assert scores[0]["agent_id"] == supervisor.id
+    assert scores[0]["avg_score"] < scores[1]["avg_score"]
+    assert scores[1]["agent_id"] == agent.id
+    assert scores[1]["avg_score"] == 100
+
+
+@pytest.mark.django_db
+def test_fleet_dashboard_includes_driver_safety_scores(supervisor):
+    client = APIClient()
+    client.force_authenticate(user=supervisor)
+    response = client.get("/api/fleet/dashboard/")
+    assert response.status_code == 200
+    assert "driver_safety_scores" in response.data
+
+
+@pytest.mark.django_db
+def test_report_export_driver_safety_scores(admin):
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get("/api/reporting/export/driver_safety_scores/?filetype=xlsx")
+    assert response.status_code == 200, response.content[:200]
+    assert response.content[:2] == b"PK"

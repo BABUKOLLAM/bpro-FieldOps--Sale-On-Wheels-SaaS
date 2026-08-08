@@ -264,6 +264,20 @@ def fleet_route_analytics_report():
     )
 
 
+def driver_safety_scores_report():
+    from apps.fleet.services import driver_safety_scores
+
+    rows = [
+        [s["agent_name"], s["trip_count"], s["avg_score"], s["total_speeding_events"], s["total_idle_minutes"]]
+        for s in driver_safety_scores()
+    ]
+    return (
+        "Driver Safety Scores — speeding & idling only, last 30 days",
+        ["Agent", "Trips", "Avg Score", "Speeding Events", "Idle Minutes"],
+        rows,
+    )
+
+
 def inventory_velocity_report():
     """FM-10: fast/slow movers and stock-out/overstock, by item across all
     van godowns — qty sold in the last 30 days from the stock ledger
@@ -338,6 +352,7 @@ REPORT_BUILDERS = {
     "fleet_compliance": fleet_compliance_report,
     "fleet_geofence": fleet_geofence_report,
     "fleet_route_analytics": fleet_route_analytics_report,
+    "driver_safety_scores": driver_safety_scores_report,
     "inventory_velocity": inventory_velocity_report,
 }
 
@@ -357,5 +372,6 @@ REPORT_LABELS = {
     "fleet_compliance": "Fleet Compliance (Documents)",
     "fleet_geofence": "Fleet Geofence Alerts",
     "fleet_route_analytics": "Fleet Route Analytics (Idle/Deviation)",
+    "driver_safety_scores": "Driver Safety Scores",
     "inventory_velocity": "Inventory Velocity",
 }

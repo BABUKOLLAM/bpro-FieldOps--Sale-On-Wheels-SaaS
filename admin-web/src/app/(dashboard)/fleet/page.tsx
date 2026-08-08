@@ -66,6 +66,15 @@ type RouteAnalyticsEntry = {
   deviation_count: number;
 };
 
+type DriverSafetyScore = {
+  agent_id: string;
+  agent_name: string;
+  trip_count: number;
+  avg_score: number;
+  total_speeding_events: number;
+  total_idle_minutes: number;
+};
+
 type FleetDashboard = {
   vehicles: VehicleEntry[];
   maintenance_alerts: MaintenanceAlert[];
@@ -74,6 +83,7 @@ type FleetDashboard = {
   compliance_alerts: ComplianceAlert[];
   geofence_alerts: GeofenceAlert[];
   route_analytics: RouteAnalyticsEntry[];
+  driver_safety_scores: DriverSafetyScore[];
 };
 
 type Vehicle = { id: string; reg_no: string };
@@ -446,6 +456,61 @@ export default async function FleetPage() {
                   </td>
                   <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.idle_minutes} min</td>
                   <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.deviation_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+            Driver Safety Scores — speeding &amp; idling only, last 30 days ({data.driver_safety_scores.length})
+          </h2>
+          <ExportCsvButton data={data.driver_safety_scores} filename="driver-safety-scores.csv" />
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          100 = nothing flagged. Deducted for GPS-implied speeding segments and for the idle-time share of trip
+          duration only — harsh braking/acceleration would need an accelerometer stream this app doesn&apos;t
+          collect, so it isn&apos;t part of this score. A coaching starting point, not an automated penalty.
+        </p>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <th className="px-4 py-2 font-medium">Agent</th>
+                <th className="px-4 py-2 font-medium">Trips</th>
+                <th className="px-4 py-2 font-medium">Avg Score</th>
+                <th className="px-4 py-2 font-medium">Speeding Events</th>
+                <th className="px-4 py-2 font-medium">Idle Minutes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.driver_safety_scores.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                    No completed trips with GPS breadcrumbs in the last 30 days.
+                  </td>
+                </tr>
+              )}
+              {data.driver_safety_scores.map((s) => (
+                <tr key={s.agent_id} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.agent_name}</td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.trip_count}</td>
+                  <td
+                    className={`px-4 py-2 font-semibold ${
+                      s.avg_score < 70
+                        ? "text-red-600 dark:text-red-400"
+                        : s.avg_score < 90
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-emerald-600 dark:text-emerald-400"
+                    }`}
+                  >
+                    {s.avg_score}
+                  </td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.total_speeding_events}</td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.total_idle_minutes} min</td>
                 </tr>
               ))}
             </tbody>
