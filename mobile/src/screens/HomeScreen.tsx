@@ -17,12 +17,15 @@ import Trip, { TRIP_IN_PROGRESS } from '../db/models/Trip';
 import Attendance from '../db/models/Attendance';
 import { synchronize } from '../sync/synchronize';
 import { useAuth } from '../auth/AuthContext';
+import { useTranslation } from '../i18n/LanguageContext';
+import { LOCALE_LABELS } from '../i18n/locales';
 import { colors } from '../theme/colors';
 
 type Stop = { beatCustomer: BeatCustomer; customer: Customer | null };
 
 export default function HomeScreen({ navigation }: any) {
   const { user, logout } = useAuth();
+  const { locale, t, setLocale } = useTranslation();
   const [stops, setStops] = useState<Stop[]>([]);
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
   const [checkedIn, setCheckedIn] = useState(false);
@@ -75,13 +78,13 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const result = await synchronize();
       setSyncMessage(
-        `Synced. ${result.pushed} pushed${
-          result.failed ? `, ${result.failed} failed` : ''
+        `${t.home.syncedMessage} ${result.pushed} ${t.home.pushed}${
+          result.failed ? `, ${result.failed} ${t.home.failed}` : ''
         }.`
       );
       await loadData();
     } catch {
-      setSyncMessage('Sync failed — will retry automatically.');
+      setSyncMessage(t.home.syncFailedMessage);
     } finally {
       setSyncing(false);
     }
@@ -96,9 +99,20 @@ export default function HomeScreen({ navigation }: any) {
           </Text>
           <Text style={styles.role}>{user?.roles?.join(', ')}</Text>
         </View>
-        <TouchableOpacity onPress={logout}>
-          <Text style={styles.logout}>Sign out</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.languagePill}
+            onPress={() => setLocale(locale === 'en' ? 'hi' : 'en')}
+            accessibilityLabel={t.home.language}
+          >
+            <Text style={styles.languagePillText}>
+              {LOCALE_LABELS[locale === 'en' ? 'hi' : 'en']}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={logout}>
+            <Text style={styles.logout}>{t.home.signOut}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity
@@ -114,7 +128,7 @@ export default function HomeScreen({ navigation }: any) {
             checkedIn && styles.attendanceButtonTextActive,
           ]}
         >
-          {checkedIn ? 'Checked in — Check Out' : 'Check In'}
+          {checkedIn ? t.home.checkedInCheckOut : t.home.checkIn}
         </Text>
       </TouchableOpacity>
 
@@ -125,7 +139,7 @@ export default function HomeScreen({ navigation }: any) {
         }
       >
         <Text style={styles.tripButtonText}>
-          {activeTrip ? 'Trip in progress — Manage Trip' : 'Start Trip'}
+          {activeTrip ? t.home.tripInProgress : t.home.startTrip}
         </Text>
       </TouchableOpacity>
 
@@ -133,7 +147,7 @@ export default function HomeScreen({ navigation }: any) {
         style={styles.expenseButton}
         onPress={() => navigation.navigate('Expense')}
       >
-        <Text style={styles.expenseButtonText}>Log Expense</Text>
+        <Text style={styles.expenseButtonText}>{t.home.logExpense}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -144,12 +158,12 @@ export default function HomeScreen({ navigation }: any) {
         {syncing ? (
           <ActivityIndicator color={colors.primary} />
         ) : (
-          <Text style={styles.syncButtonText}>Sync Now</Text>
+          <Text style={styles.syncButtonText}>{t.home.syncNow}</Text>
         )}
       </TouchableOpacity>
       {syncMessage && <Text style={styles.syncMessage}>{syncMessage}</Text>}
 
-      <Text style={styles.sectionTitle}>Today's Route</Text>
+      <Text style={styles.sectionTitle}>{t.home.todaysRoute}</Text>
       <FlatList
         data={stops}
         keyExtractor={(item) => item.beatCustomer.id}
@@ -164,17 +178,15 @@ export default function HomeScreen({ navigation }: any) {
             }
           >
             <Text style={styles.stopName}>
-              {item.customer?.name || 'Unknown customer'}
+              {item.customer?.name || t.home.unknownCustomer}
             </Text>
             <Text style={styles.stopMeta}>
-              {item.customer?.code} · Outstanding ₹
+              {item.customer?.code} · {t.home.outstanding} ₹
               {item.customer?.outstandingBalance ?? 0}
             </Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No route assigned. Pull to sync.</Text>
-        }
+        ListEmptyComponent={<Text style={styles.empty}>{t.home.noRoute}</Text>}
       />
     </View>
   );
@@ -190,6 +202,19 @@ const styles = StyleSheet.create({
   },
   greeting: { color: colors.textPrimary, fontSize: 20, fontWeight: '700' },
   role: { color: colors.textSecondary, fontSize: 13 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  languagePill: {
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  languagePillText: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   logout: { color: colors.danger, fontSize: 14 },
   attendanceButton: {
     borderColor: colors.primary,

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { LanguageProvider } from "@/i18n/LanguageContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -58,8 +59,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
         </Script>
-        {children}
-        <ServiceWorkerRegister />
+        <LanguageProvider>
+          {children}
+          <ServiceWorkerRegister />
+        </LanguageProvider>
       </body>
     </html>
   );

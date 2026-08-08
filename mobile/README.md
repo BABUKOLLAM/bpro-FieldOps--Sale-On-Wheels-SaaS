@@ -65,6 +65,20 @@ npx pod-install ios       # iOS only
 npm run ios                # or: npm run android
 ```
 
+## Multi-language UI (FR-17)
+
+`src/i18n/` is a small hand-maintained dictionary (English + Hindi so
+far — see `locales.ts`) plus a `LanguageProvider`/`useTranslation()`
+context (`LanguageContext.tsx`), not a full i18n library — the app's
+string surface is small enough that this is simpler to review and
+extend. The chosen language persists via
+`@react-native-async-storage/async-storage` and is switchable from the
+pill button next to "Sign out" on the home screen. Currently wired into
+navigation titles and the home screen; other screens still show
+English strings and can be migrated the same way (add keys to both
+locales in `locales.ts`, then `const { t } = useTranslation()` in the
+screen).
+
 ## Configuration
 
 Edit `src/config.ts` to point at your backend (`API_BASE_URL`). For a real

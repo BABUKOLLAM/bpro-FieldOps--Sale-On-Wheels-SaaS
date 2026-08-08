@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../auth/AuthContext';
 import { usePinLock } from '../auth/PinLock';
+import { useTranslation } from '../i18n/LanguageContext';
 import LoginScreen from '../screens/auth/LoginScreen';
 import PinGateScreen from '../screens/auth/PinGateScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -18,6 +19,7 @@ const Stack = createNativeStackNavigator();
 export default function RootNavigator() {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const { isLoading: pinLoading, isUnlocked } = usePinLock();
+  const { t } = useTranslation();
 
   if (authLoading || pinLoading) {
     return (
@@ -65,27 +67,27 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Home"
               component={HomeScreen}
-              options={{ title: 'Van Sales' }}
+              options={{ title: t.nav.home }}
             />
             <Stack.Screen
               name="SpotBilling"
               component={SpotBillingScreen}
-              options={{ title: 'Spot Billing' }}
+              options={{ title: t.nav.spotBilling }}
             />
             <Stack.Screen
               name="Trip"
               component={TripScreen}
-              options={{ title: 'Trip' }}
+              options={{ title: t.nav.trip }}
             />
             <Stack.Screen
               name="Expense"
               component={ExpenseScreen}
-              options={{ title: 'Expense' }}
+              options={{ title: t.nav.expense }}
             />
             <Stack.Screen
               name="Attendance"
               component={AttendanceScreen}
-              options={{ title: 'Attendance' }}
+              options={{ title: t.nav.attendance }}
             />
           </>
         )}

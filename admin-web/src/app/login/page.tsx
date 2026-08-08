@@ -4,9 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslation } from "@/i18n/LanguageContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [username, setUsername] = useState("tech@bpropms.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -45,21 +48,23 @@ export default function LoginPage() {
         }}
       />
 
+      <div className="absolute right-4 top-4">
+        <LanguageSwitcher />
+      </div>
+
       <div className="relative flex flex-1 flex-col items-center justify-center px-4 py-10">
         <Link href="/" className="mb-8 flex flex-col items-center gap-3">
           <BrandLogo height={40} />
-          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">← Back to Van Sales home</span>
+          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t.login.backToHome}</span>
         </Link>
 
         <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-lg shadow-slate-900/5">
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Sign in to Van Sales</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Access the back-office console for field, fleet &amp; finance.
-          </p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">{t.login.heading}</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t.login.subheading}</p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Username</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t.login.username}</label>
               <input
                 type="text"
                 required
@@ -70,7 +75,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t.login.password}</label>
               <input
                 type="password"
                 required
@@ -91,7 +96,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
             >
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? t.login.signingIn : t.login.signIn}
             </button>
           </form>
 
