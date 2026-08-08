@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django_filters",
     # local apps
     "apps.core",
+    "apps.tenancy",
     "apps.company",
     "apps.accounts",
     "apps.catalog",
@@ -60,11 +61,21 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    # Must resolve the tenant (and switch request.urlconf when none
+    # resolves) before AuthenticationMiddleware, which needs the tenant's
+    # own accounts.User table already selected.
+    "apps.tenancy.middleware.TenantResolutionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.accounts.middleware.AuditLogMiddleware",
 ]
+
+# Root domain(s) TenantResolutionMiddleware strips to resolve a subdomain
+# to a tenant slug (e.g. "acme.vansales.app" -> "acme" when
+# "vansales.app" is listed here). See apps/tenancy/middleware.py — the
+# X-Tenant-Slug header takes priority over this for local dev/tests.
+PLATFORM_ROOT_DOMAINS = env.list("PLATFORM_ROOT_DOMAINS", default=[])
 
 ROOT_URLCONF = "config.urls"
 
@@ -87,6 +98,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+# "default" is the control-plane database (apps.tenancy.Tenant,
+# PlatformAdmin) — for a single-tenant/local-dev/test setup with no
+# TenantResolutionMiddleware in play, it's also where every other app's
+# data lives, exactly as before this file introduced multi-tenancy (see
+# apps/tenancy/db_router.py's fallback). Real tenant databases are
+# registered dynamically at runtime by apps.tenancy.routing.
+# activate_tenant(), not listed here statically.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -97,6 +115,8 @@ DATABASES = {
         "PORT": env("POSTGRES_PORT", default="5432"),
     }
 }
+
+DATABASE_ROUTERS = ["apps.tenancy.db_router.TenancyRouter"]
 
 AUTH_USER_MODEL = "accounts.User"
 

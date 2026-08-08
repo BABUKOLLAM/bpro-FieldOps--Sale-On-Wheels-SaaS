@@ -1,21 +1,7 @@
-import json
-
-from cryptography.fernet import Fernet, InvalidToken
-from django.conf import settings
 from django.db import models
 
+from apps.core.encryption import decrypt_json, encrypt_json
 from apps.core.models import BaseModel
-
-
-def _fernet() -> Fernet:
-    key = settings.FIELD_ENCRYPTION_KEY
-    if not key:
-        raise RuntimeError(
-            "FIELD_ENCRYPTION_KEY is not set — required to store payment gateway credentials. "
-            "Generate one with: python -c \"from cryptography.fernet import Fernet; "
-            "print(Fernet.generate_key().decode())\""
-        )
-    return Fernet(key.encode() if isinstance(key, str) else key)
 
 
 class PaymentGatewayConnection(BaseModel):
@@ -46,16 +32,11 @@ class PaymentGatewayConnection(BaseModel):
 
     @property
     def credentials(self) -> dict:
-        if not self._credentials_encrypted:
-            return {}
-        try:
-            return json.loads(_fernet().decrypt(self._credentials_encrypted.encode()).decode())
-        except InvalidToken:
-            return {}
+        return decrypt_json(self._credentials_encrypted)
 
     @credentials.setter
     def credentials(self, value: dict):
-        self._credentials_encrypted = _fernet().encrypt(json.dumps(value).encode()).decode()
+        self._credentials_encrypted = encrypt_json(value)
 
 
 class PaymentOrder(BaseModel):
