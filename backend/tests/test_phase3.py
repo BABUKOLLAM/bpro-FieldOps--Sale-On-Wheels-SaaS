@@ -45,19 +45,58 @@ def test_user_created_without_password_cannot_login(admin):
 
 
 @pytest.mark.django_db
-def test_role_permission_update_via_api(admin):
+def test_role_permission_change_requires_governance_approval(admin):
+    """Role.permissions no longer changes via direct PATCH — it now goes
+    through apps.governance's ChangeRequest propose/approve workflow (see
+    tests/test_governance.py for the fuller suite)."""
+    from apps.accounts.constants import ROLE_BACK_OFFICE_ADMIN
+    from apps.accounts.models import User, UserRole
+
     Role.seed_defaults()
     role = Role.objects.get(name=ROLE_VAN_SALESMAN)
-    original_perms = set(role.permissions)
 
     client = APIClient()
     client.force_authenticate(user=admin)
-    response = client.patch(f"/api/roles/{role.id}/", {"permissions": ["sales.invoice.create"]}, format="json")
-    assert response.status_code == 200, response.data
+
+    # RoleViewSet is read-only now — direct writes are gone.
+    direct_response = client.patch(
+        f"/api/roles/{role.id}/", {"permissions": ["sales.invoice.create"]}, format="json"
+    )
+    assert direct_response.status_code == 405
+
+    # IT Head (the `admin` fixture) may propose a change...
+    propose_response = client.post(
+        "/api/governance/change-requests/",
+        {
+            "target_type": "role", "target_id": str(role.id),
+            "proposed_changes": {"permissions": ["sales.invoice.create"]},
+        },
+        format="json",
+    )
+    assert propose_response.status_code == 201, propose_response.data
+    change_request_id = propose_response.data["id"]
+    assert propose_response.data["status"] == "pending"
+
+    # ...but IT Head cannot approve — only Super Admin/Admin can.
+    denied_approval = client.post(f"/api/governance/change-requests/{change_request_id}/approve/", format="json")
+    assert denied_approval.status_code == 403
+    role.refresh_from_db()
+    assert "sales.invoice.create" not in role.permissions or len(role.permissions) != 1
+
+    approver_role = Role.objects.get(name=ROLE_BACK_OFFICE_ADMIN)
+    approver = User.objects.create_user(username="approver@test.local", password="testpass123")
+    UserRole.objects.create(user=approver, role=approver_role)
+    approver_client = APIClient()
+    approver_client.force_authenticate(user=approver)
+
+    approve_response = approver_client.post(
+        f"/api/governance/change-requests/{change_request_id}/approve/", format="json"
+    )
+    assert approve_response.status_code == 200, approve_response.data
+    assert approve_response.data["status"] == "approved"
 
     role.refresh_from_db()
     assert role.permissions == ["sales.invoice.create"]
-    assert role.permissions != list(original_perms) or len(original_perms) == 1
 
 
 @pytest.mark.django_db

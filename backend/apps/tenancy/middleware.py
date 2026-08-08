@@ -29,6 +29,7 @@ exactly as it did before this file existed: apps.tenancy.db_router's
 fallback-to-"default" then makes the data layer behave identically too.
 """
 from django.conf import settings
+from django.core.exceptions import DisallowedHost
 
 from .models import Tenant
 from .routing import activate_tenant, deactivate_tenant
@@ -67,8 +68,27 @@ class TenantResolutionMiddleware:
             # normal app.
             return tenant, True
 
-        host = request.get_host().split(":")[0].lower()
-        for root_domain in getattr(settings, "PLATFORM_ROOT_DOMAINS", []):
+        root_domains = getattr(settings, "PLATFORM_ROOT_DOMAINS", [])
+        if not root_domains:
+            # The overwhelmingly common case (every single-tenant/local-dev
+            # deployment, and every non-Host-routed internal call — e.g.
+            # admin-web's server-to-server calls to the "backend" container
+            # hostname, which ALLOWED_HOSTS was never meant to cover).
+            # Skip request.get_host() entirely rather than pay Django's
+            # ALLOWED_HOSTS validation for a lookup we won't use anyway.
+            return None, False
+
+        try:
+            host = request.get_host().split(":")[0].lower()
+        except DisallowedHost:
+            # A Host header ALLOWED_HOSTS doesn't recognize is not this
+            # middleware's concern to enforce — that's a job for Django's
+            # own host validation wherever it actually matters (CSRF,
+            # absolute-URI building, ...). Fall through to the normal app
+            # exactly like "no tenant signal at all".
+            return None, False
+
+        for root_domain in root_domains:
             if host == root_domain:
                 return None, True  # the platform's own bare root domain
             suffix = f".{root_domain}"

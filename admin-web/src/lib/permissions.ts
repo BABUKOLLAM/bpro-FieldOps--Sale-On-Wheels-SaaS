@@ -82,6 +82,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { code: "attendance.view_all", label: "View all attendance records" },
     ],
   },
+  {
+    domain: "Governance",
+    permissions: [
+      { code: "governance.master_settings.manage", label: "Propose Master Settings & role changes" },
+      { code: "governance.change_request.approve", label: "Approve/reject pending changes" },
+    ],
+  },
 ];
 
 export const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap((g) => g.permissions);

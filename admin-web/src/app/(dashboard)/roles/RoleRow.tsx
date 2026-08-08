@@ -7,13 +7,14 @@ import { PERMISSION_LABELS } from "@/lib/permissions";
 type Role = { id: string; name: string; permissions: string[]; is_active: boolean };
 
 const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Super Admin",
   van_salesman: "Van Salesman / Field Sales Executive",
   pre_sales_order_booker: "Pre-Sales / Order Booker",
   sales_supervisor: "Sales Supervisor / Area Sales Manager",
-  back_office_admin: "Back-Office / Admin User",
+  back_office_admin: "Admin (Back-Office)",
   finance_accounts: "Finance / Accounts User",
   fleet_manager: "Fleet / Transport Manager",
-  system_it_admin: "System / IT Administrator",
+  system_it_admin: "IT Head (System/IT Administrator)",
 };
 
 export default function RoleRow({ role }: { role: Role }) {

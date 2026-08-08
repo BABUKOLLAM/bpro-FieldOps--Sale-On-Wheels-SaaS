@@ -1,3 +1,4 @@
+ROLE_SUPER_ADMIN = "super_admin"
 ROLE_VAN_SALESMAN = "van_salesman"
 ROLE_PRE_SALES = "pre_sales_order_booker"
 ROLE_SALES_SUPERVISOR = "sales_supervisor"
@@ -6,14 +7,21 @@ ROLE_FINANCE_ACCOUNTS = "finance_accounts"
 ROLE_FLEET_MANAGER = "fleet_manager"
 ROLE_SYSTEM_IT_ADMIN = "system_it_admin"
 
+# Roles permitted to touch Master Settings / propose role changes at all
+# (apps.governance.PERM_MASTER_SETTINGS_MANAGE) vs. the narrower set that
+# may also approve a pending change request (PERM_CHANGE_REQUEST_APPROVE).
+# Per the client's own instruction: Super Admin, Admin, and IT Head may all
+# *propose* master-settings/role changes; only Super Admin and Admin may
+# *approve* them.
 ROLE_CHOICES = [
+    (ROLE_SUPER_ADMIN, "Super Admin"),
     (ROLE_VAN_SALESMAN, "Van Salesman / Field Sales Executive"),
     (ROLE_PRE_SALES, "Pre-Sales / Order Booker"),
     (ROLE_SALES_SUPERVISOR, "Sales Supervisor / Area Sales Manager"),
-    (ROLE_BACK_OFFICE_ADMIN, "Back-Office / Admin User"),
+    (ROLE_BACK_OFFICE_ADMIN, "Admin (Back-Office)"),
     (ROLE_FINANCE_ACCOUNTS, "Finance / Accounts User"),
     (ROLE_FLEET_MANAGER, "Fleet / Transport Manager"),
-    (ROLE_SYSTEM_IT_ADMIN, "System / IT Administrator"),
+    (ROLE_SYSTEM_IT_ADMIN, "IT Head (System/IT Administrator)"),
 ]
 
 # Permission codes, grouped by domain. Referenced by apps.accounts.permissions.HasRolePermission.
@@ -44,8 +52,20 @@ PERM_EXPENSES_VIEW_ALL = "expenses.view_all"
 PERM_EXPENSES_APPROVE = "expenses.approve"
 PERM_ATTENDANCE_CREATE_OWN = "attendance.create_own"
 PERM_ATTENDANCE_VIEW_ALL = "attendance.view_all"
+# apps.governance: propose a Master Settings / role change (goes through a
+# ChangeRequest, not applied instantly) vs. approve one that's pending.
+PERM_MASTER_SETTINGS_MANAGE = "governance.master_settings.manage"
+PERM_CHANGE_REQUEST_APPROVE = "governance.change_request.approve"
 
 DEFAULT_ROLE_PERMISSIONS = {
+    ROLE_SUPER_ADMIN: [
+        PERM_CATALOG_MANAGE, PERM_CATALOG_VIEW, PERM_CUSTOMERS_MANAGE, PERM_CUSTOMERS_VIEW,
+        PERM_CUSTOMERS_CREDIT_OVERRIDE, PERM_SALES_VIEW_ALL, PERM_FLEET_VEHICLE_MANAGE, PERM_FLEET_VIEW_ALL,
+        PERM_INVENTORY_MANAGE, PERM_INTEGRATIONS_SYNC_VIEW, PERM_INTEGRATIONS_SYNC_RETRY,
+        PERM_INTEGRATIONS_WEBHOOK_MANAGE, PERM_REPORTING_DASHBOARD_VIEW, PERM_USERS_MANAGE, PERM_ROLES_MANAGE,
+        PERM_EXPENSES_VIEW_ALL, PERM_EXPENSES_APPROVE, PERM_ATTENDANCE_VIEW_ALL,
+        PERM_MASTER_SETTINGS_MANAGE, PERM_CHANGE_REQUEST_APPROVE,
+    ],
     ROLE_VAN_SALESMAN: [
         PERM_CATALOG_VIEW, PERM_CUSTOMERS_VIEW, PERM_SALES_INVOICE_CREATE, PERM_SALES_ORDER_CREATE,
         PERM_SALES_RECEIPT_CREATE, PERM_SALES_RETURN_CREATE, PERM_SALES_VIEW_OWN,
@@ -65,8 +85,9 @@ DEFAULT_ROLE_PERMISSIONS = {
         PERM_CATALOG_MANAGE, PERM_CATALOG_VIEW, PERM_CUSTOMERS_MANAGE, PERM_CUSTOMERS_VIEW,
         PERM_SALES_VIEW_ALL, PERM_INVENTORY_MANAGE, PERM_INTEGRATIONS_SYNC_VIEW,
         PERM_INTEGRATIONS_WEBHOOK_MANAGE,
-        PERM_REPORTING_DASHBOARD_VIEW, PERM_USERS_MANAGE, PERM_EXPENSES_VIEW_ALL, PERM_EXPENSES_APPROVE,
-        PERM_ATTENDANCE_VIEW_ALL,
+        PERM_REPORTING_DASHBOARD_VIEW, PERM_USERS_MANAGE, PERM_ROLES_MANAGE, PERM_EXPENSES_VIEW_ALL,
+        PERM_EXPENSES_APPROVE, PERM_ATTENDANCE_VIEW_ALL,
+        PERM_MASTER_SETTINGS_MANAGE, PERM_CHANGE_REQUEST_APPROVE,
     ],
     ROLE_FINANCE_ACCOUNTS: [
         PERM_CATALOG_VIEW, PERM_CUSTOMERS_VIEW, PERM_CUSTOMERS_CREDIT_OVERRIDE, PERM_SALES_VIEW_ALL,
@@ -83,5 +104,6 @@ DEFAULT_ROLE_PERMISSIONS = {
         PERM_INTEGRATIONS_WEBHOOK_MANAGE,
         PERM_REPORTING_DASHBOARD_VIEW, PERM_USERS_MANAGE, PERM_ROLES_MANAGE,
         PERM_EXPENSES_VIEW_ALL, PERM_EXPENSES_APPROVE, PERM_ATTENDANCE_VIEW_ALL,
+        PERM_MASTER_SETTINGS_MANAGE,
     ],
 }

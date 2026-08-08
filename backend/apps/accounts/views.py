@@ -66,7 +66,11 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({"status": "deactivated"})
 
 
-class RoleViewSet(viewsets.ModelViewSet):
+class RoleViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only: Role.permissions/is_active now only change through
+    apps.governance's ChangeRequest propose/approve workflow (see
+    apps.accounts.governance) — never a direct write here."""
+
     queryset = Role.objects.all().order_by("name")
     serializer_class = RoleSerializer
     permission_classes = [HasRolePermission]

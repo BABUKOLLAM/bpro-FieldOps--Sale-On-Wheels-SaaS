@@ -69,7 +69,10 @@ class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = ["id", "name", "permissions", "is_active"]
-        read_only_fields = ["name"]  # role identity is seeded; only permissions/is_active are editable
+        # Entirely read-only: role identity is seeded, and permissions/
+        # is_active now only change through apps.governance's ChangeRequest
+        # workflow (RoleViewSet is a ReadOnlyModelViewSet).
+        read_only_fields = fields
 
 
 class DeviceSerializer(serializers.ModelSerializer):

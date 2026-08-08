@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.tenancy",
     "apps.company",
+    "apps.governance",
     "apps.accounts",
     "apps.catalog",
     "apps.customers",

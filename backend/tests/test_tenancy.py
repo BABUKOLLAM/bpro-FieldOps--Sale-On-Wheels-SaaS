@@ -219,6 +219,33 @@ def test_middleware_bare_platform_root_domain_is_a_platform_request(settings):
 
 
 @pytest.mark.django_db
+def test_middleware_never_raises_disallowedhost_with_no_root_domains_configured(settings):
+    """Regression: with PLATFORM_ROOT_DOMAINS unset (every single-tenant/
+    local-dev deployment, and every container-to-container call using an
+    internal Docker hostname like "backend:8000"), the middleware must
+    never call request.get_host() at all — doing so previously raised
+    DisallowedHost and broke admin-web's entire server-side call path."""
+    settings.PLATFORM_ROOT_DOMAINS = []
+    settings.ALLOWED_HOSTS = ["localhost", "127.0.0.1"]  # deliberately excludes "backend"
+    request = RequestFactory().get("/", HTTP_HOST="backend:8000")
+    middleware = TenantResolutionMiddleware(lambda r: r)
+    tenant, is_platform_request = middleware._resolve(request)
+    assert tenant is None
+    assert is_platform_request is False
+
+
+@pytest.mark.django_db
+def test_middleware_falls_through_on_disallowed_host_even_with_root_domains_configured(settings):
+    settings.PLATFORM_ROOT_DOMAINS = ["vansales.test"]
+    settings.ALLOWED_HOSTS = ["localhost"]  # deliberately excludes "backend"
+    request = RequestFactory().get("/", HTTP_HOST="backend:8000")
+    middleware = TenantResolutionMiddleware(lambda r: r)
+    tenant, is_platform_request = middleware._resolve(request)
+    assert tenant is None
+    assert is_platform_request is False
+
+
+@pytest.mark.django_db
 def test_middleware_full_dispatch_sets_urlconf_only_for_platform_requests():
     seen = {}
 

@@ -18,6 +18,7 @@ export default function RoleForm({
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set(initialPermissions));
   const [isActive, setIsActive] = useState(initialActive);
+  const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,15 +35,33 @@ export default function RoleForm({
     setSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`/api/proxy/roles/${roleId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ permissions: Array.from(selected), is_active: isActive }),
+      const nextPermissions = Array.from(selected).sort();
+      const proposedChanges: Record<string, unknown> = {};
+      if (JSON.stringify(nextPermissions) !== JSON.stringify([...initialPermissions].sort())) {
+        proposedChanges.permissions = Array.from(selected);
+      }
+      if (isActive !== initialActive) {
+        proposedChanges.is_active = isActive;
+      }
+      if (Object.keys(proposedChanges).length === 0) {
+        setError("No changes to propose.");
+        return;
+      }
+
+      const response = await fetch("/api/proxy/governance/change-requests", {
+        method: "POST",
+        body: JSON.stringify({
+          target_type: "role",
+          target_id: roleId,
+          proposed_changes: proposedChanges,
+          reason,
+        }),
       });
       if (!response.ok) throw new Error(JSON.stringify(await response.json().catch(() => ({}))));
       router.refresh();
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save role.");
+      setError(err instanceof Error ? err.message : "Failed to propose change.");
     } finally {
       setSubmitting(false);
     }
@@ -50,6 +69,11 @@ export default function RoleForm({
 
   return (
     <div className="mt-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4 space-y-4">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        This proposes a change — it only takes effect once a Super Admin or Admin approves it (AR-06 role-based
+        approval).
+      </p>
+
       <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
         <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
         Role active
@@ -80,13 +104,24 @@ export default function RoleForm({
         ))}
       </div>
 
+      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+        Reason for this change (optional)
+        <input
+          type="text"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="e.g. restrict credit-override to Finance only"
+          className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-50"
+        />
+      </label>
+
       <div className="flex items-center gap-3">
         <button
           onClick={handleSave}
           disabled={submitting}
           className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
         >
-          {submitting ? "Saving…" : "Save Role"}
+          {submitting ? "Submitting…" : "Propose Change"}
         </button>
         <button onClick={onDone} className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
           Cancel
