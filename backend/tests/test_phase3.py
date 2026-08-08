@@ -877,3 +877,157 @@ def test_report_export_driver_safety_scores(admin):
     response = client.get("/api/reporting/export/driver_safety_scores/?filetype=xlsx")
     assert response.status_code == 200, response.content[:200]
     assert response.content[:2] == b"PK"
+
+
+@pytest.mark.django_db
+def test_trip_profitability_estimates_fuel_cost_from_vehicle_average(agent):
+    from apps.fleet.models import FuelLog, Trip, Vehicle
+
+    vehicle = Vehicle.objects.create(reg_no="MH-FM18-01", assigned_agent=agent)
+    base = timezone.now()
+    # Two fill-ups 100km apart, 600 spent on the second -> 6.00/km baseline.
+    FuelLog.objects.create(
+        vehicle=vehicle, fuel_qty_litres=Decimal("10"), amount=Decimal("500"),
+        odometer_reading=Decimal("1000"), filled_at=base - timezone.timedelta(days=10),
+    )
+    FuelLog.objects.create(
+        vehicle=vehicle, fuel_qty_litres=Decimal("12"), amount=Decimal("600"),
+        odometer_reading=Decimal("1100"), filled_at=base - timezone.timedelta(days=5),
+    )
+
+    trip = Trip.objects.create(
+        agent=agent, vehicle=vehicle, status=Trip.STATUS_COMPLETED,
+        start_time=base - timezone.timedelta(days=1), end_time=base,
+        start_odometer=Decimal("1100"), end_odometer=Decimal("1150"),
+    )
+
+    from apps.fleet.services import trip_profitability
+
+    results = trip_profitability()
+    row = next(r for r in results if r["trip_id"] == trip.id)
+    assert row["distance_km"] == Decimal("50")
+    assert row["fuel_cost"] == Decimal("300.00")  # 50km * 6.00/km
+    assert row["fuel_cost_estimated"] is True
+    assert row["maintenance_cost"] == Decimal("0")
+    assert row["total_cost"] == Decimal("300.00")
+    assert row["revenue"] == Decimal("0")
+    assert row["profit"] == Decimal("-300.00")
+
+
+@pytest.mark.django_db
+def test_trip_profitability_prefers_direct_fuel_log_over_estimate(agent):
+    from apps.fleet.models import FuelLog, Trip, Vehicle
+
+    vehicle = Vehicle.objects.create(reg_no="MH-FM18-02", assigned_agent=agent)
+    base = timezone.now()
+    trip = Trip.objects.create(
+        agent=agent, vehicle=vehicle, status=Trip.STATUS_COMPLETED,
+        start_time=base - timezone.timedelta(days=1), end_time=base,
+        start_odometer=Decimal("2000"), end_odometer=Decimal("2050"),
+    )
+    # A real fill-up tagged directly to this trip must win over any
+    # vehicle-average estimate (there isn't one here, but the flag still
+    # must read False for a real receipt).
+    FuelLog.objects.create(
+        vehicle=vehicle, trip=trip, fuel_qty_litres=Decimal("8"), amount=Decimal("400"),
+        odometer_reading=Decimal("2050"), filled_at=base,
+    )
+
+    from apps.fleet.services import trip_profitability
+
+    row = next(r for r in trip_profitability() if r["trip_id"] == trip.id)
+    assert row["fuel_cost"] == Decimal("400")
+    assert row["fuel_cost_estimated"] is False
+
+
+@pytest.mark.django_db
+def test_trip_profitability_includes_maintenance_in_trip_window(agent):
+    from apps.fleet.models import MaintenanceRecord, Trip, Vehicle
+
+    vehicle = Vehicle.objects.create(reg_no="MH-FM18-03", assigned_agent=agent)
+    base = timezone.now()
+    trip = Trip.objects.create(
+        agent=agent, vehicle=vehicle, status=Trip.STATUS_COMPLETED,
+        start_time=base - timezone.timedelta(days=1), end_time=base,
+        start_odometer=Decimal("3000"), end_odometer=Decimal("3020"),
+    )
+    MaintenanceRecord.objects.create(
+        vehicle=vehicle, service_date=base.date(), odometer_reading=Decimal("3010"),
+        cost=Decimal("250.00"), description="Puncture repair",
+    )
+
+    from apps.fleet.services import trip_profitability
+
+    row = next(r for r in trip_profitability() if r["trip_id"] == trip.id)
+    assert row["maintenance_cost"] == Decimal("250.00")
+    assert row["total_cost"] == Decimal("250.00")  # no fuel history -> fuel_cost is None
+
+
+@pytest.mark.django_db
+def test_trip_profitability_includes_linked_revenue_and_collections(
+    company, agent, van_godown, item, customer
+):
+    from apps.fleet.models import Trip, Vehicle
+    from apps.sales.models import Invoice, InvoiceLine, Receipt
+    from apps.sales.services import finalize_invoice
+
+    vehicle = Vehicle.objects.create(reg_no="MH-FM18-04", assigned_agent=agent)
+    base = timezone.now()
+    trip = Trip.objects.create(
+        agent=agent, vehicle=vehicle, status=Trip.STATUS_COMPLETED,
+        start_time=base - timezone.timedelta(days=1), end_time=base,
+        start_odometer=Decimal("4000"), end_odometer=Decimal("4010"),
+    )
+
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, trip=trip, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("1"), rate=Decimal("500.00"))
+    finalize_invoice(invoice)
+
+    Receipt.objects.create(
+        customer=customer, agent=agent, trip=trip, mode=Receipt.MODE_CASH,
+        amount=Decimal("200.00"), received_at=base,
+    )
+
+    from apps.fleet.services import trip_profitability
+
+    row = next(r for r in trip_profitability() if r["trip_id"] == trip.id)
+    assert row["revenue"] == invoice.grand_total
+    assert row["collections"] == Decimal("200.00")
+    assert row["profit"] == invoice.grand_total - row["total_cost"]
+
+
+@pytest.mark.django_db
+def test_trip_profitability_skips_trips_without_odometer_readings(agent):
+    from apps.fleet.models import Trip, Vehicle
+
+    vehicle = Vehicle.objects.create(reg_no="MH-FM18-05", assigned_agent=agent)
+    trip = Trip.objects.create(
+        agent=agent, vehicle=vehicle, status=Trip.STATUS_COMPLETED,
+        start_time=timezone.now() - timezone.timedelta(days=1), end_time=timezone.now(),
+    )
+
+    from apps.fleet.services import trip_profitability
+
+    assert trip.id not in [r["trip_id"] for r in trip_profitability()]
+
+
+@pytest.mark.django_db
+def test_fleet_dashboard_includes_trip_profitability(supervisor):
+    client = APIClient()
+    client.force_authenticate(user=supervisor)
+    response = client.get("/api/fleet/dashboard/")
+    assert response.status_code == 200
+    assert "trip_profitability" in response.data
+
+
+@pytest.mark.django_db
+def test_report_export_trip_profitability(admin):
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get("/api/reporting/export/trip_profitability/?filetype=xlsx")
+    assert response.status_code == 200, response.content[:200]
+    assert response.content[:2] == b"PK"

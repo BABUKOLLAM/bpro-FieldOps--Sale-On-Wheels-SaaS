@@ -278,6 +278,27 @@ def driver_safety_scores_report():
     )
 
 
+def trip_profitability_report():
+    from apps.fleet.services import trip_profitability
+
+    rows = [
+        [
+            t["agent_name"], t["vehicle_reg_no"], t["start_time"], t["distance_km"],
+            t["fuel_cost"], "estimated" if t["fuel_cost_estimated"] else "actual",
+            t["maintenance_cost"], t["total_cost"], t["revenue"], t["collections"], t["profit"],
+        ]
+        for t in trip_profitability()
+    ]
+    return (
+        "Trip Cost & Profitability — estimate, last 30 days (fuel + maintenance only; labor/wages not tracked)",
+        [
+            "Agent", "Vehicle", "Trip Start", "Distance (km)", "Fuel Cost", "Fuel Cost Basis",
+            "Maintenance Cost", "Total Cost", "Revenue", "Collections", "Profit",
+        ],
+        rows,
+    )
+
+
 def inventory_velocity_report():
     """FM-10: fast/slow movers and stock-out/overstock, by item across all
     van godowns — qty sold in the last 30 days from the stock ledger
@@ -353,6 +374,7 @@ REPORT_BUILDERS = {
     "fleet_geofence": fleet_geofence_report,
     "fleet_route_analytics": fleet_route_analytics_report,
     "driver_safety_scores": driver_safety_scores_report,
+    "trip_profitability": trip_profitability_report,
     "inventory_velocity": inventory_velocity_report,
 }
 
@@ -373,5 +395,6 @@ REPORT_LABELS = {
     "fleet_geofence": "Fleet Geofence Alerts",
     "fleet_route_analytics": "Fleet Route Analytics (Idle/Deviation)",
     "driver_safety_scores": "Driver Safety Scores",
+    "trip_profitability": "Trip Cost & Profitability",
     "inventory_velocity": "Inventory Velocity",
 }

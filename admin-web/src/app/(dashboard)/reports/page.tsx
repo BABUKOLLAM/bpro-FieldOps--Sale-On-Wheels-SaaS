@@ -20,6 +20,7 @@ const DESCRIPTIONS: Record<string, string> = {
   fleet_geofence: "Active trips currently inside a restricted zone.",
   fleet_route_analytics: "Trips with notable idle time or GPS points off the assigned beat route — last 30 days.",
   driver_safety_scores: "Per-agent safety score from speeding and idling only — last 30 days.",
+  trip_profitability: "Per-trip fuel + maintenance cost vs. revenue/collections — an estimate, last 30 days.",
   inventory_velocity: "Fast/slow-moving SKUs, stock-outs, and overstock across van stock — last 30 days.",
 };
 

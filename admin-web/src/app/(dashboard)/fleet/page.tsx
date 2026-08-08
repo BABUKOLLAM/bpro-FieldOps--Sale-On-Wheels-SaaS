@@ -75,6 +75,21 @@ type DriverSafetyScore = {
   total_idle_minutes: number;
 };
 
+type TripProfitability = {
+  trip_id: string;
+  agent_name: string;
+  vehicle_reg_no: string;
+  start_time: string;
+  distance_km: string;
+  fuel_cost: string | null;
+  fuel_cost_estimated: boolean;
+  maintenance_cost: string;
+  total_cost: string;
+  revenue: string;
+  collections: string;
+  profit: string;
+};
+
 type FleetDashboard = {
   vehicles: VehicleEntry[];
   maintenance_alerts: MaintenanceAlert[];
@@ -84,6 +99,7 @@ type FleetDashboard = {
   geofence_alerts: GeofenceAlert[];
   route_analytics: RouteAnalyticsEntry[];
   driver_safety_scores: DriverSafetyScore[];
+  trip_profitability: TripProfitability[];
 };
 
 type Vehicle = { id: string; reg_no: string };
@@ -511,6 +527,74 @@ export default async function FleetPage() {
                   </td>
                   <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.total_speeding_events}</td>
                   <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.total_idle_minutes} min</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+            Trip Cost &amp; Profitability — estimate, last 30 days ({data.trip_profitability.length})
+          </h2>
+          <ExportCsvButton data={data.trip_profitability} filename="trip-profitability.csv" />
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Cost covers fuel (a receipt tagged to the trip if one exists, else the vehicle&apos;s average cost/km) and
+          maintenance performed in the trip&apos;s date window — driver/wage cost isn&apos;t tracked anywhere in this
+          system and is excluded rather than guessed at. An estimate, not full cost accounting.
+        </p>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <th className="px-4 py-2 font-medium">Agent</th>
+                <th className="px-4 py-2 font-medium">Vehicle</th>
+                <th className="px-4 py-2 font-medium">Trip Start</th>
+                <th className="px-4 py-2 font-medium">Distance</th>
+                <th className="px-4 py-2 font-medium">Fuel Cost</th>
+                <th className="px-4 py-2 font-medium">Maint. Cost</th>
+                <th className="px-4 py-2 font-medium">Revenue</th>
+                <th className="px-4 py-2 font-medium">Profit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.trip_profitability.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-6 text-center text-slate-400">
+                    No completed trips with odometer readings in the last 30 days.
+                  </td>
+                </tr>
+              )}
+              {data.trip_profitability.map((t) => (
+                <tr key={t.trip_id} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{t.agent_name}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                    {t.vehicle_reg_no}
+                  </td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                    {new Date(t.start_time).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{t.distance_km} km</td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                    {t.fuel_cost === null ? "—" : `₹${t.fuel_cost}`}
+                    {t.fuel_cost !== null && t.fuel_cost_estimated && (
+                      <span className="ml-1 text-[10px] uppercase text-slate-400">est.</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{t.maintenance_cost}</td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{t.revenue}</td>
+                  <td
+                    className={`px-4 py-2 font-semibold ${
+                      Number(t.profit) < 0
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-emerald-600 dark:text-emerald-400"
+                    }`}
+                  >
+                    ₹{t.profit}
+                  </td>
                 </tr>
               ))}
             </tbody>

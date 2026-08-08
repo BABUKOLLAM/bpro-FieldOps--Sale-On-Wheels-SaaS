@@ -23,7 +23,7 @@ from .serializers import (
 )
 from .services import (
     STATUS_OK, STATUS_OVERDUE, compliance_due_alerts, driver_safety_scores, end_trip, evaluate_fuel_log,
-    geofence_alerts, maintenance_due_alerts, start_trip, trip_route_analytics,
+    geofence_alerts, maintenance_due_alerts, start_trip, trip_profitability, trip_route_analytics,
 )
 
 
@@ -269,4 +269,5 @@ class FleetDashboardView(APIView):
             "geofence_alerts": geofence_alerts(),
             "route_analytics": trip_route_analytics(),
             "driver_safety_scores": driver_safety_scores(),
+            "trip_profitability": trip_profitability(),
         })

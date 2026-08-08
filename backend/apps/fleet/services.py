@@ -1,11 +1,13 @@
 from decimal import Decimal
 
-from django.db.models import Avg
+from django.db.models import Avg, Sum
 from django.utils import timezone
 
 from apps.core.geo import haversine_km
 
-from .models import FuelLog, Geofence, LocationPing, MaintenanceSchedule, OdometerLog, Trip, VehicleDocument
+from .models import (
+    FuelLog, Geofence, LocationPing, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, VehicleDocument,
+)
 
 
 def start_trip(trip: Trip, *, odometer=None, latitude=None, longitude=None, photo=None):
@@ -418,4 +420,88 @@ def driver_safety_scores(days: int = 30) -> list[dict]:
             "total_idle_minutes": bucket["idle"],
         })
     results.sort(key=lambda r: r["avg_score"])
+    return results
+
+
+# FM-18 trip cost & profitability — an estimate built from the two real
+# cost signals this data actually has: fuel and maintenance. Driver/
+# labor wages are not tracked anywhere in this system and are
+# deliberately excluded rather than guessed at — a genuine "fully loaded
+# cost" figure needs that data to exist first; this is flagged in every
+# response rather than silently presented as complete.
+def _vehicle_fuel_cost_per_km(vehicle) -> Decimal | None:
+    """Average cost-per-km from this vehicle's own fuel history — lets a
+    trip get a fuel-cost estimate even when no single fill-up is tagged
+    to it, which is the common case (agents fill up on their own
+    schedule, not once per trip)."""
+    logs = list(FuelLog.objects.filter(vehicle=vehicle).order_by("odometer_reading"))
+    if len(logs) < 2:
+        return None
+    total_distance = logs[-1].odometer_reading - logs[0].odometer_reading
+    if total_distance <= 0:
+        return None
+    # The first log has no "distance since last fill" baseline of its
+    # own — only spend from the second fill-up onward pairs with a known
+    # distance travelled.
+    total_cost = sum((log.amount for log in logs[1:]), Decimal("0"))
+    return total_cost / total_distance
+
+
+def trip_profitability(days: int = 30) -> list[dict]:
+    """Per-trip cost/revenue/profit for completed trips in the last
+    `days`. Revenue/collections come from Invoices/Receipts linked to
+    the trip; cost is fuel (a direct fill-up tagged to the trip if one
+    exists, else the vehicle's average cost-per-km) plus any maintenance
+    performed inside the trip's own date window."""
+    from apps.sales.models import Invoice, Receipt
+
+    since = timezone.now() - timezone.timedelta(days=days)
+    trips = Trip.objects.filter(
+        status=Trip.STATUS_COMPLETED, start_time__gte=since, vehicle__isnull=False,
+    ).select_related("agent", "vehicle")
+
+    cost_per_km_cache: dict = {}
+    results = []
+    for trip in trips:
+        distance = trip.distance_travelled
+        if distance is None or distance <= 0:
+            continue
+
+        if trip.vehicle_id not in cost_per_km_cache:
+            cost_per_km_cache[trip.vehicle_id] = _vehicle_fuel_cost_per_km(trip.vehicle)
+        cost_per_km = cost_per_km_cache[trip.vehicle_id]
+
+        direct_fuel = FuelLog.objects.filter(trip=trip).aggregate(total=Sum("amount"))["total"]
+        fuel_cost_estimated = direct_fuel is None
+        if direct_fuel is not None:
+            fuel_cost = direct_fuel
+        elif cost_per_km is not None:
+            fuel_cost = (distance * cost_per_km).quantize(Decimal("0.01"))
+        else:
+            fuel_cost = None
+
+        trip_end_date = (trip.end_time or trip.start_time).date()
+        maintenance_cost = MaintenanceRecord.objects.filter(
+            vehicle=trip.vehicle, service_date__gte=trip.start_time.date(), service_date__lte=trip_end_date,
+        ).aggregate(total=Sum("cost"))["total"] or Decimal("0")
+
+        total_cost = (fuel_cost or Decimal("0")) + maintenance_cost
+        revenue = Invoice.objects.filter(trip=trip).aggregate(total=Sum("grand_total"))["total"] or Decimal("0")
+        collections = Receipt.objects.filter(trip=trip).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        results.append({
+            "trip_id": trip.id,
+            "agent_name": trip.agent.get_full_name() or trip.agent.username,
+            "vehicle_reg_no": trip.vehicle.reg_no,
+            "start_time": trip.start_time,
+            "distance_km": distance,
+            "fuel_cost": fuel_cost,
+            "fuel_cost_estimated": fuel_cost_estimated,
+            "maintenance_cost": maintenance_cost,
+            "total_cost": total_cost,
+            "revenue": revenue,
+            "collections": collections,
+            "profit": revenue - total_cost,
+        })
+    results.sort(key=lambda r: r["start_time"], reverse=True)
     return results
