@@ -5,3 +5,7 @@ class CompanyConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.company"
     label = "company"
+
+    def ready(self):
+        from . import governance
+        governance.register()

@@ -11,6 +11,7 @@ export type Dictionary = {
     liveMap: string;
     fleet: string;
     masterData: string;
+    masterSettings: string;
     approvals: string;
     reports: string;
     targets: string;
@@ -46,6 +47,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       liveMap: "Live Map",
       fleet: "Fleet",
       masterData: "Master Data",
+      masterSettings: "Master Settings",
       approvals: "Approvals & Sync",
       reports: "Reports",
       targets: "Targets",
@@ -75,6 +77,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       liveMap: "लाइव मैप",
       fleet: "फ्लीट",
       masterData: "मास्टर डेटा",
+      masterSettings: "मास्टर सेटिंग्स",
       approvals: "अनुमोदन और सिंक",
       reports: "रिपोर्ट",
       targets: "लक्ष्य",

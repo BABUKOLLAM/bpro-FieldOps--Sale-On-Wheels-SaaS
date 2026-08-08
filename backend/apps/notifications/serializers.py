@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import DeviceToken, NotificationLog
+from .models import DeviceToken, NotificationGatewaySettings, NotificationLog
 
 
 class DeviceTokenSerializer(serializers.ModelSerializer):
@@ -20,3 +20,22 @@ class NotificationLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationLog
         fields = ["id", "user", "user_username", "title", "body", "data", "channel", "device_count", "created_at"]
+
+
+class NotificationGatewaySettingsSerializer(serializers.ModelSerializer):
+    # The actual keys are never serialized — only whether one is
+    # configured, same masked-secret posture as everywhere else
+    # credentials show up in this codebase (ERPConnection, Webhook).
+    has_fcm_server_key = serializers.SerializerMethodField()
+    has_sms_gateway_api_key = serializers.SerializerMethodField()
+
+    class Meta:
+        model = NotificationGatewaySettings
+        fields = ["id", "sms_gateway_url", "has_fcm_server_key", "has_sms_gateway_api_key"]
+        read_only_fields = fields  # edits go through apps.governance — see apps/notifications/governance.py
+
+    def get_has_fcm_server_key(self, obj):
+        return bool(obj.fcm_server_key)
+
+    def get_has_sms_gateway_api_key(self, obj):
+        return bool(obj.sms_gateway_api_key)

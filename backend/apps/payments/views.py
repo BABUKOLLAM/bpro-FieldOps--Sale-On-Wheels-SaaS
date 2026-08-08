@@ -4,11 +4,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.constants import PERM_SALES_VIEW_ALL
+from apps.accounts.constants import PERM_MASTER_SETTINGS_MANAGE, PERM_SALES_VIEW_ALL
+from apps.accounts.permissions import HasRolePermission
 from apps.sales.models import Invoice
 
-from .models import PaymentOrder
-from .serializers import CreatePaymentOrderSerializer, PaymentOrderSerializer
+from .models import PaymentGatewayConnection, PaymentOrder
+from .serializers import CreatePaymentOrderSerializer, PaymentGatewayConnectionSerializer, PaymentOrderSerializer
 from .services import PaymentVerificationError, create_payment_order, verify_and_record_payment
 
 
@@ -46,6 +47,18 @@ class PaymentOrderViewSet(
 
         order = create_payment_order(invoice, serializer.validated_data["amount"])
         return Response(PaymentOrderSerializer(order).data, status=201)
+
+
+class PaymentGatewayConnectionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only: gateway_type/is_active now only change through
+    apps.governance's ChangeRequest workflow (see
+    apps/payments/governance.py) — credentials stay Django-admin/shell
+    only, same posture as apps.integrations.ERPConnection."""
+
+    queryset = PaymentGatewayConnection.objects.all()
+    serializer_class = PaymentGatewayConnectionSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_MASTER_SETTINGS_MANAGE
 
 
 class PaymentWebhookView(APIView):

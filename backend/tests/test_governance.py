@@ -1,18 +1,9 @@
 import pytest
 from rest_framework.test import APIClient
 
-from apps.accounts.constants import ROLE_BACK_OFFICE_ADMIN, ROLE_SUPER_ADMIN, ROLE_VAN_SALESMAN
+from apps.accounts.constants import ROLE_SUPER_ADMIN, ROLE_VAN_SALESMAN
 from apps.accounts.models import Role, User, UserRole
 from apps.governance.models import ChangeRequest
-
-
-@pytest.fixture
-def back_office_admin(db):
-    Role.seed_defaults()
-    role = Role.objects.get(name=ROLE_BACK_OFFICE_ADMIN)
-    user = User.objects.create_user(username="boadmin@test.local", password="testpass123")
-    UserRole.objects.create(user=user, role=role)
-    return user
 
 
 @pytest.fixture

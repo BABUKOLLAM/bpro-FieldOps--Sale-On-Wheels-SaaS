@@ -1,10 +1,11 @@
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from apps.accounts.constants import PERM_REPORTING_DASHBOARD_VIEW
+from apps.accounts.constants import PERM_MASTER_SETTINGS_MANAGE, PERM_REPORTING_DASHBOARD_VIEW
+from apps.accounts.permissions import HasRolePermission
 
-from .models import DeviceToken, NotificationLog
-from .serializers import DeviceTokenSerializer, NotificationLogSerializer
+from .models import DeviceToken, NotificationGatewaySettings, NotificationLog
+from .serializers import DeviceTokenSerializer, NotificationGatewaySettingsSerializer, NotificationLogSerializer
 
 
 class DeviceTokenViewSet(
@@ -48,3 +49,19 @@ class NotificationLogViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         if user.is_superuser or PERM_REPORTING_DASHBOARD_VIEW in user.permission_codes():
             return qs
         return qs.filter(user=user)
+
+
+class NotificationGatewaySettingsViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Read-only: sms_gateway_url now only changes through
+    apps.governance's ChangeRequest workflow (see
+    apps/notifications/governance.py); fcm_server_key/sms_gateway_api_key
+    stay Django-admin/shell only (see apps/notifications/models.py).
+    Always exactly one row — auto-provisioned on first access."""
+
+    serializer_class = NotificationGatewaySettingsSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_MASTER_SETTINGS_MANAGE
+
+    def get_queryset(self):
+        NotificationGatewaySettings.get_solo()
+        return NotificationGatewaySettings.objects.all()

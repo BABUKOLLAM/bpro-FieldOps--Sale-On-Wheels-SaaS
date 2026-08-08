@@ -23,6 +23,9 @@ export default function DashboardNav() {
       <Link href="/master-data" className={LINK_CLASS}>
         {t.nav.masterData}
       </Link>
+      <Link href="/master-settings" className={LINK_CLASS}>
+        {t.nav.masterSettings}
+      </Link>
       <Link href="/approvals" className={LINK_CLASS}>
         {t.nav.approvals}
       </Link>

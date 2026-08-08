@@ -4,9 +4,20 @@ import urllib.request
 
 from django.conf import settings
 
-from .models import DeviceToken, NotificationLog, SmsLog
+from .models import DeviceToken, NotificationGatewaySettings, NotificationLog, SmsLog
 
 FCM_SEND_URL = "https://fcm.googleapis.com/fcm/send"
+
+
+def _resolve_gateway_setting(db_field: str, settings_key: str) -> str:
+    """DB-backed Master Settings override (apps.notifications.
+    NotificationGatewaySettings) takes precedence when set; otherwise
+    falls back to the env var exactly as before that model existed. Uses
+    .first() (not get_solo()) so calling this doesn't provision a row
+    just because a notification was sent."""
+    gateway_settings = NotificationGatewaySettings.objects.first()
+    db_value = getattr(gateway_settings, db_field, "") if gateway_settings else ""
+    return db_value or getattr(settings, settings_key, "")
 
 
 def send_push_notification(user, title: str, body: str, data: dict | None = None) -> NotificationLog:
@@ -18,7 +29,7 @@ def send_push_notification(user, title: str, body: str, data: dict | None = None
     data = data or {}
     tokens = list(DeviceToken.objects.filter(user=user, is_active=True).values_list("token", flat=True))
 
-    server_key = getattr(settings, "FCM_SERVER_KEY", "")
+    server_key = _resolve_gateway_setting("fcm_server_key", "FCM_SERVER_KEY")
     if not server_key or not tokens:
         channel = NotificationLog.CHANNEL_CONSOLE
         print(f"[push:console] to={user} title={title!r} body={body!r} data={data} tokens={len(tokens)}")
@@ -53,8 +64,8 @@ def send_sms(phone: str, message: str) -> SmsLog:
     SMS_GATEWAY_URL configured -> print instead of faking delivery,
     generic enough to point at any REST-based SMS gateway once a vendor
     is chosen (the BRD doesn't name one)."""
-    gateway_url = getattr(settings, "SMS_GATEWAY_URL", "")
-    api_key = getattr(settings, "SMS_GATEWAY_API_KEY", "")
+    gateway_url = _resolve_gateway_setting("sms_gateway_url", "SMS_GATEWAY_URL")
+    api_key = _resolve_gateway_setting("sms_gateway_api_key", "SMS_GATEWAY_API_KEY")
 
     if not gateway_url:
         channel = SmsLog.CHANNEL_CONSOLE

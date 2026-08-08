@@ -1,3 +1,5 @@
+import secrets
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
@@ -18,7 +20,12 @@ from .serializers import (
 from .tasks import retry_sync_job
 
 
-class ERPConnectionViewSet(viewsets.ModelViewSet):
+class ERPConnectionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only: erp_type/sync_mode/batch_interval_minutes/is_active now
+    only change through apps.governance's ChangeRequest workflow (see
+    apps/integrations/governance.py) — credentials were already
+    write-only-via-admin before this (never exposed on the serializer)."""
+
     queryset = ERPConnection.objects.all()
     serializer_class = ERPConnectionSerializer
     permission_classes = [HasRolePermission]
@@ -94,15 +101,35 @@ class ConnectorJobViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return Response({"status": entry.status})
 
 
-class WebhookViewSet(viewsets.ModelViewSet):
+class WebhookViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin,
+    mixins.DestroyModelMixin, viewsets.GenericViewSet,
+):
     """BRD 11.3 generic integration layer — subscription management.
     Gated on a dedicated permission (not integrations.sync.view) since
-    this surface accepts a secret used to sign outbound deliveries."""
+    this surface accepts a secret used to sign outbound deliveries.
+
+    Adding/removing a subscription stays a direct action (unlike Role or
+    Company, having several webhooks is the normal, expected shape — it's
+    not a single seeded row). But *editing* an existing one
+    (name/url/event_types/is_active) now goes through apps.governance's
+    ChangeRequest workflow instead (see apps/integrations/governance.py)
+    — no PATCH/PUT here (no UpdateModelMixin). `secret` deliberately never
+    goes through that generic JSON-diff flow (a ChangeRequest's
+    proposed_changes/previous_snapshot are plain JSON, not encrypted) —
+    rotate it via the dedicated `rotate_secret` action below instead."""
 
     queryset = Webhook.objects.order_by("name")
     serializer_class = WebhookSerializer
     permission_classes = [HasRolePermission]
     required_permission_code = PERM_INTEGRATIONS_WEBHOOK_MANAGE
+
+    @action(detail=True, methods=["post"])
+    def rotate_secret(self, request, pk=None):
+        webhook = self.get_object()
+        webhook.secret = request.data.get("secret") or secrets.token_urlsafe(32)
+        webhook.save(update_fields=["secret"])
+        return Response({"status": "rotated"})
 
 
 class WebhookDeliveryLogViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):

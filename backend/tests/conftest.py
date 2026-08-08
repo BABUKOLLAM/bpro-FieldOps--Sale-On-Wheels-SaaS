@@ -2,7 +2,9 @@ from decimal import Decimal
 
 import pytest
 
-from apps.accounts.constants import ROLE_SALES_SUPERVISOR, ROLE_SYSTEM_IT_ADMIN, ROLE_VAN_SALESMAN
+from apps.accounts.constants import (
+    ROLE_BACK_OFFICE_ADMIN, ROLE_SALES_SUPERVISOR, ROLE_SYSTEM_IT_ADMIN, ROLE_VAN_SALESMAN,
+)
 from apps.accounts.models import Role, User, UserRole
 from apps.catalog.models import Item, ItemCategory, UOM
 from apps.company.models import Company, GSTRegistration
@@ -44,6 +46,15 @@ def admin(db):
     Role.seed_defaults()
     role = Role.objects.get(name=ROLE_SYSTEM_IT_ADMIN)
     user = User.objects.create_user(username="admin@test.local", password="testpass123")
+    UserRole.objects.create(user=user, role=role)
+    return user
+
+
+@pytest.fixture
+def back_office_admin(db):
+    Role.seed_defaults()
+    role = Role.objects.get(name=ROLE_BACK_OFFICE_ADMIN)
+    user = User.objects.create_user(username="boadmin@test.local", password="testpass123")
     UserRole.objects.create(user=user, role=role)
     return user
 
