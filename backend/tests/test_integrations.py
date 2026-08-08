@@ -1,8 +1,10 @@
 import json
-from io import BytesIO
+import urllib.error
+from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
+from rest_framework.test import APIClient
 
 from apps.integrations.connectors.base import ConnectorError
 from apps.integrations.connectors.local_json_api import BusyConnector, MargConnector
@@ -81,3 +83,131 @@ def test_busy_connector_check_status(mock_urlopen):
 
     result = connector.check_status("BUSY-VCH-001")
     assert result == {"reference": "BUSY-VCH-001", "status": "posted"}
+
+
+class _FakeHTTPResponse:
+    status = 200
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def _make_invoice(company, agent, van_godown, item, customer):
+    from datetime import date
+    from apps.sales.models import Invoice, InvoiceLine
+    from apps.sales.services import finalize_invoice
+
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("1"), rate=Decimal("10.00"))
+    finalize_invoice(invoice)
+    return invoice
+
+
+@pytest.mark.django_db
+def test_dispatch_event_no_subscribers_is_a_noop(company, agent, van_godown, item, customer):
+    from apps.integrations.models import Webhook, WebhookDeliveryLog
+    from apps.integrations.webhooks import dispatch_event
+
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+    dispatch_event(Webhook.EVENT_INVOICE_FINALIZED, invoice)
+    assert WebhookDeliveryLog.objects.count() == 0
+
+
+@pytest.mark.django_db
+@patch("apps.integrations.webhooks.urllib.request.urlopen")
+def test_dispatch_event_delivers_to_active_subscriber_with_valid_signature(
+    mock_urlopen, company, agent, van_godown, item, customer
+):
+    import hashlib
+    import hmac as hmac_module
+
+    from apps.integrations.models import Webhook, WebhookDeliveryLog
+    from apps.integrations.webhooks import dispatch_event
+
+    mock_urlopen.return_value = _FakeHTTPResponse()
+    webhook = Webhook.objects.create(
+        name="Test subscriber", url="https://example.test/hook", secret="topsecret",
+        event_types=[Webhook.EVENT_INVOICE_FINALIZED], is_active=True,
+    )
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+
+    dispatch_event(Webhook.EVENT_INVOICE_FINALIZED, invoice)
+
+    log = WebhookDeliveryLog.objects.get(webhook=webhook)
+    assert log.status == WebhookDeliveryLog.STATUS_SUCCESS
+    assert log.response_status_code == 200
+    assert log.payload["data"]["invoice_id"] == str(invoice.id)
+
+    sent_request = mock_urlopen.call_args[0][0]
+    expected_signature = hmac_module.new(b"topsecret", sent_request.data, hashlib.sha256).hexdigest()
+    assert sent_request.get_header("X-webhook-signature") == f"sha256={expected_signature}"
+
+
+@pytest.mark.django_db
+def test_dispatch_event_skips_inactive_and_unsubscribed_webhooks(company, agent, van_godown, item, customer):
+    from apps.integrations.models import Webhook, WebhookDeliveryLog
+    from apps.integrations.webhooks import dispatch_event
+
+    Webhook.objects.create(
+        name="Inactive", url="https://example.test/hook", secret="s",
+        event_types=[Webhook.EVENT_INVOICE_FINALIZED], is_active=False,
+    )
+    Webhook.objects.create(
+        name="Wrong event", url="https://example.test/hook", secret="s",
+        event_types=[Webhook.EVENT_RECEIPT_FINALIZED], is_active=True,
+    )
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+
+    dispatch_event(Webhook.EVENT_INVOICE_FINALIZED, invoice)
+    assert WebhookDeliveryLog.objects.count() == 0
+
+
+@pytest.mark.django_db
+@patch("apps.integrations.webhooks.urllib.request.urlopen")
+def test_dispatch_event_logs_failure_without_raising(mock_urlopen, company, agent, van_godown, item, customer):
+    from apps.integrations.models import Webhook, WebhookDeliveryLog
+    from apps.integrations.webhooks import dispatch_event
+
+    mock_urlopen.side_effect = urllib.error.URLError("connection refused")
+    Webhook.objects.create(
+        name="Unreachable", url="https://example.test/hook", secret="s",
+        event_types=[Webhook.EVENT_INVOICE_FINALIZED], is_active=True,
+    )
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+
+    dispatch_event(Webhook.EVENT_INVOICE_FINALIZED, invoice)  # must not raise
+
+    log = WebhookDeliveryLog.objects.get()
+    assert log.status == WebhookDeliveryLog.STATUS_FAILED
+    assert "connection refused" in log.error_message
+
+
+@pytest.mark.django_db
+def test_webhook_crud_requires_manage_permission(agent, admin):
+    from apps.accounts.constants import PERM_INTEGRATIONS_WEBHOOK_MANAGE
+    from apps.accounts.models import Role
+
+    payload = {
+        "name": "My subscriber", "url": "https://example.test/hook", "secret": "s3cret",
+        "event_types": ["invoice.finalized"],
+    }
+
+    agent_client = APIClient()
+    agent_client.force_authenticate(user=agent)
+    response = agent_client.post("/api/integrations/webhooks/", payload, format="json")
+    assert response.status_code == 403
+
+    Role.seed_defaults()
+    assert PERM_INTEGRATIONS_WEBHOOK_MANAGE in admin.permission_codes()
+    admin_client = APIClient()
+    admin_client.force_authenticate(user=admin)
+    response = admin_client.post("/api/integrations/webhooks/", payload, format="json")
+    assert response.status_code == 201, response.data
+    assert "secret" not in response.data

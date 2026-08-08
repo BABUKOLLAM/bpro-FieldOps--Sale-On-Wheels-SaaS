@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import ERPConnection, SyncLogEntry
+from .models import ERPConnection, SyncLogEntry, Webhook, WebhookDeliveryLog
 
 
 class ERPConnectionSerializer(serializers.ModelSerializer):
@@ -34,3 +34,24 @@ class ConnectorJobResultSerializer(serializers.Serializer):
     erp_reference_id = serializers.CharField(required=False, allow_blank=True)
     error_message = serializers.CharField(required=False, allow_blank=True)
     response_payload = serializers.JSONField(required=False)
+
+
+class WebhookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Webhook
+        fields = ["id", "name", "url", "secret", "event_types", "is_active", "created_at"]
+        # Never echoed back once set — same write-only treatment as a
+        # password (see apps.accounts.serializers.UserSerializer).
+        extra_kwargs = {"secret": {"write_only": True}}
+
+
+class WebhookDeliveryLogSerializer(serializers.ModelSerializer):
+    webhook_name = serializers.CharField(source="webhook.name", read_only=True)
+
+    class Meta:
+        model = WebhookDeliveryLog
+        fields = [
+            "id", "webhook", "webhook_name", "event_type", "status",
+            "response_status_code", "error_message", "created_at",
+        ]
+        read_only_fields = fields

@@ -201,9 +201,12 @@ def finalize_invoice(invoice: Invoice, *, override_by=None, override_reason: str
     customer.outstanding_balance += invoice.grand_total
     customer.save(update_fields=["outstanding_balance"])
 
+    from apps.integrations.models import Webhook
     from apps.integrations.tasks import enqueue_tally_job
+    from apps.integrations.webhooks import dispatch_event
 
     transaction.on_commit(lambda: enqueue_tally_job("invoice", invoice.id))
+    transaction.on_commit(lambda: dispatch_event(Webhook.EVENT_INVOICE_FINALIZED, invoice))
     return invoice
 
 
@@ -243,9 +246,12 @@ def finalize_receipt(receipt: Receipt):
     receipt.customer.outstanding_balance -= receipt.amount
     receipt.customer.save(update_fields=["outstanding_balance"])
 
+    from apps.integrations.models import Webhook
     from apps.integrations.tasks import enqueue_tally_job
+    from apps.integrations.webhooks import dispatch_event
 
     transaction.on_commit(lambda: enqueue_tally_job("receipt", receipt.id))
+    transaction.on_commit(lambda: dispatch_event(Webhook.EVENT_RECEIPT_FINALIZED, receipt))
     return receipt
 
 
@@ -282,9 +288,12 @@ def finalize_credit_note(credit_note: CreditNote):
     credit_note.customer.outstanding_balance -= total
     credit_note.customer.save(update_fields=["outstanding_balance"])
 
+    from apps.integrations.models import Webhook
     from apps.integrations.tasks import enqueue_tally_job
+    from apps.integrations.webhooks import dispatch_event
 
     transaction.on_commit(lambda: enqueue_tally_job("credit_note", credit_note.id))
+    transaction.on_commit(lambda: dispatch_event(Webhook.EVENT_CREDIT_NOTE_FINALIZED, credit_note))
     return credit_note
 
 

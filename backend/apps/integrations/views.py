@@ -4,13 +4,16 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.accounts.constants import PERM_INTEGRATIONS_SYNC_RETRY, PERM_INTEGRATIONS_SYNC_VIEW
+from apps.accounts.constants import (
+    PERM_INTEGRATIONS_SYNC_RETRY, PERM_INTEGRATIONS_SYNC_VIEW, PERM_INTEGRATIONS_WEBHOOK_MANAGE,
+)
 from apps.accounts.permissions import HasRolePermission
 
 from .authentication import ConnectorAPIKeyAuthentication
-from .models import ERPConnection, SyncLogEntry
+from .models import ERPConnection, SyncLogEntry, Webhook, WebhookDeliveryLog
 from .serializers import (
     ConnectorJobResultSerializer, ConnectorJobSerializer, ERPConnectionSerializer, SyncLogEntrySerializer,
+    WebhookDeliveryLogSerializer, WebhookSerializer,
 )
 from .tasks import retry_sync_job
 
@@ -89,3 +92,23 @@ class ConnectorJobViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         entry.response_payload = data.get("response_payload", {})
         entry.save(update_fields=["status", "erp_reference_id", "error_message", "response_payload"])
         return Response({"status": entry.status})
+
+
+class WebhookViewSet(viewsets.ModelViewSet):
+    """BRD 11.3 generic integration layer — subscription management.
+    Gated on a dedicated permission (not integrations.sync.view) since
+    this surface accepts a secret used to sign outbound deliveries."""
+
+    queryset = Webhook.objects.order_by("name")
+    serializer_class = WebhookSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_INTEGRATIONS_WEBHOOK_MANAGE
+
+
+class WebhookDeliveryLogViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = WebhookDeliveryLog.objects.select_related("webhook").order_by("-created_at")
+    serializer_class = WebhookDeliveryLogSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_INTEGRATIONS_WEBHOOK_MANAGE
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["webhook", "status", "event_type"]

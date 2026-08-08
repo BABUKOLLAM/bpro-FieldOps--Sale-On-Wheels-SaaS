@@ -102,3 +102,51 @@ class SyncLogEntry(BaseModel):
 
     def __str__(self):
         return f"{self.entity_type}:{self.local_object_id} [{self.status}]"
+
+
+class Webhook(BaseModel):
+    """Generic multi-ERP / third-party integration layer (BRD 11.3):
+    rather than a bespoke connector for every possible external system
+    the way Tally/Busy/Marg (11.1/11.2) are, any system that can receive
+    an HTTPS POST can subscribe to a business event here — no connector
+    code needed on this side. See apps.integrations.webhooks for the
+    dispatch logic and payload shapes."""
+
+    EVENT_INVOICE_FINALIZED = "invoice.finalized"
+    EVENT_RECEIPT_FINALIZED = "receipt.finalized"
+    EVENT_CREDIT_NOTE_FINALIZED = "credit_note.finalized"
+    EVENT_CHOICES = [
+        (EVENT_INVOICE_FINALIZED, "Invoice finalized"),
+        (EVENT_RECEIPT_FINALIZED, "Receipt finalized"),
+        (EVENT_CREDIT_NOTE_FINALIZED, "Credit note finalized"),
+    ]
+
+    name = models.CharField(max_length=100)
+    url = models.URLField()
+    secret = models.CharField(
+        max_length=100, help_text="Used to HMAC-SHA256 sign each delivery (X-Webhook-Signature header).",
+    )
+    event_types = models.JSONField(default=list, help_text="Subset of the event type keys above.")
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.url})"
+
+
+class WebhookDeliveryLog(BaseModel):
+    """One row per delivery attempt — same "log every attempt, never fake
+    success" convention as SyncLogEntry/NotificationLog/SmsLog."""
+
+    STATUS_SUCCESS = "success"
+    STATUS_FAILED = "failed"
+    STATUS_CHOICES = [(STATUS_SUCCESS, "Success"), (STATUS_FAILED, "Failed")]
+
+    webhook = models.ForeignKey(Webhook, on_delete=models.CASCADE, related_name="delivery_logs")
+    event_type = models.CharField(max_length=50)
+    payload = models.JSONField(default=dict)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    response_status_code = models.PositiveSmallIntegerField(null=True, blank=True)
+    error_message = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.webhook.name} — {self.event_type} [{self.status}]"
