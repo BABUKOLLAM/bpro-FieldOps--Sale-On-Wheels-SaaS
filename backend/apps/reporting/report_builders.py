@@ -247,6 +247,23 @@ def fleet_geofence_report():
     )
 
 
+def fleet_route_analytics_report():
+    from apps.fleet.services import trip_route_analytics
+
+    rows = [
+        [
+            a["agent_name"], a["vehicle_reg_no"] or "—", a["beat_name"] or "—",
+            a["start_time"], a["idle_minutes"], a["deviation_count"],
+        ]
+        for a in trip_route_analytics()
+    ]
+    return (
+        "Fleet Route Analytics — idle time & route deviation, last 30 days",
+        ["Agent", "Vehicle", "Beat", "Trip Start", "Idle Minutes", "Deviation Points"],
+        rows,
+    )
+
+
 def inventory_velocity_report():
     """FM-10: fast/slow movers and stock-out/overstock, by item across all
     van godowns — qty sold in the last 30 days from the stock ledger
@@ -320,6 +337,7 @@ REPORT_BUILDERS = {
     "fleet_reverse_logistics": fleet_reverse_logistics_report,
     "fleet_compliance": fleet_compliance_report,
     "fleet_geofence": fleet_geofence_report,
+    "fleet_route_analytics": fleet_route_analytics_report,
     "inventory_velocity": inventory_velocity_report,
 }
 
@@ -338,5 +356,6 @@ REPORT_LABELS = {
     "fleet_reverse_logistics": "Fleet Reverse Logistics",
     "fleet_compliance": "Fleet Compliance (Documents)",
     "fleet_geofence": "Fleet Geofence Alerts",
+    "fleet_route_analytics": "Fleet Route Analytics (Idle/Deviation)",
     "inventory_velocity": "Inventory Velocity",
 }

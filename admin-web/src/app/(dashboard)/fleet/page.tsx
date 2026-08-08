@@ -56,6 +56,16 @@ type GeofenceAlert = {
   recorded_at: string;
 };
 
+type RouteAnalyticsEntry = {
+  trip_id: string;
+  agent_name: string;
+  vehicle_reg_no: string | null;
+  beat_name: string | null;
+  start_time: string;
+  idle_minutes: number;
+  deviation_count: number;
+};
+
 type FleetDashboard = {
   vehicles: VehicleEntry[];
   maintenance_alerts: MaintenanceAlert[];
@@ -63,6 +73,7 @@ type FleetDashboard = {
   reverse_logistics: ReverseLogisticsEntry[];
   compliance_alerts: ComplianceAlert[];
   geofence_alerts: GeofenceAlert[];
+  route_analytics: RouteAnalyticsEntry[];
 };
 
 type Vehicle = { id: string; reg_no: string };
@@ -389,6 +400,57 @@ export default async function FleetPage() {
           </table>
         </div>
         <GeofenceForm />
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+            Route Analytics — idle time &amp; route deviation, last 30 days ({data.route_analytics.length})
+          </h2>
+          <ExportCsvButton data={data.route_analytics} filename="fleet-route-analytics.csv" />
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Best-effort from periodic (~3-minute) GPS breadcrumbs, not continuous telemetry — idle time is inferred
+          from consecutive pings that stayed in place, and deviation is straight-line distance from the nearest
+          planned stop. Only trips with 15+ idle minutes or at least one deviation point are shown.
+        </p>
+        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                <th className="px-4 py-2 font-medium">Agent</th>
+                <th className="px-4 py-2 font-medium">Vehicle</th>
+                <th className="px-4 py-2 font-medium">Beat</th>
+                <th className="px-4 py-2 font-medium">Trip Start</th>
+                <th className="px-4 py-2 font-medium">Idle</th>
+                <th className="px-4 py-2 font-medium">Deviation Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.route_analytics.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
+                    No trips with notable idle time or route deviation in the last 30 days.
+                  </td>
+                </tr>
+              )}
+              {data.route_analytics.map((r) => (
+                <tr key={r.trip_id} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.agent_name}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                    {r.vehicle_reg_no || "—"}
+                  </td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.beat_name || "—"}</td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                    {new Date(r.start_time).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.idle_minutes} min</td>
+                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.deviation_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

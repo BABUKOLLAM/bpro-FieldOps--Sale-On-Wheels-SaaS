@@ -18,6 +18,7 @@ const DESCRIPTIONS: Record<string, string> = {
   fleet_reverse_logistics: "Damaged/expired returns and whether they've been reconciled to the warehouse.",
   fleet_compliance: "Vehicle and driver documents (RC, insurance, permit, PUC, license) due for renewal.",
   fleet_geofence: "Active trips currently inside a restricted zone.",
+  fleet_route_analytics: "Trips with notable idle time or GPS points off the assigned beat route — last 30 days.",
   inventory_velocity: "Fast/slow-moving SKUs, stock-outs, and overstock across van stock — last 30 days.",
 };
 

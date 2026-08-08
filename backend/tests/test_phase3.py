@@ -623,3 +623,124 @@ def test_invoice_otp_delivery_flow_via_api(company, agent, van_godown, item, cus
     )
     assert response.status_code == 200, response.data
     assert response.data["delivery_confirmed_via"] == Invoice.DELIVERY_VIA_OTP
+
+
+@pytest.mark.django_db
+def test_trip_idle_minutes_from_stationary_pings(agent):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import trip_idle_minutes
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_COMPLETED, start_time=timezone.now())
+    base = timezone.now()
+    # Three pings ~100m apart in time, all within the idle radius of each
+    # other -> the whole 20-minute span between them counts as idle.
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"), recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076010"), longitude=Decimal("72.877710"),
+        recorded_at=base + timezone.timedelta(minutes=10),
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076020"), longitude=Decimal("72.877720"),
+        recorded_at=base + timezone.timedelta(minutes=20),
+    )
+    assert trip_idle_minutes(trip) == 20
+
+
+@pytest.mark.django_db
+def test_trip_idle_minutes_zero_when_moving(agent):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import trip_idle_minutes
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_COMPLETED, start_time=timezone.now())
+    base = timezone.now()
+    # Consecutive pings ~11km apart -- clearly moving, not idle.
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"), recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.176000"), longitude=Decimal("72.977700"),
+        recorded_at=base + timezone.timedelta(minutes=10),
+    )
+    assert trip_idle_minutes(trip) == 0
+
+
+@pytest.mark.django_db
+def test_route_deviation_points_flags_ping_far_from_every_stop(agent, customer):
+    from apps.customers.models import Beat, BeatCustomer, CustomerAddress
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import route_deviation_points
+
+    CustomerAddress.objects.create(
+        customer=customer, line1="Test", city="Mumbai",
+        latitude=Decimal("19.076000"), longitude=Decimal("72.877700"),
+    )
+    beat = Beat.objects.create(name="Test Beat", assigned_agent=agent)
+    BeatCustomer.objects.create(beat=beat, customer=customer, visit_sequence=1)
+    trip = Trip.objects.create(agent=agent, beat=beat, status=Trip.STATUS_COMPLETED, start_time=timezone.now())
+
+    # On-route: right at the stop.
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"),
+        recorded_at=timezone.now(),
+    )
+    # Off-route: ~11km away, well past the 2km threshold.
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.176000"), longitude=Decimal("72.977700"),
+        recorded_at=timezone.now() + timezone.timedelta(minutes=5),
+    )
+
+    deviations = route_deviation_points(trip)
+    assert len(deviations) == 1
+    assert deviations[0]["distance_km"] > 2.0
+
+
+@pytest.mark.django_db
+def test_route_deviation_points_empty_without_beat(agent):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import route_deviation_points
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_COMPLETED, start_time=timezone.now())
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"),
+        recorded_at=timezone.now(),
+    )
+    assert route_deviation_points(trip) == []
+
+
+@pytest.mark.django_db
+def test_trip_route_analytics_excludes_unremarkable_trips(agent, customer):
+    from apps.fleet.models import LocationPing, Trip
+    from apps.fleet.services import trip_route_analytics
+
+    # A trip with movement and no beat at all -- nothing notable, must
+    # not clutter the results.
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_COMPLETED, start_time=timezone.now())
+    base = timezone.now()
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"), recorded_at=base,
+    )
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.176000"), longitude=Decimal("72.977700"),
+        recorded_at=base + timezone.timedelta(minutes=10),
+    )
+    assert trip_route_analytics() == []
+
+
+@pytest.mark.django_db
+def test_fleet_dashboard_includes_route_analytics(supervisor):
+    client = APIClient()
+    client.force_authenticate(user=supervisor)
+    response = client.get("/api/fleet/dashboard/")
+    assert response.status_code == 200
+    assert "route_analytics" in response.data
+
+
+@pytest.mark.django_db
+def test_report_export_fleet_route_analytics(admin):
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get("/api/reporting/export/fleet_route_analytics/?filetype=xlsx")
+    assert response.status_code == 200, response.content[:200]
+    assert response.content[:2] == b"PK"

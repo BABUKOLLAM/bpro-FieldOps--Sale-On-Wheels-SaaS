@@ -245,3 +245,87 @@ def geofence_alerts() -> list[dict]:
                     "recorded_at": ping.recorded_at,
                 })
     return alerts
+
+
+# FM-08 idle-time / route-deviation analytics — best-effort from the same
+# periodic (~3-minute interval) GPS breadcrumbs the live map uses, not
+# continuous telemetry. "Idle" is inferred from consecutive pings that
+# stayed within a small radius of each other, not a real ignition/motion
+# sensor signal, and "deviation" is straight-line distance from the
+# nearest planned stop, not road-network distance — both flagged here as
+# what they are rather than oversold as precise.
+IDLE_RADIUS_KM = 0.1
+IDLE_ALERT_THRESHOLD_MINUTES = 15
+ROUTE_DEVIATION_THRESHOLD_KM = 2.0
+
+
+def trip_idle_minutes(trip: Trip) -> int:
+    pings = list(LocationPing.objects.filter(trip=trip).order_by("recorded_at"))
+    idle_seconds = 0.0
+    for prev, curr in zip(pings, pings[1:]):
+        dist_km = haversine_km(float(prev.latitude), float(prev.longitude), float(curr.latitude), float(curr.longitude))
+        if dist_km <= IDLE_RADIUS_KM:
+            idle_seconds += (curr.recorded_at - prev.recorded_at).total_seconds()
+    return int(idle_seconds // 60)
+
+
+def route_deviation_points(trip: Trip) -> list[dict]:
+    """Pings further than ROUTE_DEVIATION_THRESHOLD_KM from every stop on
+    the trip's beat. Returns [] if the trip has no beat, or no stop has a
+    geocoded address — nothing to compare against, not "no deviation"."""
+    if not trip.beat_id:
+        return []
+
+    from apps.customers.models import BeatCustomer, CustomerAddress
+
+    stop_coords = []
+    for bc in BeatCustomer.objects.filter(beat_id=trip.beat_id).select_related("customer"):
+        addr = CustomerAddress.objects.filter(
+            customer=bc.customer, latitude__isnull=False, longitude__isnull=False,
+        ).first()
+        if addr:
+            stop_coords.append((float(addr.latitude), float(addr.longitude)))
+    if not stop_coords:
+        return []
+
+    deviations = []
+    for ping in LocationPing.objects.filter(trip=trip).order_by("recorded_at"):
+        min_dist = min(
+            haversine_km(float(ping.latitude), float(ping.longitude), lat, lng) for lat, lng in stop_coords
+        )
+        if min_dist > ROUTE_DEVIATION_THRESHOLD_KM:
+            deviations.append({
+                "recorded_at": ping.recorded_at,
+                "latitude": ping.latitude,
+                "longitude": ping.longitude,
+                "distance_km": round(min_dist, 2),
+            })
+    return deviations
+
+
+def trip_route_analytics(days: int = 30) -> list[dict]:
+    """Per-trip idle time + deviation points for completed trips in the
+    last `days` — only trips with something notable are returned, same
+    "don't clutter the dashboard with every ok row" convention as
+    maintenance_due_alerts/compliance_due_alerts."""
+    since = timezone.now() - timezone.timedelta(days=days)
+    trips = Trip.objects.filter(
+        status=Trip.STATUS_COMPLETED, start_time__gte=since,
+    ).select_related("agent", "vehicle", "beat")
+
+    results = []
+    for trip in trips:
+        idle_minutes = trip_idle_minutes(trip)
+        deviations = route_deviation_points(trip)
+        if idle_minutes < IDLE_ALERT_THRESHOLD_MINUTES and not deviations:
+            continue
+        results.append({
+            "trip_id": trip.id,
+            "agent_name": trip.agent.get_full_name() or trip.agent.username,
+            "vehicle_reg_no": trip.vehicle.reg_no if trip.vehicle else None,
+            "beat_name": trip.beat.name if trip.beat else None,
+            "start_time": trip.start_time,
+            "idle_minutes": idle_minutes,
+            "deviation_count": len(deviations),
+        })
+    return results
