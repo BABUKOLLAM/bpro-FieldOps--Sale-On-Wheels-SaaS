@@ -199,6 +199,13 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="reports@vansales.local")
 # attempt is still logged to NotificationLog either way.
 FCM_SERVER_KEY = env("FCM_SERVER_KEY", default="")
 
+# ---- SMS / OTP (FR-12 proof-of-delivery) ----
+# No vendor is named in the BRD, so this points at a generic REST
+# gateway URL. Without SMS_GATEWAY_URL, apps.notifications.send_sms
+# writes to the console instead of calling a real gateway.
+SMS_GATEWAY_URL = env("SMS_GATEWAY_URL", default="")
+SMS_GATEWAY_API_KEY = env("SMS_GATEWAY_API_KEY", default="")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

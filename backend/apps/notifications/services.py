@@ -4,7 +4,7 @@ import urllib.request
 
 from django.conf import settings
 
-from .models import DeviceToken, NotificationLog
+from .models import DeviceToken, NotificationLog, SmsLog
 
 FCM_SEND_URL = "https://fcm.googleapis.com/fcm/send"
 
@@ -45,3 +45,30 @@ def send_push_notification(user, title: str, body: str, data: dict | None = None
     return NotificationLog.objects.create(
         user=user, title=title, body=body, data=data, channel=channel, device_count=len(tokens),
     )
+
+
+def send_sms(phone: str, message: str) -> SmsLog:
+    """FR-12 OTP proof-of-delivery (and any future SMS need). Same
+    console-fallback shape as send_push_notification/email: no
+    SMS_GATEWAY_URL configured -> print instead of faking delivery,
+    generic enough to point at any REST-based SMS gateway once a vendor
+    is chosen (the BRD doesn't name one)."""
+    gateway_url = getattr(settings, "SMS_GATEWAY_URL", "")
+    api_key = getattr(settings, "SMS_GATEWAY_API_KEY", "")
+
+    if not gateway_url:
+        channel = SmsLog.CHANNEL_CONSOLE
+        print(f"[sms:console] to={phone} message={message!r}")
+    else:
+        channel = SmsLog.CHANNEL_GATEWAY
+        payload = json.dumps({"to": phone, "message": message, "api_key": api_key}).encode("utf-8")
+        request = urllib.request.Request(
+            gateway_url, data=payload, method="POST", headers={"Content-Type": "application/json"},
+        )
+        try:
+            urllib.request.urlopen(request, timeout=10)
+        except urllib.error.URLError:
+            channel = SmsLog.CHANNEL_CONSOLE
+            print(f"[sms:console-fallback-on-error] to={phone} message={message!r}")
+
+    return SmsLog.objects.create(phone=phone, message=message, channel=channel)

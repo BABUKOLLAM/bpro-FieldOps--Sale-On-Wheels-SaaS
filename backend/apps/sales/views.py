@@ -12,6 +12,7 @@ from apps.accounts.constants import (
 
 from .models import CreditNote, Invoice, Receipt, SalesOrder
 from .serializers import CreditNoteSerializer, InvoiceSerializer, ReceiptSerializer, SalesOrderSerializer
+from .services import send_delivery_otp, verify_delivery_otp
 
 
 def _can_view_all(user):
@@ -79,6 +80,20 @@ class InvoiceViewSet(OwnScopedViewSet):
         invoice.credit_override_by = request.user
         invoice.credit_override_reason = request.data.get("reason", "")
         invoice.save(update_fields=["credit_check_status", "credit_override_by", "credit_override_reason"])
+        return Response(self.get_serializer(invoice).data)
+
+    @action(detail=True, methods=["post"], url_path="send-delivery-otp")
+    def send_delivery_otp_action(self, request, pk=None):
+        """FR-12 proof-of-delivery, the OTP alternative to a signature."""
+        invoice = self.get_object()
+        send_delivery_otp(invoice)
+        return Response({"sent": True})
+
+    @action(detail=True, methods=["post"], url_path="verify-delivery-otp")
+    def verify_delivery_otp_action(self, request, pk=None):
+        invoice = self.get_object()
+        code = request.data.get("code", "")
+        verify_delivery_otp(invoice, code)
         return Response(self.get_serializer(invoice).data)
 
 

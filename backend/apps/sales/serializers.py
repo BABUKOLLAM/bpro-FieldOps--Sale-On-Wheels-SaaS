@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.serializers import ClientGeneratedIdMixin
@@ -55,10 +56,12 @@ class InvoiceSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
             "gst_registration", "place_of_supply_state", "invoice_date", "subtotal", "discount_total",
             "tax_total", "grand_total", "payment_status", "credit_check_status", "credit_override_reason",
             "sync_status", "signature_image", "device_created_at", "lines",
+            "delivery_confirmed_via", "delivery_confirmed_at",
         ]
         read_only_fields = [
             "invoice_no", "subtotal", "discount_total", "tax_total", "grand_total",
             "payment_status", "credit_check_status", "sync_status",
+            "delivery_confirmed_via", "delivery_confirmed_at",
         ]
 
     def create(self, validated_data):
@@ -73,6 +76,19 @@ class InvoiceSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
 
         finalize_invoice(invoice, override_by=override_by, override_reason=override_reason)
         return invoice
+
+    def update(self, instance, validated_data):
+        # A signature-only PATCH (the mobile app's proof-of-delivery
+        # capture flow) is the one update path that also stamps delivery
+        # confirmation — every other field update behaves exactly like
+        # ModelSerializer's default (touches only keys present).
+        signature_provided = "signature_image" in validated_data
+        instance = super().update(instance, validated_data)
+        if signature_provided and instance.signature_image:
+            instance.delivery_confirmed_via = Invoice.DELIVERY_VIA_SIGNATURE
+            instance.delivery_confirmed_at = timezone.now()
+            instance.save(update_fields=["delivery_confirmed_via", "delivery_confirmed_at"])
+        return instance
 
 
 class PaymentAllocationSerializer(serializers.ModelSerializer):

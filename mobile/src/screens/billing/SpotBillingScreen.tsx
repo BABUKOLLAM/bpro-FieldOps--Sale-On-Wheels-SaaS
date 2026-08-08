@@ -21,6 +21,7 @@ import VanStock from '../../db/models/VanStock';
 import Invoice, { SYNC_PENDING } from '../../db/models/Invoice';
 import InvoiceLine from '../../db/models/InvoiceLine';
 import { synchronize } from '../../sync/synchronize';
+import { apiPostJson } from '../../api/client';
 import { colors } from '../../theme/colors';
 
 type CartLine = { item: Item; rate: number; qty: string };
@@ -46,6 +47,15 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   // signature step instead — the invoice already exists locally at this
   // point, so "skip" is just leaving it unsigned, not losing the sale.
   const [savedInvoice, setSavedInvoice] = useState<Invoice | null>(null);
+  // OTP is the alternative proof-of-delivery to a signature (FR-12), but
+  // unlike signature (uploaded later, at sync time), the OTP endpoints
+  // act on the server-side invoice by id right now — so this path only
+  // works once the invoice has actually been pushed, i.e. online.
+  const [otpStep, setOtpStep] = useState<
+    'closed' | 'sending' | 'entering' | 'verifying'
+  >('closed');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -207,6 +217,48 @@ export default function SpotBillingScreen({ route, navigation }: any) {
     navigation.goBack();
   }
 
+  async function handleSendOtp() {
+    if (!savedInvoice) {
+      return;
+    }
+    setOtpError(null);
+    setOtpStep('sending');
+    try {
+      // The invoice must exist server-side before an OTP can be sent
+      // against it — push it now rather than waiting for a background
+      // sync, since the customer is standing there waiting for the code.
+      await synchronize();
+      await apiPostJson(
+        `/api/sales/invoices/${savedInvoice.serverId}/send-delivery-otp/`,
+        {}
+      );
+      setOtpStep('entering');
+    } catch {
+      setOtpError(
+        'Could not send OTP — needs an internet connection. Use signature instead, or try again.'
+      );
+      setOtpStep('closed');
+    }
+  }
+
+  async function handleVerifyOtp() {
+    if (!savedInvoice) {
+      return;
+    }
+    setOtpError(null);
+    setOtpStep('verifying');
+    try {
+      await apiPostJson(
+        `/api/sales/invoices/${savedInvoice.serverId}/verify-delivery-otp/`,
+        { code: otpCode }
+      );
+      navigation.goBack();
+    } catch (err: any) {
+      setOtpError(err?.body?.detail || 'Incorrect or expired OTP.');
+      setOtpStep('entering');
+    }
+  }
+
   if (scanning) {
     return (
       <View style={{ flex: 1 }}>
@@ -222,6 +274,49 @@ export default function SpotBillingScreen({ route, navigation }: any) {
           onPress={() => setScanning(false)}
         >
           <Text style={styles.cancelScanButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (savedInvoice && otpStep !== 'closed') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.customerName}>Confirm via OTP</Text>
+        <Text style={styles.customerMeta}>
+          {otpStep === 'sending' &&
+            'Sending OTP to the customer’s registered phone…'}
+          {(otpStep === 'entering' || otpStep === 'verifying') &&
+            'Enter the 6-digit code sent to the customer.'}
+        </Text>
+        {otpError && <Text style={styles.otpError}>{otpError}</Text>}
+        {(otpStep === 'entering' || otpStep === 'verifying') && (
+          <>
+            <TextInput
+              style={styles.otpInput}
+              value={otpCode}
+              onChangeText={setOtpCode}
+              keyboardType="number-pad"
+              maxLength={6}
+              placeholder="123456"
+              placeholderTextColor={colors.textSecondary}
+            />
+            <TouchableOpacity
+              style={styles.tripButtonLike}
+              onPress={handleVerifyOtp}
+              disabled={otpStep === 'verifying' || otpCode.length !== 6}
+            >
+              <Text style={styles.tripButtonLikeText}>
+                {otpStep === 'verifying' ? 'Verifying…' : 'Verify OTP'}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+        <TouchableOpacity
+          style={styles.skipButton}
+          onPress={() => setOtpStep('closed')}
+        >
+          <Text style={styles.skipButtonText}>Back to signature</Text>
         </TouchableOpacity>
       </View>
     );
@@ -245,6 +340,10 @@ export default function SpotBillingScreen({ route, navigation }: any) {
             descriptionText="Sign to confirm delivery"
           />
         </View>
+        {otpError && <Text style={styles.otpError}>{otpError}</Text>}
+        <TouchableOpacity style={styles.tripButtonLike} onPress={handleSendOtp}>
+          <Text style={styles.tripButtonLikeText}>Confirm via OTP instead</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.skipButton}
           onPress={() => navigation.goBack()}
@@ -348,6 +447,31 @@ const styles = StyleSheet.create({
   },
   skipButton: { padding: 16, alignItems: 'center' },
   skipButtonText: { color: colors.textSecondary, fontSize: 14 },
+  tripButtonLike: {
+    borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  tripButtonLikeText: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  otpInput: {
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 20,
+    letterSpacing: 8,
+    textAlign: 'center',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  otpError: { color: colors.danger, fontSize: 13, marginBottom: 8 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',

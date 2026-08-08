@@ -102,8 +102,33 @@ class Invoice(BaseModel):
         null=True, blank=True, help_text="When the invoice was actually created on-device, for offline records."
     )
 
+    DELIVERY_VIA_NONE = ""
+    DELIVERY_VIA_SIGNATURE = "signature"
+    DELIVERY_VIA_OTP = "otp"
+    DELIVERY_VIA_CHOICES = [
+        (DELIVERY_VIA_NONE, "Not confirmed"), (DELIVERY_VIA_SIGNATURE, "Signature"), (DELIVERY_VIA_OTP, "OTP"),
+    ]
+    delivery_confirmed_via = models.CharField(max_length=10, choices=DELIVERY_VIA_CHOICES, blank=True, default="")
+    delivery_confirmed_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return self.invoice_no or str(self.id)
+
+
+class InvoiceDeliveryOTP(BaseModel):
+    """FR-12 proof-of-delivery: the alternative to a signature. One row
+    per invoice — a re-sent OTP replaces the previous code rather than
+    accumulating a history, since only the latest one is ever valid.
+    The code itself is hashed (django.contrib.auth.hashers), never
+    stored or returned in plaintext once generated."""
+
+    invoice = models.OneToOneField(Invoice, on_delete=models.CASCADE, related_name="delivery_otp")
+    code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveIntegerField(default=0)
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    MAX_ATTEMPTS = 5
 
 
 class InvoiceLine(BaseModel):

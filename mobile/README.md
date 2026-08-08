@@ -79,6 +79,17 @@ English strings and can be migrated the same way (add keys to both
 locales in `locales.ts`, then `const { t } = useTranslation()` in the
 screen).
 
+## OTP proof-of-delivery (FR-12 remainder)
+
+`SpotBillingScreen`'s post-save step now offers "Confirm via OTP instead"
+alongside the existing signature capture. Unlike signature (captured
+offline, uploaded whenever the invoice next syncs), OTP is inherently
+online-only: the backend's `send-delivery-otp`/`verify-delivery-otp`
+endpoints act on the invoice by its server id, so the flow pushes the
+invoice via `synchronize()` first and surfaces a clear error ("needs an
+internet connection — use signature instead") if that fails, rather than
+silently hanging or pretending to work offline.
+
 ## Configuration
 
 Edit `src/config.ts` to point at your backend (`API_BASE_URL`). For a real

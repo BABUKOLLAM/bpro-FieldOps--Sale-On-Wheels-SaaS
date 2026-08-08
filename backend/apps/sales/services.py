@@ -1,16 +1,22 @@
-from datetime import date
+import secrets
+from datetime import date, timedelta
 from decimal import Decimal
 
+from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.db.models import Sum
+from django.utils import timezone
 
 from apps.catalog.models import PriceList, PriceListItem, Scheme, SchemeBXGY
 from apps.company.models import Company
 from apps.core.exceptions import DomainError
 from apps.inventory.models import StockLedgerEntry
 from apps.inventory.services import post_stock_movement
+from apps.notifications.services import send_sms
 
-from .models import CreditNote, DocumentSequence, Invoice, InvoiceLine, Receipt
+from .models import CreditNote, DocumentSequence, Invoice, InvoiceDeliveryOTP, InvoiceLine, Receipt
+
+OTP_VALIDITY_MINUTES = 10
 
 
 def financial_year_for(d: date) -> str:
@@ -280,3 +286,56 @@ def finalize_credit_note(credit_note: CreditNote):
 
     transaction.on_commit(lambda: enqueue_tally_job("credit_note", credit_note.id))
     return credit_note
+
+
+def send_delivery_otp(invoice: Invoice) -> InvoiceDeliveryOTP:
+    """FR-12 proof-of-delivery, alternative to a signature. A re-send
+    replaces any previous unverified OTP for this invoice rather than
+    stacking — only the latest code is ever valid."""
+    if not invoice.customer.phone:
+        raise DomainError("Customer has no phone number on file.", code="no_phone")
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    otp, _ = InvoiceDeliveryOTP.objects.update_or_create(
+        invoice=invoice,
+        defaults={
+            "code_hash": make_password(code),
+            "expires_at": timezone.now() + timedelta(minutes=OTP_VALIDITY_MINUTES),
+            "attempts": 0,
+            "verified_at": None,
+        },
+    )
+    send_sms(
+        invoice.customer.phone,
+        f"Your OTP to confirm delivery of invoice {invoice.invoice_no or invoice.id} is {code}. "
+        f"Valid for {OTP_VALIDITY_MINUTES} minutes.",
+    )
+    return otp
+
+
+@transaction.atomic
+def verify_delivery_otp(invoice: Invoice, code: str) -> Invoice:
+    try:
+        otp = invoice.delivery_otp
+    except InvoiceDeliveryOTP.DoesNotExist:
+        raise DomainError("No OTP has been sent for this invoice.", code="otp_not_sent")
+
+    if otp.verified_at:
+        raise DomainError("This invoice's delivery is already confirmed.", code="already_verified")
+    if otp.attempts >= InvoiceDeliveryOTP.MAX_ATTEMPTS:
+        raise DomainError("Too many incorrect attempts — request a new OTP.", code="otp_locked")
+    if timezone.now() > otp.expires_at:
+        raise DomainError("This OTP has expired — request a new one.", code="otp_expired")
+
+    if not check_password(code, otp.code_hash):
+        otp.attempts += 1
+        otp.save(update_fields=["attempts"])
+        raise DomainError("Incorrect OTP.", code="otp_incorrect")
+
+    otp.verified_at = timezone.now()
+    otp.save(update_fields=["verified_at"])
+
+    invoice.delivery_confirmed_via = Invoice.DELIVERY_VIA_OTP
+    invoice.delivery_confirmed_at = otp.verified_at
+    invoice.save(update_fields=["delivery_confirmed_via", "delivery_confirmed_at"])
+    return invoice

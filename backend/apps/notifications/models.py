@@ -48,3 +48,21 @@ class NotificationLog(BaseModel):
 
     def __str__(self):
         return f"{self.title} → {self.user}"
+
+
+class SmsLog(BaseModel):
+    """A record of every SMS the system attempted to send (FR-12 OTP
+    proof-of-delivery today; usable for any future SMS need). Same
+    console-fallback auditability as NotificationLog/push — see
+    apps.notifications.services.send_sms."""
+
+    CHANNEL_GATEWAY = "gateway"
+    CHANNEL_CONSOLE = "console"
+    CHANNEL_CHOICES = [(CHANNEL_GATEWAY, "SMS gateway"), (CHANNEL_CONSOLE, "Console (no gateway configured)")]
+
+    phone = models.CharField(max_length=20)
+    message = models.TextField()
+    channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES)
+
+    def __str__(self):
+        return f"SMS → {self.phone}"

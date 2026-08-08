@@ -151,10 +151,10 @@ def test_expense_push_is_idempotent(agent):
 
 @pytest.mark.django_db
 def test_invoice_signature_upload_via_multipart_patch(company, agent, van_godown, item, customer):
-    """Confirms the plan's assumption: PATCH with just signature_image
-    works with zero custom upload endpoint, because InvoiceSerializer has
-    no update() override and DRF's default ModelSerializer.update() only
-    touches keys present in validated_data (partial=True on PATCH)."""
+    """PATCH with just signature_image needs no dedicated upload endpoint:
+    InvoiceSerializer.update() delegates to ModelSerializer's default,
+    which only touches keys present in validated_data (partial=True on
+    PATCH) — the rest of the invoice must be untouched by this PATCH."""
     _, gst_registration = company
     invoice = Invoice.objects.create(
         customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,

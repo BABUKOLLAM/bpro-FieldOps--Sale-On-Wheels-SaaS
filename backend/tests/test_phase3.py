@@ -529,3 +529,97 @@ def test_notification_log_scoped_to_own_user_unless_privileged(agent, supervisor
     titles = [row["title"] for row in response.data["results"]]
     assert "For agent" in titles
     assert "For supervisor" not in titles
+
+
+def _make_invoice(company, agent, van_godown, item, customer):
+    from apps.sales.models import Invoice, InvoiceLine
+    from apps.sales.services import finalize_invoice
+
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("1"), rate=Decimal("10.00"))
+    finalize_invoice(invoice)
+    return invoice
+
+
+def _extract_otp_code(phone):
+    import re
+
+    from apps.notifications.models import SmsLog
+
+    log = SmsLog.objects.filter(phone=phone).order_by("-created_at").first()
+    match = re.search(r"is (\d{6})", log.message)
+    return match.group(1)
+
+
+@pytest.mark.django_db
+def test_send_delivery_otp_requires_customer_phone(company, agent, van_godown, item, customer):
+    from apps.core.exceptions import DomainError
+    from apps.sales.services import send_delivery_otp
+
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+    with pytest.raises(DomainError):
+        send_delivery_otp(invoice)
+
+
+@pytest.mark.django_db
+def test_send_and_verify_delivery_otp_happy_path(company, agent, van_godown, item, customer):
+    from apps.sales.models import Invoice
+    from apps.sales.services import send_delivery_otp, verify_delivery_otp
+
+    customer.phone = "9876543210"
+    customer.save(update_fields=["phone"])
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+
+    send_delivery_otp(invoice)
+    code = _extract_otp_code(customer.phone)
+
+    verify_delivery_otp(invoice, code)
+    invoice.refresh_from_db()
+    assert invoice.delivery_confirmed_via == Invoice.DELIVERY_VIA_OTP
+    assert invoice.delivery_confirmed_at is not None
+
+
+@pytest.mark.django_db
+def test_verify_delivery_otp_wrong_code_locks_after_max_attempts(company, agent, van_godown, item, customer):
+    from apps.core.exceptions import DomainError
+    from apps.sales.models import InvoiceDeliveryOTP
+    from apps.sales.services import send_delivery_otp, verify_delivery_otp
+
+    customer.phone = "9876543210"
+    customer.save(update_fields=["phone"])
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+    send_delivery_otp(invoice)
+
+    for _ in range(InvoiceDeliveryOTP.MAX_ATTEMPTS):
+        with pytest.raises(DomainError):
+            verify_delivery_otp(invoice, "000000")
+
+    with pytest.raises(DomainError) as exc_info:
+        verify_delivery_otp(invoice, "000000")
+    assert exc_info.value.code == "otp_locked"
+
+
+@pytest.mark.django_db
+def test_invoice_otp_delivery_flow_via_api(company, agent, van_godown, item, customer):
+    from apps.sales.models import Invoice
+
+    customer.phone = "9876543210"
+    customer.save(update_fields=["phone"])
+    invoice = _make_invoice(company, agent, van_godown, item, customer)
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+
+    response = client.post(f"/api/sales/invoices/{invoice.id}/send-delivery-otp/")
+    assert response.status_code == 200, response.data
+
+    code = _extract_otp_code(customer.phone)
+    response = client.post(
+        f"/api/sales/invoices/{invoice.id}/verify-delivery-otp/", {"code": code}, format="json",
+    )
+    assert response.status_code == 200, response.data
+    assert response.data["delivery_confirmed_via"] == Invoice.DELIVERY_VIA_OTP
