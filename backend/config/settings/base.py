@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.mobile_sync",
     "apps.reporting",
     "apps.notifications",
+    "apps.payments",
 ]
 
 MIDDLEWARE = [

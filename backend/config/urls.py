@@ -20,6 +20,7 @@ urlpatterns = [
     path("api/sync/", include("apps.mobile_sync.urls")),
     path("api/reporting/", include("apps.reporting.urls")),
     path("api/notifications/", include("apps.notifications.urls")),
+    path("api/payments/", include("apps.payments.urls")),
 ]
 
 if settings.DEBUG:

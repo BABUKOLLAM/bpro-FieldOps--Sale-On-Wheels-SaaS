@@ -17,6 +17,7 @@ export type Dictionary = {
     users: string;
     roles: string;
     notifications: string;
+    payments: string;
   };
   login: {
     heading: string;
@@ -51,6 +52,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       users: "Users",
       roles: "Roles",
       notifications: "Notifications",
+      payments: "Payments",
     },
     login: {
       heading: "Sign in to Van Sales",
@@ -79,6 +81,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       users: "उपयोगकर्ता",
       roles: "भूमिकाएँ",
       notifications: "सूचनाएं",
+      payments: "भुगतान",
     },
     login: {
       heading: "वैन सेल्स में साइन इन करें",

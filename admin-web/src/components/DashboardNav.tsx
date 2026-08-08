@@ -41,6 +41,9 @@ export default function DashboardNav() {
       <Link href="/notifications" className={LINK_CLASS}>
         {t.nav.notifications}
       </Link>
+      <Link href="/payments" className={LINK_CLASS}>
+        {t.nav.payments}
+      </Link>
     </nav>
   );
 }
