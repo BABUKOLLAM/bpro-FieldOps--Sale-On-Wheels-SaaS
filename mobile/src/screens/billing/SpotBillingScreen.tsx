@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -22,6 +23,8 @@ import Invoice, { SYNC_PENDING } from '../../db/models/Invoice';
 import InvoiceLine from '../../db/models/InvoiceLine';
 import { synchronize } from '../../sync/synchronize';
 import { apiPostJson } from '../../api/client';
+import { buildReceiptText } from '../../printing/receiptText';
+import { printReceipt } from '../../printing/bluetoothPrinter';
 import { colors } from '../../theme/colors';
 
 type CartLine = { item: Item; rate: number; qty: string };
@@ -56,6 +59,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   >('closed');
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -259,6 +263,47 @@ export default function SpotBillingScreen({ route, navigation }: any) {
     }
   }
 
+  function currentReceiptText() {
+    return buildReceiptText({
+      customerName: customer?.name || 'Walk-in customer',
+      lines: cartLines.map((l) => ({
+        name: l.item.name,
+        qty: Number(l.qty || 0),
+        rate: l.rate,
+      })),
+      subtotal: estimatedSubtotal,
+      tax: estimatedTax,
+      total: estimatedTotal,
+    });
+  }
+
+  /** FR-03: native OS share sheet (SMS/WhatsApp/email/etc) — built into
+   * React Native, no extra native module needed. */
+  async function handleShareReceipt() {
+    try {
+      await Share.share({ message: currentReceiptText() });
+    } catch {
+      // User cancelled the share sheet — not an error worth surfacing.
+    }
+  }
+
+  /** FR-03: Bluetooth thermal printing — see printing/bluetoothPrinter.ts
+   * for the "first paired printer" scope note. */
+  async function handlePrintReceipt() {
+    setPrinting(true);
+    try {
+      await printReceipt(currentReceiptText());
+    } catch (err: any) {
+      Alert.alert(
+        'Print failed',
+        err?.message ||
+          'Could not print — check the printer is paired and powered on.'
+      );
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   if (scanning) {
     return (
       <View style={{ flex: 1 }}>
@@ -344,6 +389,23 @@ export default function SpotBillingScreen({ route, navigation }: any) {
         <TouchableOpacity style={styles.tripButtonLike} onPress={handleSendOtp}>
           <Text style={styles.tripButtonLikeText}>Confirm via OTP instead</Text>
         </TouchableOpacity>
+        <View style={styles.receiptActionsRow}>
+          <TouchableOpacity
+            style={styles.receiptActionButton}
+            onPress={handleShareReceipt}
+          >
+            <Text style={styles.receiptActionButtonText}>Share Receipt</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.receiptActionButton}
+            onPress={handlePrintReceipt}
+            disabled={printing}
+          >
+            <Text style={styles.receiptActionButtonText}>
+              {printing ? 'Printing…' : 'Print via Bluetooth'}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity
           style={styles.skipButton}
           onPress={() => navigation.goBack()}
@@ -472,6 +534,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   otpError: { color: colors.danger, fontSize: 13, marginBottom: 8 },
+  receiptActionsRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  receiptActionButton: {
+    flex: 1,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+  },
+  receiptActionButtonText: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',

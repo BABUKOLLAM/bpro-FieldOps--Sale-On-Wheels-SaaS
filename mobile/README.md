@@ -43,6 +43,23 @@ possible in this environment — no native projects exist here to edit):
   `react-native-image-picker` for expense receipt photos): Android
   `CAMERA` permission; iOS `NSCameraUsageDescription` (and
   `NSPhotoLibraryUsageDescription` for the gallery-picker path).
+- **Bluetooth** (`react-native-thermal-receipt-printer`, FR-03 receipt
+  printing — `src/printing/bluetoothPrinter.ts`): Android
+  `BLUETOOTH`/`BLUETOOTH_ADMIN` (and `BLUETOOTH_CONNECT` on Android 12+);
+  iOS `NSBluetoothAlwaysUsageDescription`. Printing connects to the
+  first already-paired BLE printer — pairing itself happens in the OS
+  Bluetooth settings, not in-app.
+
+## Receipt sharing & printing (FR-03 remainder)
+
+`SpotBillingScreen`'s post-save step adds two actions alongside
+signature/OTP: **Share Receipt** (React Native's built-in `Share` API —
+no extra native module, opens the OS share sheet for SMS/WhatsApp/
+email/etc) and **Print via Bluetooth** (`printing/bluetoothPrinter.ts`,
+prints to the first paired thermal printer). Both build from the same
+`printing/receiptText.ts` so the two outputs stay identical. Bluetooth
+printing is unverified like every other native module here — no
+Bluetooth hardware or native project to test against.
 
 ## Native project setup
 
