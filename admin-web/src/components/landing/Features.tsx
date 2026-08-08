@@ -39,13 +39,13 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section id="features" className="bg-slate-50 dark:bg-slate-900/40 py-14 sm:py-20">
+    <section id="features" className="bg-neutral-50 dark:bg-neutral-900/40 py-14 sm:py-20">
     <div className="mx-auto max-w-6xl px-5 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="font-[family-name:var(--font-archivo)] text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
           Built for the way field sales actually works
         </h2>
-        <p className="mt-3 text-slate-600 dark:text-slate-300">
+        <p className="mt-3 text-neutral-600 dark:text-neutral-300">
           Every feature below maps directly to a real field-ops problem — no generic CRM
           bolted onto a van.
         </p>
@@ -55,13 +55,13 @@ export default function Features() {
         {FEATURES.map(({ title, description, icon: Icon }) => (
           <div
             key={title}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6"
+            className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/60 text-green-600 dark:text-green-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400">
               <Icon />
             </div>
-            <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">{title}</h3>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{description}</p>
+            <h3 className="mt-4 text-base font-semibold text-neutral-900 dark:text-white">{title}</h3>
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{description}</p>
           </div>
         ))}
       </div>

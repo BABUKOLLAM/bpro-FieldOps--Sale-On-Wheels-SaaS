@@ -13,7 +13,7 @@ export default async function Home() {
   const authenticated = await isAuthenticated();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-neutral-950">
       <Header authenticated={authenticated} />
       <main>
         <Hero />
@@ -23,10 +23,10 @@ export default async function Home() {
 
         <section id="pricing" className="mx-auto max-w-6xl px-5 pt-14 pb-14 sm:px-6 sm:pt-20 sm:pb-20">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h2 className="font-[family-name:var(--font-archivo)] text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
               Simple, size-based pricing
             </h2>
-            <p className="mt-3 text-slate-600 dark:text-slate-300">
+            <p className="mt-3 text-neutral-600 dark:text-neutral-300">
               One-time setup + a per-agent monthly subscription. Hosting shown separately, scaled
               to your deployment size.
             </p>
@@ -38,10 +38,10 @@ export default async function Home() {
 
         <section id="calculator" className="mx-auto max-w-6xl px-5 pb-14 sm:px-6 sm:pb-20">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h2 className="font-[family-name:var(--font-archivo)] text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
               Get an exact number for your fleet
             </h2>
-            <p className="mt-3 text-slate-600 dark:text-slate-300">
+            <p className="mt-3 text-neutral-600 dark:text-neutral-300">
               Move the slider to your agent count and pick a tier — pricing updates instantly.
             </p>
           </div>
