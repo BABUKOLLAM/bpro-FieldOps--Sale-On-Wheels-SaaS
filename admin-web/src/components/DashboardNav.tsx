@@ -38,6 +38,9 @@ export default function DashboardNav() {
       <Link href="/roles" className={LINK_CLASS}>
         {t.nav.roles}
       </Link>
+      <Link href="/notifications" className={LINK_CLASS}>
+        {t.nav.notifications}
+      </Link>
     </nav>
   );
 }

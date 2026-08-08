@@ -465,3 +465,67 @@ def test_bxgy_scheme_api_crud(admin, item, van_godown):
     list_response = client.get("/api/catalog/schemes-bxgy/")
     assert list_response.status_code == 200
     assert list_response.data["count"] == 1
+
+
+@pytest.mark.django_db
+def test_push_notification_falls_back_to_console_without_fcm_key(agent, settings):
+    from apps.notifications.models import NotificationLog
+    from apps.notifications.services import send_push_notification
+
+    settings.FCM_SERVER_KEY = ""
+    log = send_push_notification(agent, "Test title", "Test body", data={"k": "v"})
+
+    assert log.channel == NotificationLog.CHANNEL_CONSOLE
+    assert log.device_count == 0
+    assert NotificationLog.objects.filter(user=agent, title="Test title").exists()
+
+
+@pytest.mark.django_db
+def test_device_token_registration_is_idempotent_per_token(agent):
+    from apps.notifications.models import DeviceToken
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+
+    payload = {"token": "device-abc-123", "platform": DeviceToken.PLATFORM_ANDROID}
+    response1 = client.post("/api/notifications/device-tokens/", payload, format="json")
+    assert response1.status_code == 201, response1.data
+
+    # Re-registering the same token (app reinstall / refresh) must not 409.
+    response2 = client.post("/api/notifications/device-tokens/", payload, format="json")
+    assert response2.status_code == 201, response2.data
+    assert DeviceToken.objects.filter(token="device-abc-123").count() == 1
+
+
+@pytest.mark.django_db
+def test_expense_approve_sends_push_notification_to_agent(agent, supervisor):
+    from apps.expenses.models import Expense
+    from apps.notifications.models import NotificationLog
+
+    expense = Expense.objects.create(
+        agent=agent, category=Expense.CATEGORY_MISC, amount=Decimal("300"), expense_date=date.today(),
+    )
+    client = APIClient()
+    client.force_authenticate(user=supervisor)
+    response = client.post(f"/api/expenses/{expense.id}/approve/")
+    assert response.status_code == 200
+
+    log = NotificationLog.objects.filter(user=agent, title="Expense approved").first()
+    assert log is not None
+    assert str(expense.id) in log.data.get("expense_id", "")
+
+
+@pytest.mark.django_db
+def test_notification_log_scoped_to_own_user_unless_privileged(agent, supervisor):
+    from apps.notifications.services import send_push_notification
+
+    send_push_notification(agent, "For agent", "body")
+    send_push_notification(supervisor, "For supervisor", "body")
+
+    agent_client = APIClient()
+    agent_client.force_authenticate(user=agent)
+    response = agent_client.get("/api/notifications/logs/")
+    assert response.status_code == 200
+    titles = [row["title"] for row in response.data["results"]]
+    assert "For agent" in titles
+    assert "For supervisor" not in titles

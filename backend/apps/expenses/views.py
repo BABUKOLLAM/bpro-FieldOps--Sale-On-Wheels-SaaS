@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.constants import PERM_EXPENSES_APPROVE, PERM_EXPENSES_CREATE_OWN, PERM_EXPENSES_VIEW_ALL
+from apps.notifications.services import send_push_notification
 
 from .models import Expense
 from .serializers import ExpenseSerializer
@@ -48,6 +49,10 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         expense.approved_at = timezone.now()
         expense.rejection_reason = ""
         expense.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
+        send_push_notification(
+            expense.agent, "Expense approved", f"Your {expense.category} expense of ₹{expense.amount} was approved.",
+            data={"type": "expense_approved", "expense_id": str(expense.id)},
+        )
         return Response(self.get_serializer(expense).data)
 
     @action(detail=True, methods=["post"])
@@ -60,4 +65,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         expense.approved_at = timezone.now()
         expense.rejection_reason = request.data.get("reason", "")
         expense.save(update_fields=["status", "approved_by", "approved_at", "rejection_reason"])
+        send_push_notification(
+            expense.agent, "Expense rejected", f"Your {expense.category} expense of ₹{expense.amount} was rejected.",
+            data={"type": "expense_rejected", "expense_id": str(expense.id)},
+        )
         return Response(self.get_serializer(expense).data)

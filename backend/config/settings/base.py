@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "apps.integrations",
     "apps.mobile_sync",
     "apps.reporting",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -191,6 +192,12 @@ if EMAIL_HOST:
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="reports@vansales.local")
+
+# ---- Push notifications (FR-18) ----
+# Same shape as email above: without FCM_SERVER_KEY, apps.notifications
+# writes to the console instead of calling the real FCM API, and every
+# attempt is still logged to NotificationLog either way.
+FCM_SERVER_KEY = env("FCM_SERVER_KEY", default="")
 
 LOGGING = {
     "version": 1,
