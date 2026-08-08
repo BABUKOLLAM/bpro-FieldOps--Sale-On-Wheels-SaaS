@@ -6,6 +6,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from .connectors.base import ConnectorError
+from .connectors.local_json_api import BusyConnector, MargConnector
 from .connectors.mock import MockConnector
 from .connectors.tally_xml import TallyXMLConnector
 from .models import ERPConnection, SyncLogEntry
@@ -18,8 +19,8 @@ RETRY_BACKOFF_MINUTES = [1, 5, 15, 60, 60, 60]
 _CONNECTOR_CLASSES = {
     ERPConnection.ERP_MOCK: MockConnector,
     ERPConnection.ERP_TALLY: TallyXMLConnector,
-    # ERP_BUSY / ERP_MARG: same job-queue contract, a connectors/*.py
-    # implementing BaseConnector is the only thing that changes.
+    ERPConnection.ERP_BUSY: BusyConnector,
+    ERPConnection.ERP_MARG: MargConnector,
 }
 
 
