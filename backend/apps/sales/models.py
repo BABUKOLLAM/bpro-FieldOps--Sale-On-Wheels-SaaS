@@ -117,6 +117,12 @@ class InvoiceLine(BaseModel):
     sgst_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     igst_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     line_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    is_bonus = models.BooleanField(
+        default=False, help_text="System-generated free line from a BXGY scheme, not entered by the agent.",
+    )
+    bxgy_scheme = models.ForeignKey(
+        "catalog.SchemeBXGY", null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+    )
 
     def __str__(self):
         return f"{self.item.sku} x{self.qty}"

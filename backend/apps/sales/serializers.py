@@ -36,9 +36,12 @@ class InvoiceLineSerializer(serializers.ModelSerializer):
         model = InvoiceLine
         fields = [
             "id", "invoice", "item", "qty", "rate", "discount_amount", "taxable_amount",
-            "cgst_amount", "sgst_amount", "igst_amount", "line_total",
+            "cgst_amount", "sgst_amount", "igst_amount", "line_total", "is_bonus", "bxgy_scheme",
         ]
-        read_only_fields = ["taxable_amount", "cgst_amount", "sgst_amount", "igst_amount", "line_total"]
+        read_only_fields = [
+            "taxable_amount", "cgst_amount", "sgst_amount", "igst_amount", "line_total",
+            "is_bonus", "bxgy_scheme",
+        ]
         extra_kwargs = {"invoice": {"required": False}}
 
 

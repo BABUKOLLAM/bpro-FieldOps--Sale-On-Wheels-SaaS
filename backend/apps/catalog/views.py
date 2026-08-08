@@ -5,9 +5,9 @@ from rest_framework.filters import SearchFilter
 from apps.accounts.constants import PERM_CATALOG_MANAGE, PERM_CATALOG_VIEW
 from apps.accounts.permissions import HasRolePermission
 
-from .models import Item, ItemCategory, PriceList, Scheme, UOM
+from .models import Item, ItemCategory, PriceList, Scheme, SchemeBXGY, UOM
 from .serializers import (
-    ItemCategorySerializer, ItemSerializer, PriceListSerializer, SchemeSerializer, UOMSerializer,
+    ItemCategorySerializer, ItemSerializer, PriceListSerializer, SchemeBXGYSerializer, SchemeSerializer, UOMSerializer,
 )
 
 
@@ -56,4 +56,10 @@ class PriceListViewSet(viewsets.ModelViewSet):
 class SchemeViewSet(viewsets.ModelViewSet):
     queryset = Scheme.objects.all().order_by("-valid_from")
     serializer_class = SchemeSerializer
+    permission_classes = [CatalogPermission]
+
+
+class SchemeBXGYViewSet(viewsets.ModelViewSet):
+    queryset = SchemeBXGY.objects.all().order_by("-valid_from")
+    serializer_class = SchemeBXGYSerializer
     permission_classes = [CatalogPermission]

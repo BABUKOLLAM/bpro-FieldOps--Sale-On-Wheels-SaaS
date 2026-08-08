@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Item, ItemCategory, PriceList, PriceListItem, Scheme, SchemeSlab, UOM
+from .models import Item, ItemCategory, PriceList, PriceListItem, Scheme, SchemeBXGY, SchemeSlab, UOM
 
 
 @admin.register(UOM)
@@ -40,3 +40,11 @@ class SchemeSlabInline(admin.TabularInline):
 class SchemeAdmin(admin.ModelAdmin):
     list_display = ("name", "item", "category", "discount_type", "value", "valid_from", "valid_to", "is_active")
     inlines = [SchemeSlabInline]
+
+
+@admin.register(SchemeBXGY)
+class SchemeBXGYAdmin(admin.ModelAdmin):
+    list_display = (
+        "name", "trigger_item", "trigger_qty", "bonus_item", "bonus_qty",
+        "max_multiples", "valid_from", "valid_to", "is_active",
+    )

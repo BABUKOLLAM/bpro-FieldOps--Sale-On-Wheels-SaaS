@@ -337,3 +337,131 @@ def test_report_export_fleet_compliance_and_geofence_and_inventory(admin):
         response = client.get(f"/api/reporting/export/{key}/?filetype=xlsx")
         assert response.status_code == 200, (key, response.content[:200])
         assert response.content[:2] == b"PK"
+
+
+def _bonus_item(van_godown):
+    from apps.catalog.models import UOM, Item
+
+    uom = UOM.objects.get_or_create(code="BONUS-PCS", defaults={"name": "Pieces"})[0]
+    return Item.objects.create(sku="SKU-BONUS", name="Bonus Item", base_uom=uom, gst_rate=Decimal("18.00"))
+
+
+@pytest.mark.django_db
+def test_bxgy_multiples_for_boundary_cases(item, van_godown):
+    from apps.catalog.models import SchemeBXGY
+
+    bonus_item = _bonus_item(van_godown)
+    scheme = SchemeBXGY.objects.create(
+        name="Buy 10 get 1", trigger_item=item, trigger_qty=Decimal("10"),
+        bonus_item=bonus_item, bonus_qty=Decimal("1"),
+        valid_from=date(2020, 1, 1), valid_to=date(2030, 1, 1),
+    )
+    assert scheme.multiples_for(Decimal("9")) == 0
+    assert scheme.multiples_for(Decimal("10")) == 1
+    assert scheme.multiples_for(Decimal("25")) == 2  # partial second multiple doesn't count
+    assert scheme.multiples_for(Decimal("30")) == 3
+
+
+@pytest.mark.django_db
+def test_bxgy_multiples_respects_max_multiples_cap(item, van_godown):
+    from apps.catalog.models import SchemeBXGY
+
+    bonus_item = _bonus_item(van_godown)
+    scheme = SchemeBXGY.objects.create(
+        name="Buy 5 get 1, capped", trigger_item=item, trigger_qty=Decimal("5"),
+        bonus_item=bonus_item, bonus_qty=Decimal("1"), max_multiples=2,
+        valid_from=date(2020, 1, 1), valid_to=date(2030, 1, 1),
+    )
+    assert scheme.multiples_for(Decimal("50")) == 2
+
+
+@pytest.mark.django_db
+def test_bxgy_injects_free_bonus_line_on_invoice_finalize(company, agent, van_godown, item, customer):
+    from apps.catalog.models import SchemeBXGY
+    from apps.sales.models import Invoice, InvoiceLine
+    from apps.sales.services import finalize_invoice
+
+    bonus_item = _bonus_item(van_godown)
+    SchemeBXGY.objects.create(
+        name="Buy 10 get 1 free", trigger_item=item, trigger_qty=Decimal("10"),
+        bonus_item=bonus_item, bonus_qty=Decimal("1"),
+        valid_from=date(2020, 1, 1), valid_to=date(2030, 1, 1),
+    )
+
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("20"), rate=Decimal("10.00"))
+    finalize_invoice(invoice)
+
+    invoice.refresh_from_db()
+    bonus_lines = list(invoice.lines.filter(is_bonus=True))
+    assert len(bonus_lines) == 1
+    bonus_line = bonus_lines[0]
+    assert bonus_line.item_id == bonus_item.id
+    assert bonus_line.qty == Decimal("2")  # 20 // 10 = 2 multiples
+    # Fully waived regardless of rate: taxable/tax/line_total all zero.
+    assert bonus_line.taxable_amount == Decimal("0.00")
+    assert bonus_line.cgst_amount == Decimal("0.00")
+    assert bonus_line.line_total == Decimal("0.00")
+    # The trigger line's own price is untouched by the bonus scheme.
+    trigger_line = invoice.lines.get(is_bonus=False)
+    assert trigger_line.discount_amount == Decimal("0")
+
+
+@pytest.mark.django_db
+def test_bxgy_bonus_line_is_regenerated_not_duplicated_on_recompute(company, agent, van_godown, item, customer):
+    from apps.catalog.models import SchemeBXGY
+    from apps.sales.models import Invoice, InvoiceLine
+    from apps.sales.services import finalize_invoice, recompute_invoice
+
+    bonus_item = _bonus_item(van_godown)
+    SchemeBXGY.objects.create(
+        name="Buy 10 get 1 free", trigger_item=item, trigger_qty=Decimal("10"),
+        bonus_item=bonus_item, bonus_qty=Decimal("1"),
+        valid_from=date(2020, 1, 1), valid_to=date(2030, 1, 1),
+    )
+
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("10"), rate=Decimal("10.00"))
+    finalize_invoice(invoice)
+    assert invoice.lines.filter(is_bonus=True).count() == 1
+    assert invoice.lines.get(is_bonus=True).qty == Decimal("1")
+
+    # Calling recompute again (e.g. a second sync-time pass) must replace,
+    # not duplicate, the bonus line — and reflect an updated trigger qty.
+    recompute_invoice(invoice)
+    assert invoice.lines.filter(is_bonus=True).count() == 1
+
+    invoice.lines.filter(is_bonus=False).update(qty=Decimal("20"))
+    recompute_invoice(invoice)
+    assert invoice.lines.filter(is_bonus=True).count() == 1
+    assert invoice.lines.get(is_bonus=True).qty == Decimal("2")
+
+
+@pytest.mark.django_db
+def test_bxgy_scheme_api_crud(admin, item, van_godown):
+    bonus_item = _bonus_item(van_godown)
+    client = APIClient()
+    client.force_authenticate(user=admin)
+
+    response = client.post(
+        "/api/catalog/schemes-bxgy/",
+        {
+            "name": "Buy 10 get 1", "trigger_item": item.id, "trigger_qty": "10",
+            "bonus_item": bonus_item.id, "bonus_qty": "1",
+            "valid_from": "2020-01-01", "valid_to": "2030-01-01",
+        },
+        format="json",
+    )
+    assert response.status_code == 201, response.data
+
+    list_response = client.get("/api/catalog/schemes-bxgy/")
+    assert list_response.status_code == 200
+    assert list_response.data["count"] == 1

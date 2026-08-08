@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Item, ItemCategory, PriceList, PriceListItem, Scheme, SchemeSlab, UOM
+from .models import Item, ItemCategory, PriceList, PriceListItem, Scheme, SchemeBXGY, SchemeSlab, UOM
 
 
 class UOMSerializer(serializers.ModelSerializer):
@@ -73,3 +73,12 @@ class SchemeSerializer(serializers.ModelSerializer):
             for slab in slabs_data:
                 SchemeSlab.objects.create(scheme=instance, **slab)
         return instance
+
+
+class SchemeBXGYSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SchemeBXGY
+        fields = [
+            "id", "name", "trigger_item", "trigger_qty", "bonus_item", "bonus_qty",
+            "max_multiples", "valid_from", "valid_to", "is_active",
+        ]

@@ -129,3 +129,34 @@ class SchemeSlab(BaseModel):
         if qty < self.min_qty:
             return False
         return self.max_qty is None or qty <= self.max_qty
+
+
+class SchemeBXGY(BaseModel):
+    """Buy-X-Get-Y scheme (FR-14 remainder): buying `trigger_item` in
+    multiples of `trigger_qty` grants `bonus_qty` units of `bonus_item`
+    per multiple, free. Unlike `Scheme`, this never discounts an existing
+    line — it injects a separate bonus invoice line instead (see
+    apps.sales.services.apply_bxgy_bonus_lines)."""
+
+    name = models.CharField(max_length=100)
+    trigger_item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="bxgy_triggers")
+    trigger_qty = models.DecimalField(max_digits=12, decimal_places=3)
+    bonus_item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="bxgy_bonuses")
+    bonus_qty = models.DecimalField(max_digits=12, decimal_places=3)
+    max_multiples = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Cap on how many times the bonus repeats per invoice. Blank = uncapped.",
+    )
+    valid_from = models.DateField()
+    valid_to = models.DateField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    def multiples_for(self, trigger_line_qty) -> int:
+        if not trigger_line_qty or trigger_line_qty < self.trigger_qty:
+            return 0
+        multiples = int(trigger_line_qty // self.trigger_qty)
+        if self.max_multiples is not None:
+            multiples = min(multiples, self.max_multiples)
+        return multiples

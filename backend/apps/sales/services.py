@@ -2,8 +2,9 @@ from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Sum
 
-from apps.catalog.models import Scheme
+from apps.catalog.models import PriceList, PriceListItem, Scheme, SchemeBXGY
 from apps.company.models import Company
 from apps.core.exceptions import DomainError
 from apps.inventory.models import StockLedgerEntry
@@ -67,9 +68,52 @@ def models_q_for_item(item):
     return Q(item=item) | Q(category=item.category)
 
 
+def apply_bxgy_bonus_lines(invoice: Invoice, on_date: date):
+    """BXGY (FR-14 remainder): derives free bonus lines from the
+    invoice's real (non-bonus) line quantities and a full replace —
+    delete every previously-generated bonus line, then re-derive from
+    scratch — so this is safe to call on every recompute, including
+    edits that change a trigger item's quantity after the fact."""
+    invoice.lines.filter(is_bonus=True).delete()
+
+    trigger_qty_by_item = {
+        row["item_id"]: row["total_qty"]
+        for row in invoice.lines.filter(is_bonus=False).values("item_id").annotate(total_qty=Sum("qty"))
+    }
+    if not trigger_qty_by_item:
+        return
+
+    schemes = SchemeBXGY.objects.filter(
+        is_active=True, valid_from__lte=on_date, valid_to__gte=on_date,
+        trigger_item_id__in=trigger_qty_by_item.keys(),
+    ).select_related("bonus_item")
+    if not schemes:
+        return
+
+    default_price_list = PriceList.objects.filter(is_default=True, is_active=True).first()
+
+    for scheme in schemes:
+        multiples = scheme.multiples_for(trigger_qty_by_item[scheme.trigger_item_id])
+        if multiples <= 0:
+            continue
+        rate = Decimal("0")
+        if default_price_list:
+            entry = PriceListItem.objects.filter(price_list=default_price_list, item=scheme.bonus_item).first()
+            if entry:
+                rate = entry.rate
+        InvoiceLine.objects.create(
+            invoice=invoice, item=scheme.bonus_item, qty=scheme.bonus_qty * multiples, rate=rate,
+            is_bonus=True, bxgy_scheme=scheme,
+        )
+
+
 def compute_line(line: InvoiceLine, gst_rate_source_state: str, place_of_supply_state: str, on_date: date):
     gross = line.qty * line.rate
-    if not line.discount_amount:
+    if line.is_bonus:
+        # Always fully waived, regardless of any Scheme that might also
+        # match this item — it's a freebie, not a discounted sale.
+        line.discount_amount = gross
+    elif not line.discount_amount:
         line.discount_amount = best_scheme_discount(line.item, line.qty, line.rate, on_date)
     line.taxable_amount = (gross - line.discount_amount).quantize(Decimal("0.01"))
 
@@ -95,6 +139,7 @@ def recompute_invoice(invoice: Invoice):
     recomputed from the item master + scheme rules here, never trusted
     from the client — this is what lets an offline-created invoice be
     safely re-validated at sync time."""
+    apply_bxgy_bonus_lines(invoice, invoice.invoice_date)
     lines = list(invoice.lines.select_related("item").all())
     subtotal = discount_total = tax_total = Decimal("0")
     for line in lines:
