@@ -3,7 +3,9 @@ from decimal import Decimal
 from django.db.models import Avg
 from django.utils import timezone
 
-from .models import FuelLog, MaintenanceSchedule, OdometerLog, Trip
+from apps.core.geo import haversine_km
+
+from .models import FuelLog, Geofence, LocationPing, MaintenanceSchedule, OdometerLog, Trip, VehicleDocument
 
 
 def start_trip(trip: Trip, *, odometer=None, latitude=None, longitude=None, photo=None):
@@ -164,4 +166,82 @@ def maintenance_due_alerts(vehicle=None) -> list[dict]:
                 "current_odometer": current_odometer,
                 "status": status,
             })
+    return alerts
+
+
+# FM-16 vehicle/driver document compliance — same due_soon/overdue shape
+# as maintenance_due_alerts, mirrored deliberately for a consistent
+# alert vocabulary across the fleet dashboard.
+COMPLIANCE_DUE_SOON_DAYS = 30
+
+
+def compliance_due_alerts(vehicle=None, agent=None) -> list[dict]:
+    """FM-16: every active vehicle/driver document that's due_soon or
+    overdue for renewal, across the fleet or scoped to one vehicle/agent."""
+    documents = VehicleDocument.objects.filter(is_active=True).select_related("vehicle", "agent")
+    if vehicle is not None:
+        documents = documents.filter(vehicle=vehicle)
+    if agent is not None:
+        documents = documents.filter(agent=agent)
+
+    today = timezone.localdate()
+    alerts = []
+    for doc in documents:
+        days_remaining = (doc.expiry_date - today).days
+        if days_remaining < 0:
+            status = STATUS_OVERDUE
+        elif days_remaining <= COMPLIANCE_DUE_SOON_DAYS:
+            status = STATUS_DUE_SOON
+        else:
+            continue
+        holder = doc.vehicle.reg_no if doc.vehicle else (doc.agent.get_full_name() or doc.agent.username)
+        alerts.append({
+            "document_id": doc.id,
+            "holder": holder,
+            "document_type": doc.document_type,
+            "document_type_display": doc.get_document_type_display(),
+            "document_number": doc.document_number,
+            "expiry_date": doc.expiry_date,
+            "days_remaining": days_remaining,
+            "status": status,
+        })
+    return alerts
+
+
+# FM-14 geofencing — restricted-zone entry only (see Geofence's docstring
+# for why "unscheduled stops" isn't attempted). Checked against each
+# active trip's latest known location, not a stored entry/exit event log —
+# there's no background job/websocket in this build to raise the alert
+# the instant it happens, so this is computed on read.
+GEOFENCE_ALERT_MAX_AGE_MINUTES = 30
+
+
+def geofence_alerts() -> list[dict]:
+    """For every in-progress trip, whether its most recent location ping
+    falls inside an active restricted geofence."""
+    restricted_zones = list(Geofence.objects.filter(is_active=True, zone_type=Geofence.ZONE_RESTRICTED))
+    if not restricted_zones:
+        return []
+
+    cutoff = timezone.now() - timezone.timedelta(minutes=GEOFENCE_ALERT_MAX_AGE_MINUTES)
+    alerts = []
+    for trip in Trip.objects.filter(status=Trip.STATUS_IN_PROGRESS).select_related("agent", "vehicle"):
+        ping = (
+            LocationPing.objects.filter(trip=trip, recorded_at__gte=cutoff).order_by("-recorded_at").first()
+            or LocationPing.objects.filter(agent=trip.agent, recorded_at__gte=cutoff).order_by("-recorded_at").first()
+        )
+        if not ping:
+            continue
+        for zone in restricted_zones:
+            distance_m = haversine_km(float(ping.latitude), float(ping.longitude), float(zone.latitude), float(zone.longitude)) * 1000
+            if distance_m <= zone.radius_meters:
+                alerts.append({
+                    "trip_id": trip.id,
+                    "agent_name": trip.agent.get_full_name() or trip.agent.username,
+                    "vehicle_reg_no": trip.vehicle.reg_no if trip.vehicle else None,
+                    "zone_id": zone.id,
+                    "zone_name": zone.name,
+                    "distance_meters": round(distance_m),
+                    "recorded_at": ping.recorded_at,
+                })
     return alerts

@@ -164,3 +164,62 @@ class MaintenanceRecord(BaseModel):
 
     def __str__(self):
         return f"{self.vehicle} — {self.description} ({self.service_date})"
+
+
+class VehicleDocument(BaseModel):
+    """FM-16 Vehicle Document & Compliance Management — RC/insurance/
+    permit/PUC track against the vehicle; driving license tracks against
+    the driver. Exactly one of vehicle/agent is set per row (enforced in
+    the serializer, not the DB, to keep this a plain FK pair rather than
+    a generic-relation model for two holder types)."""
+
+    DOC_RC = "rc"
+    DOC_INSURANCE = "insurance"
+    DOC_PERMIT = "permit"
+    DOC_PUC = "puc"
+    DOC_DRIVING_LICENSE = "driving_license"
+    DOC_TYPE_CHOICES = [
+        (DOC_RC, "Registration Certificate"), (DOC_INSURANCE, "Insurance"), (DOC_PERMIT, "Permit"),
+        (DOC_PUC, "Pollution Under Control Certificate"), (DOC_DRIVING_LICENSE, "Driving License"),
+    ]
+
+    vehicle = models.ForeignKey(Vehicle, null=True, blank=True, on_delete=models.CASCADE, related_name="documents")
+    agent = models.ForeignKey(
+        "accounts.User", null=True, blank=True, on_delete=models.CASCADE, related_name="documents"
+    )
+    document_type = models.CharField(max_length=20, choices=DOC_TYPE_CHOICES)
+    document_number = models.CharField(max_length=100, blank=True)
+    expiry_date = models.DateField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        holder = self.vehicle or self.agent
+        return f"{holder} — {self.get_document_type_display()} (exp. {self.expiry_date})"
+
+
+class Geofence(BaseModel):
+    """FM-14 Geofencing & Zone Alerts — a circular virtual boundary.
+    "Restricted" zones trigger an unauthorized-entry alert when an
+    active trip's latest location falls inside one (see
+    services.geofence_alerts). "Unscheduled stops" — comparing a stop
+    against the agent's planned beat — needs continuous telemetry finer
+    than the periodic breadcrumb interval this build captures (the same
+    limitation already noted for FM-08 idle-time analytics) and isn't
+    attempted here."""
+
+    ZONE_WAREHOUSE = "warehouse"
+    ZONE_DEPOT = "depot"
+    ZONE_RESTRICTED = "restricted"
+    ZONE_TYPE_CHOICES = [
+        (ZONE_WAREHOUSE, "Warehouse"), (ZONE_DEPOT, "Depot"), (ZONE_RESTRICTED, "Restricted"),
+    ]
+
+    name = models.CharField(max_length=100)
+    zone_type = models.CharField(max_length=20, choices=ZONE_TYPE_CHOICES)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    radius_meters = models.PositiveIntegerField(default=200)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_zone_type_display()})"

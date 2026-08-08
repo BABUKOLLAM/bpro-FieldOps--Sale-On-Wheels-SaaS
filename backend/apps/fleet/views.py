@@ -16,12 +16,15 @@ from apps.accounts.constants import PERM_FLEET_TRIP_MANAGE_OWN, PERM_FLEET_VEHIC
 from apps.accounts.permissions import HasRolePermission
 from apps.inventory.models import StockTransfer
 
-from .models import FuelLog, MaintenanceRecord, MaintenanceSchedule, Trip, TripCheckpoint, Vehicle
+from .models import FuelLog, Geofence, MaintenanceRecord, MaintenanceSchedule, Trip, TripCheckpoint, Vehicle, VehicleDocument
 from .serializers import (
-    FuelLogSerializer, MaintenanceRecordSerializer, MaintenanceScheduleSerializer,
-    TripCheckpointSerializer, TripSerializer, VehicleSerializer,
+    FuelLogSerializer, GeofenceSerializer, MaintenanceRecordSerializer, MaintenanceScheduleSerializer,
+    TripCheckpointSerializer, TripSerializer, VehicleDocumentSerializer, VehicleSerializer,
 )
-from .services import STATUS_OK, STATUS_OVERDUE, end_trip, evaluate_fuel_log, maintenance_due_alerts, start_trip
+from .services import (
+    STATUS_OK, STATUS_OVERDUE, compliance_due_alerts, end_trip, evaluate_fuel_log, geofence_alerts,
+    maintenance_due_alerts, start_trip,
+)
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
@@ -148,12 +151,29 @@ class MaintenanceRecordViewSet(viewsets.ModelViewSet):
     filterset_fields = ["vehicle"]
 
 
+class VehicleDocumentViewSet(viewsets.ModelViewSet):
+    queryset = VehicleDocument.objects.select_related("vehicle", "agent")
+    serializer_class = VehicleDocumentSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_FLEET_VEHICLE_MANAGE
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["vehicle", "agent", "document_type", "is_active"]
+
+
+class GeofenceViewSet(viewsets.ModelViewSet):
+    queryset = Geofence.objects.all().order_by("name")
+    serializer_class = GeofenceSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_FLEET_VEHICLE_MANAGE
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["zone_type", "is_active"]
+
+
 class FleetDashboardView(APIView):
     """FM-12/FM-13: vehicle utilization, fuel cost, maintenance alerts,
-    and reverse-logistics reconciliation on one screen for a fleet
-    manager. "Compliance status" (FM-16: RC/insurance/PUC expiry) is
-    deliberately omitted — that module isn't built (see
-    docs/architecture.md's out-of-scope list)."""
+    reverse-logistics reconciliation, document compliance (FM-16), and
+    restricted-zone geofence alerts (FM-14) on one screen for a fleet
+    manager."""
 
     permission_classes = [HasRolePermission]
     required_permission_code = PERM_FLEET_VIEW_ALL
@@ -245,4 +265,6 @@ class FleetDashboardView(APIView):
             "maintenance_alerts": all_alerts,
             "fuel_cost_trend": fuel_cost_trend,
             "reverse_logistics": reverse_logistics,
+            "compliance_alerts": compliance_due_alerts(),
+            "geofence_alerts": geofence_alerts(),
         })

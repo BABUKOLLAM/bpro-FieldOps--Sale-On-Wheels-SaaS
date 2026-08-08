@@ -3,7 +3,8 @@ from rest_framework import serializers
 from apps.core.serializers import ClientGeneratedIdMixin
 
 from .models import (
-    FuelLog, LocationPing, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint, Vehicle,
+    FuelLog, Geofence, LocationPing, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint,
+    Vehicle, VehicleDocument,
 )
 
 
@@ -93,3 +94,22 @@ class MaintenanceRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaintenanceRecord
         fields = ["id", "vehicle", "schedule", "service_date", "odometer_reading", "cost", "description"]
+
+
+class VehicleDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleDocument
+        fields = ["id", "vehicle", "agent", "document_type", "document_number", "expiry_date", "is_active"]
+
+    def validate(self, attrs):
+        vehicle = attrs.get("vehicle", getattr(self.instance, "vehicle", None))
+        agent = attrs.get("agent", getattr(self.instance, "agent", None))
+        if bool(vehicle) == bool(agent):
+            raise serializers.ValidationError("Set exactly one of vehicle or agent, not both or neither.")
+        return attrs
+
+
+class GeofenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Geofence
+        fields = ["id", "name", "zone_type", "latitude", "longitude", "radius_meters", "is_active"]

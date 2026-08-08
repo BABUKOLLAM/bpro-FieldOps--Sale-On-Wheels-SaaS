@@ -213,6 +213,98 @@ def fleet_reverse_logistics_report():
     )
 
 
+def fleet_compliance_report():
+    from apps.fleet.services import compliance_due_alerts
+
+    rows = [
+        [
+            a["holder"], a["document_type_display"], a["document_number"] or "—",
+            a["expiry_date"], a["days_remaining"], a["status"],
+        ]
+        for a in compliance_due_alerts()
+    ]
+    return (
+        "Vehicle & Driver Compliance Report",
+        ["Vehicle / Driver", "Document", "Number", "Expiry Date", "Days Remaining", "Status"],
+        rows,
+    )
+
+
+def fleet_geofence_report():
+    from apps.fleet.services import geofence_alerts
+
+    rows = [
+        [
+            a["agent_name"], a["vehicle_reg_no"] or "—", a["zone_name"],
+            a["distance_meters"], a["recorded_at"],
+        ]
+        for a in geofence_alerts()
+    ]
+    return (
+        "Geofence Alerts Report — restricted-zone entries, active trips",
+        ["Agent", "Vehicle", "Zone", "Distance (m)", "Detected At"],
+        rows,
+    )
+
+
+def inventory_velocity_report():
+    """FM-10: fast/slow movers and stock-out/overstock, by item across all
+    van godowns — qty sold in the last 30 days from the stock ledger
+    against current on-hand quantity."""
+    from apps.inventory.models import Godown, StockLedgerEntry, VanStock
+
+    cutoff = timezone.now() - timedelta(days=30)
+    sold_by_item = {}
+    for entry in (
+        StockLedgerEntry.objects.filter(
+            txn_type=StockLedgerEntry.TXN_SALE, created_at__gte=cutoff, godown__godown_type=Godown.TYPE_VAN,
+        )
+        .values("item_id", "item__sku", "item__name")
+        .annotate(qty_sold=Sum("qty"))
+    ):
+        sold_by_item[entry["item_id"]] = {
+            "sku": entry["item__sku"], "name": entry["item__name"], "qty_sold": abs(float(entry["qty_sold"] or 0)),
+        }
+
+    on_hand_by_item = {}
+    for row in (
+        VanStock.objects.filter(godown__godown_type=Godown.TYPE_VAN)
+        .values("item_id")
+        .annotate(qty=Sum("qty_on_hand"))
+    ):
+        on_hand_by_item[row["item_id"]] = float(row["qty"] or 0)
+
+    item_ids = set(sold_by_item) | set(on_hand_by_item)
+    rows = []
+    for item_id in item_ids:
+        sold = sold_by_item.get(item_id, {}).get("qty_sold", 0.0)
+        on_hand = on_hand_by_item.get(item_id, 0.0)
+        sku = sold_by_item.get(item_id, {}).get("sku", "—")
+        name = sold_by_item.get(item_id, {}).get("name")
+        if name is None:
+            from apps.catalog.models import Item
+
+            item = Item.objects.filter(id=item_id).first()
+            sku, name = (item.sku, item.name) if item else ("—", "Unknown")
+        daily_velocity = sold / 30
+        if on_hand <= 0 and sold > 0:
+            pattern = "Stock-out"
+        elif daily_velocity > 0 and on_hand / daily_velocity > 21:
+            pattern = "Overstock"
+        elif sold == 0:
+            pattern = "Slow-moving"
+        else:
+            pattern = "Fast-moving" if daily_velocity >= 1 else "Normal"
+        rows.append([sku, name, sold, on_hand, round(daily_velocity, 2), pattern])
+
+    rows.sort(key=lambda r: r[2], reverse=True)
+    return (
+        "Inventory Velocity Report — last 30 days, van stock",
+        ["SKU", "Item", "Qty Sold", "Qty On Hand", "Daily Velocity", "Pattern"],
+        rows,
+    )
+
+
 REPORT_BUILDERS = {
     "sales": sales_report,
     "collections": collections_report,
@@ -226,6 +318,9 @@ REPORT_BUILDERS = {
     "fleet_maintenance": fleet_maintenance_report,
     "fleet_odometer": fleet_odometer_report,
     "fleet_reverse_logistics": fleet_reverse_logistics_report,
+    "fleet_compliance": fleet_compliance_report,
+    "fleet_geofence": fleet_geofence_report,
+    "inventory_velocity": inventory_velocity_report,
 }
 
 REPORT_LABELS = {
@@ -241,4 +336,7 @@ REPORT_LABELS = {
     "fleet_maintenance": "Fleet Maintenance Due",
     "fleet_odometer": "Fleet Odometer Log",
     "fleet_reverse_logistics": "Fleet Reverse Logistics",
+    "fleet_compliance": "Fleet Compliance (Documents)",
+    "fleet_geofence": "Fleet Geofence Alerts",
+    "inventory_velocity": "Inventory Velocity",
 }

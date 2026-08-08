@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 from .models import (
-    FuelLog, LocationPing, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint, Vehicle,
+    FuelLog, Geofence, LocationPing, MaintenanceRecord, MaintenanceSchedule, OdometerLog, Trip, TripCheckpoint,
+    Vehicle, VehicleDocument,
 )
 
 
@@ -47,3 +48,15 @@ class MaintenanceRecordAdmin(admin.ModelAdmin):
 class LocationPingAdmin(admin.ModelAdmin):
     list_display = ("agent", "vehicle", "trip", "latitude", "longitude", "recorded_at")
     list_filter = ("agent",)
+
+
+@admin.register(VehicleDocument)
+class VehicleDocumentAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "document_type", "expiry_date", "is_active")
+    list_filter = ("document_type", "is_active")
+
+
+@admin.register(Geofence)
+class GeofenceAdmin(admin.ModelAdmin):
+    list_display = ("name", "zone_type", "radius_meters", "is_active")
+    list_filter = ("zone_type", "is_active")

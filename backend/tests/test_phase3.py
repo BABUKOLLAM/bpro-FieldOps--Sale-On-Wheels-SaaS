@@ -224,3 +224,116 @@ def test_report_export_attendance(admin, agent):
     response = client.get("/api/reporting/export/attendance/?filetype=xlsx")
     assert response.status_code == 200
     assert response.content[:2] == b"PK"
+
+
+@pytest.mark.django_db
+def test_compliance_due_alerts_flags_expiring_document():
+    from apps.fleet.models import Vehicle, VehicleDocument
+    from apps.fleet.services import STATUS_DUE_SOON, compliance_due_alerts
+
+    vehicle = Vehicle.objects.create(reg_no="MH-01-TEST")
+    VehicleDocument.objects.create(
+        vehicle=vehicle, document_type=VehicleDocument.DOC_PUC,
+        expiry_date=timezone.localdate() + timezone.timedelta(days=10),
+    )
+    VehicleDocument.objects.create(
+        vehicle=vehicle, document_type=VehicleDocument.DOC_INSURANCE,
+        expiry_date=timezone.localdate() + timezone.timedelta(days=200),
+    )
+
+    alerts = compliance_due_alerts()
+    assert len(alerts) == 1
+    assert alerts[0]["status"] == STATUS_DUE_SOON
+    assert alerts[0]["document_type"] == VehicleDocument.DOC_PUC
+
+
+@pytest.mark.django_db
+def test_vehicle_document_api_requires_exactly_one_holder(admin, agent):
+    from apps.fleet.models import Vehicle
+
+    vehicle = Vehicle.objects.create(reg_no="MH-02-TEST")
+    client = APIClient()
+    client.force_authenticate(user=admin)
+
+    both = client.post(
+        "/api/fleet/documents/",
+        {"vehicle": str(vehicle.id), "agent": str(agent.id), "document_type": "rc", "expiry_date": "2030-01-01"},
+        format="json",
+    )
+    assert both.status_code == 400
+
+    neither = client.post(
+        "/api/fleet/documents/", {"document_type": "rc", "expiry_date": "2030-01-01"}, format="json"
+    )
+    assert neither.status_code == 400
+
+    valid = client.post(
+        "/api/fleet/documents/",
+        {"vehicle": str(vehicle.id), "document_type": "rc", "expiry_date": "2030-01-01"},
+        format="json",
+    )
+    assert valid.status_code == 201, valid.data
+
+
+@pytest.mark.django_db
+def test_geofence_alerts_detects_restricted_zone_entry(agent):
+    from apps.fleet.models import Geofence, LocationPing, Trip
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_IN_PROGRESS, start_time=timezone.now())
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("19.076000"), longitude=Decimal("72.877700"),
+        recorded_at=timezone.now(),
+    )
+    Geofence.objects.create(
+        name="Restricted Depot", zone_type=Geofence.ZONE_RESTRICTED,
+        latitude=Decimal("19.076100"), longitude=Decimal("72.877800"), radius_meters=500,
+    )
+
+    from apps.fleet.services import geofence_alerts
+
+    alerts = geofence_alerts()
+    assert len(alerts) == 1
+    assert alerts[0]["zone_name"] == "Restricted Depot"
+
+
+@pytest.mark.django_db
+def test_geofence_alerts_ignores_trip_far_from_zone(agent):
+    from apps.fleet.models import Geofence, LocationPing, Trip
+
+    trip = Trip.objects.create(agent=agent, status=Trip.STATUS_IN_PROGRESS, start_time=timezone.now())
+    LocationPing.objects.create(
+        agent=agent, trip=trip, latitude=Decimal("28.6139"), longitude=Decimal("77.2090"),
+        recorded_at=timezone.now(),
+    )
+    Geofence.objects.create(
+        name="Restricted Depot", zone_type=Geofence.ZONE_RESTRICTED,
+        latitude=Decimal("19.076100"), longitude=Decimal("72.877800"), radius_meters=500,
+    )
+
+    from apps.fleet.services import geofence_alerts
+
+    assert geofence_alerts() == []
+
+
+@pytest.mark.django_db
+def test_inventory_velocity_report_flags_stock_out(van_godown, item):
+    from apps.inventory.models import StockLedgerEntry, VanStock
+    from apps.reporting.report_builders import inventory_velocity_report
+
+    VanStock.objects.filter(godown=van_godown, item=item).update(qty_on_hand=0)
+    StockLedgerEntry.objects.create(
+        godown=van_godown, item=item, txn_type=StockLedgerEntry.TXN_SALE, qty=Decimal("-10"), balance_after=0,
+    )
+
+    title, headers, rows = inventory_velocity_report()
+    assert any(r[0] == item.sku and r[5] == "Stock-out" for r in rows)
+
+
+@pytest.mark.django_db
+def test_report_export_fleet_compliance_and_geofence_and_inventory(admin):
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    for key in ["fleet_compliance", "fleet_geofence", "inventory_velocity"]:
+        response = client.get(f"/api/reporting/export/{key}/?filetype=xlsx")
+        assert response.status_code == 200, (key, response.content[:200])
+        assert response.content[:2] == b"PK"
