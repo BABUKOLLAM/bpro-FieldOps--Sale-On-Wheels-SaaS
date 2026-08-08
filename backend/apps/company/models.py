@@ -24,6 +24,11 @@ class Company(BaseModel):
         "inventory.Godown", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     is_active = models.BooleanField(default=True)
+    logo = models.ImageField(
+        upload_to="branding/", null=True, blank=True,
+        help_text="Shown on the GST invoice PDF header. Uploaded directly (not via Master Settings "
+        "approval, same as default_godown) — binary data doesn't fit a ChangeRequest's JSON diff.",
+    )
 
     class Meta:
         verbose_name_plural = "companies"

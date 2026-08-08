@@ -4,9 +4,29 @@ import urllib.request
 
 from django.conf import settings
 
-from .models import DeviceToken, NotificationGatewaySettings, NotificationLog, SmsLog
+from .models import DeviceToken, MessageTemplate, NotificationGatewaySettings, NotificationLog, SmsLog
 
 FCM_SEND_URL = "https://fcm.googleapis.com/fcm/send"
+
+# The exact strings each call site hardcoded before MessageTemplate
+# existed — used as a fallback so a deployment with no Master Settings
+# edit yet behaves identically to before this model existed. Keep these
+# in sync with MessageTemplate.seed_defaults() below.
+DEFAULT_TEMPLATES = {
+    MessageTemplate.KEY_EXPENSE_APPROVED: ("Expense approved", "Your {category} expense of ₹{amount} was approved."),
+    MessageTemplate.KEY_EXPENSE_REJECTED: ("Expense rejected", "Your {category} expense of ₹{amount} was rejected."),
+    MessageTemplate.KEY_DELIVERY_OTP: (
+        "", "Your OTP to confirm delivery of invoice {invoice_no} is {code}. Valid for {validity_minutes} minutes.",
+    ),
+}
+
+
+def render_template(key: str, **kwargs) -> tuple[str, str]:
+    template = MessageTemplate.objects.filter(key=key).first()
+    if template is not None:
+        return template.render(**kwargs)
+    title, body = DEFAULT_TEMPLATES[key]
+    return title.format(**kwargs), body.format(**kwargs)
 
 
 def _resolve_gateway_setting(db_field: str, settings_key: str) -> str:

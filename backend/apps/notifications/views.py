@@ -4,8 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from apps.accounts.constants import PERM_MASTER_SETTINGS_MANAGE, PERM_REPORTING_DASHBOARD_VIEW
 from apps.accounts.permissions import HasRolePermission
 
-from .models import DeviceToken, NotificationGatewaySettings, NotificationLog
-from .serializers import DeviceTokenSerializer, NotificationGatewaySettingsSerializer, NotificationLogSerializer
+from .models import DeviceToken, MessageTemplate, NotificationGatewaySettings, NotificationLog
+from .serializers import (
+    DeviceTokenSerializer, MessageTemplateSerializer, NotificationGatewaySettingsSerializer,
+    NotificationLogSerializer,
+)
 
 
 class DeviceTokenViewSet(
@@ -65,3 +68,19 @@ class NotificationGatewaySettingsViewSet(mixins.ListModelMixin, mixins.RetrieveM
     def get_queryset(self):
         NotificationGatewaySettings.get_solo()
         return NotificationGatewaySettings.objects.all()
+
+
+class MessageTemplateViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Read-only: title_template/body_template now only change through
+    apps.governance's ChangeRequest workflow (see
+    apps/notifications/governance.py). Always exactly the KEY_CHOICES
+    rows — auto-seeded from the original hardcoded defaults on first
+    access (see MessageTemplate.seed_defaults)."""
+
+    serializer_class = MessageTemplateSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_MASTER_SETTINGS_MANAGE
+
+    def get_queryset(self):
+        MessageTemplate.seed_defaults()
+        return MessageTemplate.objects.all().order_by("key")

@@ -10,6 +10,7 @@ from apps.accounts.constants import (
     PERM_SALES_RECEIPT_CREATE, PERM_SALES_RETURN_CREATE, PERM_SALES_VIEW_ALL,
 )
 
+from .invoice_pdf import invoice_pdf_response
 from .models import CreditNote, Invoice, Receipt, SalesOrder
 from .serializers import CreditNoteSerializer, InvoiceSerializer, ReceiptSerializer, SalesOrderSerializer
 from .services import send_delivery_otp, verify_delivery_otp
@@ -95,6 +96,16 @@ class InvoiceViewSet(OwnScopedViewSet):
         code = request.data.get("code", "")
         verify_delivery_otp(invoice, code)
         return Response(self.get_serializer(invoice).data)
+
+    @action(detail=True, methods=["get"], url_path="pdf")
+    def pdf(self, request, pk=None):
+        """A real GST-formatted tax invoice PDF (BRD 20.7) — distinct from
+        apps.reporting's generic tabular report export. get_object() already
+        scopes to the requesting agent's own invoices unless they hold a
+        view-all permission (OwnScopedViewSet), so no extra permission
+        check is needed here."""
+        invoice = self.get_object()
+        return invoice_pdf_response(invoice)
 
 
 class ReceiptViewSet(OwnScopedViewSet):

@@ -20,6 +20,6 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             "id", "legal_name", "display_name", "fy_start_month", "default_godown",
-            "is_active", "gst_registrations",
+            "is_active", "logo", "gst_registrations",
         ]
         read_only_fields = [f for f in fields if f != "gst_registrations"]

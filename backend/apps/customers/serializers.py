@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from .models import Beat, BeatCustomer, Customer, CustomerAddress, CustomerCategory
+from .models import (
+    Beat, BeatCustomer, BeatTemplate, BeatTemplateStop, Customer, CustomerAddress, CustomerCategory,
+)
 
 
 class CustomerCategorySerializer(serializers.ModelSerializer):
@@ -46,3 +48,19 @@ class BeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Beat
         fields = ["id", "name", "assigned_agent", "is_active", "stops"]
+
+
+class BeatTemplateStopSerializer(serializers.ModelSerializer):
+    customer_detail = CustomerSerializer(source="customer", read_only=True)
+
+    class Meta:
+        model = BeatTemplateStop
+        fields = ["id", "template", "customer", "customer_detail", "visit_sequence"]
+
+
+class BeatTemplateSerializer(serializers.ModelSerializer):
+    stops = BeatTemplateStopSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BeatTemplate
+        fields = ["id", "name", "is_active", "stops"]

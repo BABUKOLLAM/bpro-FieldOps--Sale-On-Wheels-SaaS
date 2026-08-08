@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -8,8 +9,11 @@ from apps.accounts.constants import PERM_CUSTOMERS_MANAGE, PERM_CUSTOMERS_VIEW
 from apps.accounts.permissions import HasRolePermission
 from apps.core.geo import haversine_km
 
-from .models import Beat, BeatCustomer, Customer, CustomerCategory
-from .serializers import BeatCustomerSerializer, BeatSerializer, CustomerCategorySerializer, CustomerSerializer
+from .models import Beat, BeatCustomer, BeatTemplate, BeatTemplateStop, Customer, CustomerCategory
+from .serializers import (
+    BeatCustomerSerializer, BeatSerializer, BeatTemplateSerializer, BeatTemplateStopSerializer,
+    CustomerCategorySerializer, CustomerSerializer,
+)
 
 
 class CustomersPermission(HasRolePermission):
@@ -104,3 +108,40 @@ class BeatCustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [CustomersPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["beat", "customer"]
+
+
+class BeatTemplateViewSet(viewsets.ModelViewSet):
+    """A reusable trip plan, distinct from a live Beat (see
+    BeatTemplate's docstring) — editing/reordering a template's stops
+    never touches any Beat already instantiated from it."""
+
+    queryset = BeatTemplate.objects.all().order_by("name")
+    serializer_class = BeatTemplateSerializer
+    permission_classes = [CustomersPermission]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    @action(detail=True, methods=["post"])
+    def instantiate(self, request, pk=None):
+        """Copies this template's stops into a brand-new Beat +
+        BeatCustomer rows. The template itself is untouched — later edits
+        to it never retroactively change a Beat already created this way."""
+        template = self.get_object()
+        beat = Beat.objects.create(
+            name=request.data.get("name") or f"{template.name} ({timezone.now():%d-%b-%Y})",
+            assigned_agent_id=request.data.get("assigned_agent") or None,
+        )
+        BeatCustomer.objects.bulk_create([
+            BeatCustomer(beat=beat, customer_id=stop.customer_id, visit_sequence=stop.visit_sequence)
+            for stop in template.stops.all()
+        ])
+        beat.refresh_from_db()
+        return Response(BeatSerializer(beat).data, status=201)
+
+
+class BeatTemplateStopViewSet(viewsets.ModelViewSet):
+    queryset = BeatTemplateStop.objects.select_related("template", "customer").all()
+    serializer_class = BeatTemplateStopSerializer
+    permission_classes = [CustomersPermission]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["template", "customer"]

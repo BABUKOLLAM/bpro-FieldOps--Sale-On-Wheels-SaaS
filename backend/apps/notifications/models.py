@@ -112,3 +112,48 @@ class NotificationGatewaySettings(BaseModel):
     @sms_gateway_api_key.setter
     def sms_gateway_api_key(self, value: str):
         self._sms_gateway_api_key_encrypted = encrypt_json({"value": value}) if value else ""
+
+
+class MessageTemplate(BaseModel):
+    """DB-backed override for a notification's title/body, replacing what
+    used to be a hardcoded f-string at each call site (expense approved/
+    rejected, delivery OTP). `key` identifies which call site — see
+    apps.notifications.services.render_template, which looks up a row by
+    key and falls back to the exact original hardcoded string (via
+    DEFAULT_TEMPLATES) when no row exists yet or a deployment hasn't
+    edited it, so nothing changes in behavior until someone actually
+    edits a template through Master Settings. Placeholders use Python's
+    str.format() syntax, e.g. "{amount}"."""
+
+    KEY_EXPENSE_APPROVED = "expense_approved"
+    KEY_EXPENSE_REJECTED = "expense_rejected"
+    KEY_DELIVERY_OTP = "delivery_otp"
+    KEY_CHOICES = [
+        (KEY_EXPENSE_APPROVED, "Expense approved (push)"),
+        (KEY_EXPENSE_REJECTED, "Expense rejected (push)"),
+        (KEY_DELIVERY_OTP, "Delivery OTP (SMS)"),
+    ]
+
+    key = models.CharField(max_length=50, choices=KEY_CHOICES, unique=True)
+    title_template = models.CharField(
+        max_length=200, blank=True, help_text="Push notification title. Leave blank for SMS-only templates.",
+    )
+    body_template = models.TextField()
+
+    def __str__(self):
+        return self.get_key_display()
+
+    def render(self, **kwargs) -> tuple[str, str]:
+        return self.title_template.format(**kwargs), self.body_template.format(**kwargs)
+
+    @classmethod
+    def seed_defaults(cls):
+        """Idempotent, same convention as apps.accounts.Role.seed_defaults
+        — populates any KEY_CHOICES row that doesn't exist yet from
+        apps.notifications.services.DEFAULT_TEMPLATES (imported here, not
+        at module level, to avoid a circular import), never overwrites an
+        already-seeded/edited row."""
+        from .services import DEFAULT_TEMPLATES
+
+        for key, (title, body) in DEFAULT_TEMPLATES.items():
+            cls.objects.get_or_create(key=key, defaults={"title_template": title, "body_template": body})

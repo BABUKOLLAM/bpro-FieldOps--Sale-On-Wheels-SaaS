@@ -12,7 +12,8 @@ from apps.company.models import Company
 from apps.core.exceptions import DomainError
 from apps.inventory.models import StockLedgerEntry
 from apps.inventory.services import post_stock_movement
-from apps.notifications.services import send_sms
+from apps.notifications.models import MessageTemplate
+from apps.notifications.services import render_template, send_sms
 
 from .models import CreditNote, DocumentSequence, Invoice, InvoiceDeliveryOTP, InvoiceLine, Receipt
 
@@ -314,11 +315,11 @@ def send_delivery_otp(invoice: Invoice) -> InvoiceDeliveryOTP:
             "verified_at": None,
         },
     )
-    send_sms(
-        invoice.customer.phone,
-        f"Your OTP to confirm delivery of invoice {invoice.invoice_no or invoice.id} is {code}. "
-        f"Valid for {OTP_VALIDITY_MINUTES} minutes.",
+    _, body = render_template(
+        MessageTemplate.KEY_DELIVERY_OTP,
+        invoice_no=invoice.invoice_no or invoice.id, code=code, validity_minutes=OTP_VALIDITY_MINUTES,
     )
+    send_sms(invoice.customer.phone, body)
     return otp
 
 

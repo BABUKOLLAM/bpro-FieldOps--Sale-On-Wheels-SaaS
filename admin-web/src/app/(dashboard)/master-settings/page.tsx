@@ -3,6 +3,9 @@ import ChangeRequestRow, { type ChangeRequest } from "../roles/ChangeRequestRow"
 import SettingsCard from "./SettingsCard";
 import WebhookCreateForm from "./WebhookCreateForm";
 import WebhookActions from "./WebhookActions";
+import LogoUploadForm from "./LogoUploadForm";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -24,6 +27,7 @@ type Company = {
   display_name: string;
   fy_start_month: number;
   is_active: boolean;
+  logo: string | null;
   gst_registrations: GSTRegistration[];
 };
 
@@ -46,20 +50,35 @@ type NotificationGatewaySettings = {
   has_sms_gateway_api_key: boolean;
 };
 
+type MessageTemplate = {
+  id: string;
+  key: string;
+  key_display: string;
+  title_template: string;
+  body_template: string;
+};
+
 export default async function MasterSettingsPage() {
-  const [companies, erpConnections, paymentConnections, webhooks, notificationGateway, pending] = await Promise.all([
-    apiGet<Paginated<Company>>("/api/company/companies/"),
-    apiGet<Paginated<ERPConnection>>("/api/integrations/erp-connections/"),
-    apiGet<Paginated<PaymentGatewayConnection>>("/api/payments/gateway-connections/"),
-    apiGet<Paginated<Webhook>>("/api/integrations/webhooks/"),
-    apiGet<Paginated<NotificationGatewaySettings>>("/api/notifications/gateway-settings/"),
-    apiGet<Paginated<ChangeRequest>>("/api/governance/change-requests/?status=pending").catch(
-      () => ({ count: 0, results: [] }) as Paginated<ChangeRequest>
-    ),
-  ]);
+  const [companies, erpConnections, paymentConnections, webhooks, notificationGateway, messageTemplates, pending] =
+    await Promise.all([
+      apiGet<Paginated<Company>>("/api/company/companies/"),
+      apiGet<Paginated<ERPConnection>>("/api/integrations/erp-connections/"),
+      apiGet<Paginated<PaymentGatewayConnection>>("/api/payments/gateway-connections/"),
+      apiGet<Paginated<Webhook>>("/api/integrations/webhooks/"),
+      apiGet<Paginated<NotificationGatewaySettings>>("/api/notifications/gateway-settings/"),
+      apiGet<Paginated<MessageTemplate>>("/api/notifications/message-templates/"),
+      apiGet<Paginated<ChangeRequest>>("/api/governance/change-requests/?status=pending").catch(
+        () => ({ count: 0, results: [] }) as Paginated<ChangeRequest>
+      ),
+    ]);
 
   const company = companies.results[0];
   const gatewaySettings = notificationGateway.results[0];
+  const logoUrl = company?.logo
+    ? company.logo.startsWith("http")
+      ? company.logo
+      : `${API_BASE_URL}/${company.logo.replace(/^\//, "")}`
+    : null;
 
   return (
     <div className="space-y-10">
@@ -87,6 +106,12 @@ export default async function MasterSettingsPage() {
       {company && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Company Profile</h2>
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+              Logo — shown on the GST invoice PDF header. Uploaded directly, not via approval.
+            </p>
+            <LogoUploadForm companyId={company.id} currentLogoUrl={logoUrl} />
+          </div>
           <SettingsCard
             title={company.display_name || company.legal_name}
             subtitle={`FY starts month ${company.fy_start_month} · ${company.is_active ? "Active" : "Inactive"}`}
@@ -225,6 +250,31 @@ export default async function MasterSettingsPage() {
           />
         </section>
       )}
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          Message Templates ({messageTemplates.count})
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Push/SMS wording sent to agents and customers. {"{placeholders}"} like {"{amount}"} or {"{code}"} are
+          filled in when a message is actually sent — keep them intact when editing.
+        </p>
+        <div className="space-y-3">
+          {messageTemplates.results.map((template) => (
+            <SettingsCard
+              key={template.id}
+              title={template.key_display}
+              subtitle={template.body_template}
+              targetType="message-template"
+              targetId={template.id}
+              fields={[
+                { name: "title_template", label: "Title (push notifications only)", type: "text", value: template.title_template },
+                { name: "body_template", label: "Body", type: "text", value: template.body_template },
+              ]}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

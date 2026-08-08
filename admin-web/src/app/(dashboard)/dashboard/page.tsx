@@ -89,12 +89,13 @@ export default async function DashboardPage() {
               <th className="px-5 py-2 font-medium">Credit</th>
               <th className="px-5 py-2 font-medium">Sync</th>
               <th className="px-5 py-2 font-medium">Signature</th>
+              <th className="px-5 py-2 font-medium">Invoice PDF</th>
             </tr>
           </thead>
           <tbody>
             {data.recent_invoices.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-6 text-center text-slate-400">
+                <td colSpan={8} className="px-5 py-6 text-center text-slate-400">
                   No invoices yet today.
                 </td>
               </tr>
@@ -120,6 +121,16 @@ export default async function DashboardPage() {
                   ) : (
                     <span className="text-xs text-slate-400">—</span>
                   )}
+                </td>
+                <td className="px-5 py-2">
+                  <a
+                    href={`/api/proxy/sales/invoices/${inv.id}/pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
+                  >
+                    Download
+                  </a>
                 </td>
               </tr>
             ))}

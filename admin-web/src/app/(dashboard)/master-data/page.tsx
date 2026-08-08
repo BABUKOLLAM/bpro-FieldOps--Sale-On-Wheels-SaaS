@@ -5,6 +5,10 @@ import BeatForm from "./BeatForm";
 import BeatStopForm from "./BeatStopForm";
 import RemoveStopButton from "./RemoveStopButton";
 import OptimizeRouteButton from "./OptimizeRouteButton";
+import BeatTemplateForm from "./BeatTemplateForm";
+import BeatTemplateStopForm from "./BeatTemplateStopForm";
+import RemoveTemplateStopButton from "./RemoveTemplateStopButton";
+import InstantiateTemplateForm from "./InstantiateTemplateForm";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -48,14 +52,30 @@ type Beat = {
   stops: BeatStop[];
 };
 
+type BeatTemplateStop = {
+  id: string;
+  template: string;
+  customer: string;
+  customer_detail: Customer;
+  visit_sequence: number;
+};
+
+type BeatTemplate = {
+  id: string;
+  name: string;
+  is_active: boolean;
+  stops: BeatTemplateStop[];
+};
+
 export default async function MasterDataPage() {
-  const [customers, items, categories, uoms, beats, users] = await Promise.all([
+  const [customers, items, categories, uoms, beats, users, beatTemplates] = await Promise.all([
     apiGet<Paginated<Customer>>("/api/customers/customers/"),
     apiGet<Paginated<Item>>("/api/catalog/items/"),
     apiGet<Paginated<Category>>("/api/catalog/categories/"),
     apiGet<Paginated<UOM>>("/api/catalog/uoms/"),
     apiGet<Paginated<Beat>>("/api/customers/beats/"),
     apiGet<Paginated<User>>("/api/users/"),
+    apiGet<Paginated<BeatTemplate>>("/api/customers/beat-templates/"),
   ]);
   const agents = users.results.filter((u) => u.is_field_agent);
 
@@ -164,6 +184,45 @@ export default async function MasterDataPage() {
           )}
         </div>
         <BeatForm agents={agents} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          Trip Plan Templates ({beatTemplates.count})
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          A reusable outlet list, not yet assigned to any agent or day — instantiate one into a brand-new route
+          above without affecting the template itself.
+        </p>
+        <div className="space-y-4">
+          {beatTemplates.results.map((template) => (
+            <div key={template.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{template.name}</h3>
+              <ul className="mt-3 space-y-1.5">
+                {[...template.stops].sort((a, b) => a.visit_sequence - b.visit_sequence).map((stop) => (
+                  <li key={stop.id} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-700 dark:text-slate-300">
+                      <span className="mr-2 text-xs text-slate-400">#{stop.visit_sequence}</span>
+                      {stop.customer_detail?.name}
+                    </span>
+                    <RemoveTemplateStopButton stopId={stop.id} />
+                  </li>
+                ))}
+                {template.stops.length === 0 && <li className="text-xs text-slate-400">No stops yet.</li>}
+              </ul>
+              <div className="mt-3">
+                <BeatTemplateStopForm templateId={template.id} customers={customers.results} />
+              </div>
+              <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                <InstantiateTemplateForm templateId={template.id} agents={agents} />
+              </div>
+            </div>
+          ))}
+          {beatTemplates.results.length === 0 && (
+            <p className="text-sm text-slate-400">No trip plan templates yet — add one below.</p>
+          )}
+        </div>
+        <BeatTemplateForm />
       </section>
     </div>
   );

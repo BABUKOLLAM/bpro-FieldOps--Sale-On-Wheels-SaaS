@@ -21,14 +21,20 @@ async function forward(request: NextRequest, path: string[]) {
   const targetPath = `/api/${path.join("/")}/`;
   const search = request.nextUrl.search;
   const hasBody = !["GET", "HEAD"].includes(request.method);
+  // File uploads (e.g. Company logo) arrive as multipart/form-data — must
+  // NOT be forced through .text()/JSON, and must NOT get an explicit
+  // Content-Type header here: fetch() derives the correct
+  // "multipart/form-data; boundary=..." from the FormData body itself,
+  // and a stale boundary-less header would break Django's parser.
+  const isMultipart = (request.headers.get("content-type") || "").includes("multipart/form-data");
 
   const backendResponse = await fetch(`${API_BASE_URL_INTERNAL}${targetPath}${search}`, {
     method: request.method,
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      ...(isMultipart ? {} : { "Content-Type": "application/json" }),
     },
-    body: hasBody ? await request.text() : undefined,
+    body: hasBody ? (isMultipart ? await request.formData() : await request.text()) : undefined,
     cache: "no-store",
   });
 

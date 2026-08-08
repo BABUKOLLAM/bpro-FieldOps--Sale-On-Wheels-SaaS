@@ -86,3 +86,31 @@ class BeatCustomer(BaseModel):
 
     def __str__(self):
         return f"{self.beat.name} #{self.visit_sequence}: {self.customer.name}"
+
+
+class BeatTemplate(BaseModel):
+    """A reusable trip plan — an ordered outlet list not yet assigned to
+    any agent or day, distinct from a live Beat (which always has
+    exactly one assigned_agent and represents a route actually being
+    run). Master Settings' "instantiate" action copies a template's
+    stops into a brand-new Beat + BeatCustomer rows; editing a template
+    afterwards never touches Beats already created from it."""
+
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class BeatTemplateStop(BaseModel):
+    template = models.ForeignKey(BeatTemplate, on_delete=models.CASCADE, related_name="stops")
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="beat_template_memberships")
+    visit_sequence = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("template", "customer")
+        ordering = ["visit_sequence"]
+
+    def __str__(self):
+        return f"{self.template.name} #{self.visit_sequence}: {self.customer.name}"

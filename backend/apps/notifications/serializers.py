@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import DeviceToken, NotificationGatewaySettings, NotificationLog
+from .models import DeviceToken, MessageTemplate, NotificationGatewaySettings, NotificationLog
 
 
 class DeviceTokenSerializer(serializers.ModelSerializer):
@@ -39,3 +39,12 @@ class NotificationGatewaySettingsSerializer(serializers.ModelSerializer):
 
     def get_has_sms_gateway_api_key(self, obj):
         return bool(obj.sms_gateway_api_key)
+
+
+class MessageTemplateSerializer(serializers.ModelSerializer):
+    key_display = serializers.CharField(source="get_key_display", read_only=True)
+
+    class Meta:
+        model = MessageTemplate
+        fields = ["id", "key", "key_display", "title_template", "body_template"]
+        read_only_fields = fields  # edits go through apps.governance — see apps/notifications/governance.py
