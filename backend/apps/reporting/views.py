@@ -15,6 +15,7 @@ from apps.integrations.models import SyncLogEntry
 from apps.sales.models import Invoice, Receipt
 
 from . import exports
+from .alerts import exception_alerts_summary
 from .models import Target
 from .report_builders import REPORT_BUILDERS, REPORT_LABELS
 from .serializers import TargetSerializer
@@ -206,3 +207,17 @@ class ReportEmailView(APIView):
         except Exception as exc:  # noqa: BLE001 — surface SMTP/config errors to the caller, not a 500 page
             return Response({"detail": f"Could not send email: {exc}"}, status=status.HTTP_502_BAD_GATEWAY)
         return Response({"status": "sent", "to": to_email})
+
+
+class ExceptionAlertsView(APIView):
+    """AR-11 Alerts & Exception Reporting: stock variance, unusual
+    discounts, missed visits, and prolonged agent inactivity, in one
+    place — each category is also independently exportable via the
+    normal report-export endpoints (report keys: stock_variance,
+    unusual_discounts, missed_visits, inactive_agents)."""
+
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
+
+    def get(self, request):
+        return Response(exception_alerts_summary())

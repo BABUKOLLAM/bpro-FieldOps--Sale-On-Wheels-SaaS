@@ -357,6 +357,53 @@ def inventory_velocity_report():
     )
 
 
+def stock_variance_report():
+    from .alerts import stock_variance_alerts
+
+    rows = [
+        [a["recorded_at"], a["godown_name"], a["item_sku"], a["item_name"], float(a["qty"]), float(a["balance_after"])]
+        for a in stock_variance_alerts()
+    ]
+    return "Stock Variance (AR-11)", ["Date", "Godown", "SKU", "Item", "Adjustment Qty", "Balance After"], rows
+
+
+def unusual_discounts_report():
+    from .alerts import unusual_discount_alerts
+
+    rows = [
+        [
+            a["invoice_date"], a["invoice_no"], a["customer_name"], a["agent_name"],
+            float(a["subtotal"]), float(a["discount_total"]), float(a["discount_pct"]),
+        ]
+        for a in unusual_discount_alerts()
+    ]
+    return (
+        "Unusual Discounts (AR-11)",
+        ["Date", "Invoice No", "Customer", "Agent", "Subtotal", "Discount", "Discount %"],
+        rows,
+    )
+
+
+def missed_visits_report():
+    from .alerts import missed_visit_alerts
+
+    rows = [
+        [a["date"], a["beat_name"], a["agent_name"], a["visit_sequence"], a["customer_name"]]
+        for a in missed_visit_alerts()
+    ]
+    return "Missed Visits (AR-11)", ["Date", "Beat", "Agent", "Sequence", "Customer"], rows
+
+
+def inactive_agents_report():
+    from .alerts import inactive_agent_alerts
+
+    rows = [
+        [a["agent_name"], a["last_activity_at"], a["days_inactive"]]
+        for a in inactive_agent_alerts()
+    ]
+    return "Inactive Agents (AR-11)", ["Agent", "Last Activity", "Days Inactive"], rows
+
+
 REPORT_BUILDERS = {
     "sales": sales_report,
     "collections": collections_report,
@@ -376,6 +423,10 @@ REPORT_BUILDERS = {
     "driver_safety_scores": driver_safety_scores_report,
     "trip_profitability": trip_profitability_report,
     "inventory_velocity": inventory_velocity_report,
+    "stock_variance": stock_variance_report,
+    "unusual_discounts": unusual_discounts_report,
+    "missed_visits": missed_visits_report,
+    "inactive_agents": inactive_agents_report,
 }
 
 REPORT_LABELS = {
@@ -397,4 +448,8 @@ REPORT_LABELS = {
     "driver_safety_scores": "Driver Safety Scores",
     "trip_profitability": "Trip Cost & Profitability",
     "inventory_velocity": "Inventory Velocity",
+    "stock_variance": "Stock Variance Alerts",
+    "unusual_discounts": "Unusual Discount Alerts",
+    "missed_visits": "Missed Visit Alerts",
+    "inactive_agents": "Inactive Agent Alerts",
 }
