@@ -1,0 +1,79 @@
+# Production nginx config for a single-client deployment — two public
+# hostnames sharing one Let's Encrypt certificate (issued with both as
+# Subject Alternative Names, see docs/DEPLOYMENT.md step 6):
+#   app.YOURDOMAIN.com  -> admin-web (Next.js) — the back-office console
+#   api.YOURDOMAIN.com  -> backend (Django)    — hit directly by the
+#                                                 mobile app; admin-web's
+#                                                 own server-side proxy
+#                                                 talks to `backend:8000`
+#                                                 over the compose network
+#                                                 instead, never through
+#                                                 this domain.
+#
+# Copy to nginx/vansales.conf and replace YOURDOMAIN.com throughout
+# before using — see docs/DEPLOYMENT.md.
+
+server {
+    listen 80;
+    server_name app.YOURDOMAIN.com api.YOURDOMAIN.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name app.YOURDOMAIN.com;
+
+    ssl_certificate     /etc/letsencrypt/live/app.YOURDOMAIN.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.YOURDOMAIN.com/privkey.pem;
+
+    # Signature images / logo uploads go through admin-web's proxy route.
+    client_max_body_size 15m;
+
+    location / {
+        proxy_pass http://admin-web:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name api.YOURDOMAIN.com;
+
+    ssl_certificate     /etc/letsencrypt/live/app.YOURDOMAIN.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.YOURDOMAIN.com/privkey.pem;
+
+    # Direct invoice/signature/logo uploads from the mobile app and
+    # Django admin.
+    client_max_body_size 15m;
+
+    # Served directly off the shared volume instead of proxied through
+    # gunicorn — faster, and means WhiteNoise (configured in
+    # config/settings/production.py as a fallback) never has to run.
+    location /static/ {
+        alias /var/www/static/;
+    }
+
+    location /media/ {
+        alias /var/www/media/;
+    }
+
+    location / {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

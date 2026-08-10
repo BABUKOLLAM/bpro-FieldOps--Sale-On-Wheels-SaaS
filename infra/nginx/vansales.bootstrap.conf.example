@@ -1,0 +1,22 @@
+# Temporary HTTP-only config — used ONLY for the very first Certbot run,
+# before any certificate exists yet (nginx can't start an SSL server
+# block pointing at a cert file that doesn't exist). See step 6 in
+# docs/DEPLOYMENT.md: copy this to nginx/vansales.conf, bring nginx up,
+# issue the certificate, then replace it with vansales.conf.example
+# (the real, SSL-enabled config) and reload.
+#
+# Replace YOURDOMAIN.com below with the real domain before using.
+
+server {
+    listen 80;
+    server_name app.YOURDOMAIN.com api.YOURDOMAIN.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 200 "vansales-saas: nginx is up, waiting for TLS certificate setup.\n";
+        add_header Content-Type text/plain;
+    }
+}
