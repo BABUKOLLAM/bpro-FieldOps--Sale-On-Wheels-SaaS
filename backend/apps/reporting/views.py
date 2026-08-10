@@ -17,6 +17,7 @@ from apps.sales.models import Invoice, Receipt
 from . import exports
 from .alerts import exception_alerts_summary
 from .anomaly_insights import dashboard_anomaly_insights
+from .fraud_alerts import fraud_alerts_summary
 from .models import Target
 from .report_builders import REPORT_BUILDERS, REPORT_LABELS
 from .serializers import TargetSerializer
@@ -236,3 +237,17 @@ class AnomalyInsightsView(APIView):
 
     def get(self, request):
         return Response({"insights": dashboard_anomaly_insights()})
+
+
+class FraudAlertsView(APIView):
+    """§20.6 Fraud & anomaly detection: per-agent discount patterns,
+    sellable-return frequency, GPS-spoofed outlet check-ins, and
+    physically-impossible travel between GPS pings — see
+    apps.reporting.fraud_alerts for the rules and why each is a
+    pattern-level signal rather than a single-transaction threshold."""
+
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
+
+    def get(self, request):
+        return Response(fraud_alerts_summary())

@@ -15,6 +15,50 @@ type AnomalyInsight = {
   explanation: string;
 };
 
+type DiscountPatternAlert = {
+  agent_id: string;
+  agent_name: string;
+  invoice_count: number;
+  avg_discount_pct: number;
+  fleet_avg_discount_pct: number;
+  ratio_to_fleet_avg: number;
+};
+
+type ReturnFrequencyAlert = {
+  agent_id: string;
+  agent_name: string;
+  invoice_count: number;
+  sellable_return_count: number;
+  sellable_return_ratio: number;
+};
+
+type SpoofedCheckinAlert = {
+  checkpoint_id: string;
+  trip_id: string;
+  agent_name: string;
+  customer_id: string;
+  customer_name: string;
+  check_in_time: string;
+  distance_km: number;
+};
+
+type ImpossibleTravelAlert = {
+  agent_id: string;
+  agent_name: string;
+  from_time: string;
+  to_time: string;
+  distance_km: number;
+  elapsed_minutes: number;
+  implied_speed_kmh: number;
+};
+
+type FraudAlertsData = {
+  discount_patterns: DiscountPatternAlert[];
+  return_frequency: ReturnFrequencyAlert[];
+  spoofed_checkins: SpoofedCheckinAlert[];
+  impossible_travel: ImpossibleTravelAlert[];
+};
+
 type DashboardData = {
   date: string;
   todays_sales_total: number;
@@ -98,12 +142,36 @@ function InsightCard({ insight }: { insight: AnomalyInsight }) {
   );
 }
 
+function FraudAlertGroup({
+  title, count, description, empty, children,
+}: {
+  title: string; count: number; description: string; empty: string; children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-red-200 dark:border-red-900/60 bg-white dark:bg-slate-900 p-4">
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        {title} {count > 0 && `(${count})`}
+      </h3>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>
+      {count === 0 ? (
+        <p className="mt-3 text-sm text-slate-400">{empty}</p>
+      ) : (
+        <ul className="mt-3 space-y-2">{children}</ul>
+      )}
+    </div>
+  );
+}
+
 export default async function DashboardPage() {
-  const [data, anomalyData] = await Promise.all([
+  const [data, anomalyData, fraudData] = await Promise.all([
     apiGet<DashboardData>("/api/reporting/dashboard/"),
     apiGet<{ insights: AnomalyInsight[] }>("/api/reporting/anomaly-insights/"),
+    apiGet<FraudAlertsData>("/api/reporting/fraud-alerts/"),
   ]);
   const insights = anomalyData.insights;
+  const fraudAlertCount =
+    fraudData.discount_patterns.length + fraudData.return_frequency.length +
+    fraudData.spoofed_checkins.length + fraudData.impossible_travel.length;
 
   return (
     <div className="space-y-8">
@@ -141,6 +209,88 @@ export default async function DashboardPage() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+            Fraud &amp; Exception Alerts {fraudAlertCount > 0 && `(${fraudAlertCount})`}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Patterns across many transactions per agent — a sustained deviation, not a single flagged invoice
+            (§20.6).
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FraudAlertGroup
+            title="Discount Patterns"
+            count={fraudData.discount_patterns.length}
+            description="Agents whose average discount% is well above the fleet-wide average."
+            empty="No agent discount patterns flagged."
+          >
+            {fraudData.discount_patterns.map((a) => (
+              <li key={a.agent_id} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
+                <p className="font-medium text-slate-900 dark:text-slate-50">{a.agent_name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Avg {a.avg_discount_pct}% vs fleet {a.fleet_avg_discount_pct}% ({a.ratio_to_fleet_avg}x) across{" "}
+                  {a.invoice_count} invoices
+                </p>
+              </li>
+            ))}
+          </FraudAlertGroup>
+
+          <FraudAlertGroup
+            title="Return Frequency"
+            count={fraudData.return_frequency.length}
+            description="Agents with an unusually high rate of returns claimed fully sellable."
+            empty="No unusual return patterns flagged."
+          >
+            {fraudData.return_frequency.map((a) => (
+              <li key={a.agent_id} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
+                <p className="font-medium text-slate-900 dark:text-slate-50">{a.agent_name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {a.sellable_return_count} sellable returns / {a.invoice_count} invoices (
+                  {Math.round(a.sellable_return_ratio * 100)}%)
+                </p>
+              </li>
+            ))}
+          </FraudAlertGroup>
+
+          <FraudAlertGroup
+            title="Spoofed Check-Ins"
+            count={fraudData.spoofed_checkins.length}
+            description="Outlet check-ins whose GPS lands well outside the customer's registered address."
+            empty="No spoofed check-ins flagged."
+          >
+            {fraudData.spoofed_checkins.map((a) => (
+              <li key={a.checkpoint_id} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
+                <p className="font-medium text-slate-900 dark:text-slate-50">
+                  {a.agent_name} — {a.customer_name}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {a.distance_km} km from registered address at{" "}
+                  {new Date(a.check_in_time).toLocaleString("en-IN")}
+                </p>
+              </li>
+            ))}
+          </FraudAlertGroup>
+
+          <FraudAlertGroup
+            title="Impossible Travel"
+            count={fraudData.impossible_travel.length}
+            description="Consecutive GPS pings implying a speed no real vehicle could sustain."
+            empty="No implausible GPS jumps flagged."
+          >
+            {fraudData.impossible_travel.map((a, i) => (
+              <li key={`${a.agent_id}-${i}`} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
+                <p className="font-medium text-slate-900 dark:text-slate-50">{a.agent_name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {a.distance_km} km in {a.elapsed_minutes} min — implied {a.implied_speed_kmh} km/h
+                </p>
+              </li>
+            ))}
+          </FraudAlertGroup>
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
