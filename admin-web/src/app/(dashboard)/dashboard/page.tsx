@@ -2,6 +2,19 @@ import { apiGet } from "@/lib/api";
 import EwayBillCell from "./EwayBillCell";
 import WhatsAppNotifyButton from "./WhatsAppNotifyButton";
 
+type AnomalyInsight = {
+  metric: string;
+  label: string;
+  today_value: number;
+  baseline_mean: number;
+  baseline_stdev: number;
+  z_score: number;
+  direction: "spike" | "drop";
+  severity: "medium" | "high";
+  unit: string;
+  explanation: string;
+};
+
 type DashboardData = {
   date: string;
   todays_sales_total: number;
@@ -57,8 +70,40 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function InsightCard({ insight }: { insight: AnomalyInsight }) {
+  const toneClass =
+    insight.severity === "high"
+      ? "border-red-300 bg-red-50 dark:border-red-900/60 dark:bg-red-950/30"
+      : "border-amber-300 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/30";
+  const badgeClass =
+    insight.severity === "high"
+      ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
+      : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
+  return (
+    <div className={`rounded-lg border p-4 ${toneClass}`}>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{insight.label}</h3>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeClass}`}>
+          {insight.severity} {insight.direction}
+        </span>
+      </div>
+      <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{insight.explanation}</p>
+      <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+        z-score {insight.z_score > 0 ? "+" : ""}
+        {insight.z_score} · baseline {insight.unit}
+        {insight.baseline_mean.toLocaleString("en-IN")} ± {insight.unit}
+        {insight.baseline_stdev.toLocaleString("en-IN")}
+      </p>
+    </div>
+  );
+}
+
 export default async function DashboardPage() {
-  const data = await apiGet<DashboardData>("/api/reporting/dashboard/");
+  const [data, anomalyData] = await Promise.all([
+    apiGet<DashboardData>("/api/reporting/dashboard/"),
+    apiGet<{ insights: AnomalyInsight[] }>("/api/reporting/anomaly-insights/"),
+  ]);
+  const insights = anomalyData.insights;
 
   return (
     <div className="space-y-8">
@@ -75,6 +120,27 @@ export default async function DashboardPage() {
         <StatCard label="Checked In Today" value={data.checked_in_today_count} />
         <StatCard label="Pending Credit Review" value={data.pending_credit_review_count} tone={data.pending_credit_review_count > 0 ? "warn" : undefined} />
         <StatCard label="Sync Failures" value={data.sync_failure_count} tone={data.sync_failure_count > 0 ? "danger" : undefined} />
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+            Anomaly Insights {insights.length > 0 && `(${insights.length})`}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Today&apos;s headline metrics compared against their own recent history — flagged only when the
+            deviation is a real statistical outlier (§20.1).
+          </p>
+        </div>
+        {insights.length === 0 ? (
+          <p className="text-sm text-slate-400">No anomalies detected today.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {insights.map((insight) => (
+              <InsightCard key={insight.metric} insight={insight} />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">

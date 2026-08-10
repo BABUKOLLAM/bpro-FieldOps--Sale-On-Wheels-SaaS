@@ -16,6 +16,7 @@ from apps.sales.models import Invoice, Receipt
 
 from . import exports
 from .alerts import exception_alerts_summary
+from .anomaly_insights import dashboard_anomaly_insights
 from .models import Target
 from .report_builders import REPORT_BUILDERS, REPORT_LABELS
 from .serializers import TargetSerializer
@@ -221,3 +222,17 @@ class ExceptionAlertsView(APIView):
 
     def get(self, request):
         return Response(exception_alerts_summary())
+
+
+class AnomalyInsightsView(APIView):
+    """§20.1 AI dashboard anomaly insights: today's headline dashboard
+    metrics compared against their own trailing history, flagged only
+    when the deviation is a real statistical outlier — see
+    apps.reporting.anomaly_insights for the scoring and why each insight
+    carries its own mean/stdev/z-score explanation."""
+
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
+
+    def get(self, request):
+        return Response({"insights": dashboard_anomaly_insights()})
