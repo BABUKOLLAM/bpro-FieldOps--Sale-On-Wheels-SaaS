@@ -14,12 +14,15 @@ appId: org.reactjs.native.example.VanSales
     clearState: true
 # A cold `clearState: true` launch has to download and parse the full
 # ~9MB dev JS bundle from Metro plus initialize WatermelonDB's SQLite
-# adapter before anything renders — the previous run's screenshot at
-# this point was a plain black screen, confirming this genuinely needs
-# more than Maestro's normal per-command wait/retry allowance.
+# adapter before anything renders. 30s wasn't enough — the failure
+# screenshot at that mark still showed RN's native "Loading from
+# Metro..." progress bar, not a crash or wrong screen, just genuinely
+# still loading (the x86_64-via-Rosetta simulator build this pod
+# constraint requires adds real overhead here). Giving it real headroom
+# since it's a one-time cold-start cost, not a per-step cost.
 - extendedWaitUntil:
     visible: "Set a device PIN"
-    timeout: 30000
+    timeout: 90000
 - takeScreenshot: 01-first-run-pin-setup
 
 # First run: no device PIN set yet — this is the actual first screen,
