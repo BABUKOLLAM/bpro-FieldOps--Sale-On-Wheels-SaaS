@@ -35,6 +35,7 @@ export default function LoginScreen() {
       <Text style={styles.subtitle}>Field agent sign in</Text>
 
       <TextInput
+        testID="username-input"
         style={styles.input}
         placeholder="Username"
         placeholderTextColor={colors.textSecondary}
@@ -43,6 +44,7 @@ export default function LoginScreen() {
         onChangeText={setUsername}
       />
       <TextInput
+        testID="password-input"
         style={styles.input}
         placeholder="Password"
         placeholderTextColor={colors.textSecondary}

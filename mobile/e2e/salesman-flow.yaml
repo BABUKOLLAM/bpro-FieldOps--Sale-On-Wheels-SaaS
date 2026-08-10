@@ -46,8 +46,13 @@ appId: org.reactjs.native.example.VanSales
     timeout: 15000
 - takeScreenshot: 03-login-screen
 # Username is pre-filled with the demo agent (agent@demo.local) —
-# only the password needs entering.
-- tapOn: "Password"
+# only the password needs entering. Tapping by placeholder *text* only
+# selects the element without reliably focusing the underlying
+# TextInput's native responder (Maestro reported the tap+type as
+# successful, but the typed text never landed — 8.9s for 13 characters
+# was the tell). testID targeting is unambiguous and actually focuses it.
+- tapOn:
+    id: "password-input"
 - inputText: "DemoPass123!"
 - tapOn: "Sign In"
 
