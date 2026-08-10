@@ -7,9 +7,9 @@ from rest_framework.response import Response
 
 from apps.accounts.constants import PERM_CUSTOMERS_MANAGE, PERM_CUSTOMERS_VIEW
 from apps.accounts.permissions import HasRolePermission
-from apps.core.geo import haversine_km
 
 from .models import Beat, BeatCustomer, BeatTemplate, BeatTemplateStop, Customer, CustomerCategory
+from .route_optimization import optimize_order
 from .serializers import (
     BeatCustomerSerializer, BeatSerializer, BeatTemplateSerializer, BeatTemplateStopSerializer,
     CustomerCategorySerializer, CustomerSerializer,
@@ -54,12 +54,13 @@ class BeatViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="optimize-route")
     def optimize_route(self, request, pk=None):
-        """FM-07: nearest-neighbor re-sequencing of this beat's stops by
-        straight-line (Haversine) distance between outlet addresses — a
-        real, useful improvement over an arbitrarily-ordered list, but
-        not a capacity/traffic-aware vehicle-routing solver. Stops whose
-        customer has no address on file can't be routed and are left in
-        their current relative order at the end."""
+        """FM-07: re-sequences this beat's stops by straight-line
+        (Haversine) distance — nearest-neighbor construction followed by
+        a 2-opt improvement pass (see route_optimization.optimize_order)
+        to remove the crossing/zig-zag paths nearest-neighbor alone is
+        prone to. Not a capacity/traffic-aware vehicle-routing solver.
+        Stops whose customer has no address on file can't be routed and
+        are left in their current relative order at the end."""
         beat = self.get_object()
         stops = list(beat.stops.select_related("customer").all())
 
@@ -71,21 +72,10 @@ class BeatViewSet(viewsets.ModelViewSet):
             else:
                 unlocated.append(stop)
 
-        ordered = []
-        remaining = located[:]
-        if remaining:
-            ordered.append(remaining.pop(0))
-            while remaining:
-                current = ordered[-1]
-                nearest = min(
-                    remaining,
-                    key=lambda s: haversine_km(current[1], current[2], s[1], s[2]),
-                )
-                remaining.remove(nearest)
-                ordered.append(nearest)
+        ordered_stops = optimize_order(located)
 
         sequence = 1
-        for stop, _, _ in ordered:
+        for stop in ordered_stops:
             stop.visit_sequence = sequence
             stop.save(update_fields=["visit_sequence"])
             sequence += 1
