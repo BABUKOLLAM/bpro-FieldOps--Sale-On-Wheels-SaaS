@@ -22,11 +22,17 @@ build/
 npm-debug.log*
 .expo/
 .expo-shared/
-ios/Pods/
-ios/build/
-android/.gradle/
-android/app/build/
-android/build/
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/ios/DerivedData/
+mobile/ios/*.xcworkspace
+!mobile/ios/*.xcworkspace/contents.xcworkspacedata
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+mobile/android/local.properties
+mobile/android/*.keystore
+!mobile/android/debug.keystore
 *.jsbundle
 .watchmanconfig
 

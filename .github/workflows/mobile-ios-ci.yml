@@ -1,0 +1,48 @@
+name: mobile-ios-ci
+
+on:
+  push:
+    paths: ["mobile/**", ".github/workflows/mobile-ios-ci.yml"]
+  pull_request:
+    paths: ["mobile/**", ".github/workflows/mobile-ios-ci.yml"]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode version in use
+        run: xcodebuild -version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Install CocoaPods
+        working-directory: mobile/ios
+        run: pod install --repo-update
+
+      - name: Build for iOS Simulator (compile only, no code signing)
+        working-directory: mobile/ios
+        run: |
+          xcodebuild \
+            -workspace VanSales.xcworkspace \
+            -scheme VanSales \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
