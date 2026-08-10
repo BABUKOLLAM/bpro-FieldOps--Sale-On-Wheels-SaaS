@@ -17,6 +17,13 @@ end
 target 'VanSales' do
   config = use_native_modules!
 
+  # WatermelonDB's podspec depends on `simdjson`, but the CocoaPods-trunk
+  # `simdjson` pod is not compatible — the npm-vendored @nozbe/simdjson
+  # fork must be used instead (WatermelonDB's own podspec says so). Without
+  # this explicit :path pin, `pod install` fails with "Unable to find a
+  # specification for simdjson".
+  pod 'simdjson', :path => '../node_modules/@nozbe/simdjson'
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
