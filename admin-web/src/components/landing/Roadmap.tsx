@@ -1,22 +1,50 @@
-const PHASES = [
+const CAPABILITIES = [
   {
-    label: "Phase 1 — Now",
-    title: "Core field sales",
-    items: ["Spot billing, orders & collections", "Sales returns", "Tally Prime sync", "Admin dashboard"],
-    current: true,
+    title: "Field Sales & Billing",
+    items: [
+      "Offline spot billing, orders, collections & returns",
+      "GST-compliant invoice PDFs + e-way bill generation",
+      "UPI QR at the point of sale",
+      "Digital signature & OTP proof-of-delivery",
+      "Scheme & discount engine (slab, volume, buy-X-get-Y)",
+    ],
   },
   {
-    label: "Phase 2",
-    title: "Expansion",
-    items: ["Live GPS & route tracking", "Expense management", "Scheme & discount engine", "Barcode scanning"],
-    current: false,
+    title: "Fleet & Route Intelligence",
+    items: [
+      "Live GPS tracking & route/beat optimization",
+      "Trip cost & profitability analysis",
+      "Driver safety scoring, idle-time & route-deviation analytics",
+      "Maintenance schedules & reverse logistics",
+      "Barcode scanning, Bluetooth receipt printing",
+    ],
   },
   {
-    label: "Phase 3",
-    title: "New systems",
-    items: ["Other ERPs — Busy, Marg, SAP", "UPI & card payments"],
-    current: false,
+    title: "Back-Office, Compliance & Insights",
+    items: [
+      "Role-based access with governed change-request approvals",
+      "Master Settings hub — company, GST, integrations, payments",
+      "Bulk master-data import/export with per-row error reports",
+      "Alerts & exception reporting — variance, missed visits, inactivity",
+      "AI dashboard anomaly insights & rule-based fraud detection",
+    ],
   },
+  {
+    title: "Integrations & Payments",
+    items: [
+      "Real-time Tally Prime sync, plus Busy & Marg connectors",
+      "Generic multi-ERP API/webhook layer for anything else",
+      "UPI & card payment collection at the point of sale",
+      "WhatsApp, push, and SMS delivery notifications",
+      "Multi-language UI",
+    ],
+  },
+];
+
+const NEXT_UP = [
+  "Third-party GPS/telematics hardware integration, once you've picked a vendor",
+  "Geofencing beyond zone-based alerts",
+  "Excel/PDF/email export for the Fleet Dashboard specifically (every other report already has it)",
 ];
 
 const METRICS = [
@@ -31,36 +59,23 @@ export default function Roadmap() {
     <div className="mx-auto max-w-6xl px-5 sm:px-6">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="font-[family-name:var(--font-archivo)] text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
-          Grows with your business
+          Everything shipped, not a slide deck
         </h2>
         <p className="mt-3 text-neutral-600 dark:text-neutral-300">
-          Tally Prime is today&apos;s foundation, not a ceiling — the platform is built to extend to other
-          accounting systems and payment rails as you need them.
+          Tally Prime was the starting point — the platform has grown well past field sales into fleet
+          intelligence, compliance, and fraud detection. All of it below is built and running today.
         </p>
       </div>
 
-      <div className="mt-12 grid gap-6 sm:grid-cols-3">
-        {PHASES.map((phase) => (
+      <div className="mt-12 grid gap-6 sm:grid-cols-2">
+        {CAPABILITIES.map((group) => (
           <div
-            key={phase.label}
-            className={`rounded-xl border p-6 ${
-              phase.current
-                ? "border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20"
-                : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
-            }`}
+            key={group.title}
+            className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6"
           >
-            <span
-              className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                phase.current
-                  ? "bg-amber-500 text-neutral-950"
-                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300"
-              }`}
-            >
-              {phase.label}
-            </span>
-            <h3 className="mt-3 text-base font-semibold text-neutral-900 dark:text-white">{phase.title}</h3>
+            <h3 className="text-base font-semibold text-neutral-900 dark:text-white">{group.title}</h3>
             <ul className="mt-3 space-y-1.5">
-              {phase.items.map((item) => (
+              {group.items.map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-300">
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                   {item}
@@ -69,6 +84,19 @@ export default function Roadmap() {
             </ul>
           </div>
         ))}
+      </div>
+
+      <div className="mt-6 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 p-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+          What&apos;s next
+        </p>
+        <ul className="mt-2 space-y-1">
+          {NEXT_UP.map((item) => (
+            <li key={item} className="text-sm text-neutral-600 dark:text-neutral-300">
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="mt-10 grid gap-6 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 sm:grid-cols-3">

@@ -78,7 +78,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     login: {
       heading: "Sign in to bpro FieldOps",
-      subheading: "Access the back-office console for field, fleet & finance.",
+      subheading: "Access the back-office console for field sales, fleet, finance & compliance.",
       username: "Username",
       password: "Password",
       signIn: "Sign in",
@@ -118,7 +118,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     login: {
       heading: "bpro FieldOps में साइन इन करें",
-      subheading: "फील्ड, फ्लीट और फाइनेंस के लिए बैक-ऑफिस कंसोल एक्सेस करें।",
+      subheading: "फील्ड सेल्स, फ्लीट, फाइनेंस और कंप्लायंस के लिए बैक-ऑफिस कंसोल एक्सेस करें।",
       username: "उपयोगकर्ता नाम",
       password: "पासवर्ड",
       signIn: "साइन इन करें",

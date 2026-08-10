@@ -42,7 +42,7 @@ export default function Hero() {
         <dl className="mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4 text-center">
           {[
             ["100%", "Offline billing"],
-            ["9", "Fleet & GPS features"],
+            ["4", "Accounting & ERP integrations"],
             ["₹", "GST-compliant invoicing"],
           ].map(([stat, label]) => (
             <div key={label}>

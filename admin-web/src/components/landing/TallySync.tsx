@@ -26,7 +26,8 @@ export default function TallySync() {
           </h2>
           <p className="mt-3 text-neutral-600 dark:text-neutral-300">
             Masters flow from Tally into the field app; transactions flow back — no duplicate entry, in
-            either direction.
+            either direction. The same sync engine also connects to Busy, Marg, and anything else through a
+            generic API/webhook layer.
           </p>
         </div>
 

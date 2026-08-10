@@ -35,6 +35,18 @@ const FEATURES = [
       "Today's sales, collections, active trips, and sync health in one screen — role-based access for supervisors, finance, and fleet managers.",
     icon: DashboardIcon,
   },
+  {
+    title: "Fraud & anomaly detection",
+    description:
+      "Statistical outlier alerts on the day's headline numbers, plus rule-based checks for discount abuse, return patterns, and GPS-spoofed check-ins — explainable, not a black box.",
+    icon: AlertIcon,
+  },
+  {
+    title: "Governed back-office changes",
+    description:
+      "Sensitive settings — roles, GST details, payment gateways, integrations — go through a propose-and-approve workflow instead of a direct edit, with a full audit trail.",
+    icon: LockIcon,
+  },
 ];
 
 export default function Features() {
@@ -113,6 +125,20 @@ function DashboardIcon() {
   return (
     <svg {...iconProps()}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 13h6V4H4zM14 20h6v-9h-6zM14 4v3h6V4zM4 20h6v-3H4z" />
+    </svg>
+  );
+}
+function AlertIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+    </svg>
+  );
+}
+function LockIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 11V7a6 6 0 1112 0v4M5 11h14v9H5z" />
     </svg>
   );
 }
