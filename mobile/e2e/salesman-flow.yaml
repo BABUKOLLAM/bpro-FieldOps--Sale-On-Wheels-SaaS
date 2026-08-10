@@ -2,33 +2,36 @@ appId: org.reactjs.native.example.VanSales
 ---
 # Full salesman workflow, driven against the real backend running on the
 # CI runner (seed_demo_data's fixed dataset — see backend/apps/core/
-# management/commands/seed_demo_data.py): login, first-run PIN setup,
-# home/route list, trip start, an outlet check-in, a Spot Billing sale,
-# skip signature, sync. A screenshot is taken at every meaningful step
-# so a failure — or a passing run — is visually inspectable afterward,
-# not just inferred from assertions.
+# management/commands/seed_demo_data.py): device PIN setup (RootNavigator
+# checks the PIN-unlock gate before the auth check, so this is the actual
+# first screen on a fresh install — not login, however natural that
+# ordering assumption is), login, home/route list, trip start, an outlet
+# check-in, a Spot Billing sale, skip signature, sync. A screenshot is
+# taken at every meaningful step so a failure — or a passing run — is
+# visually inspectable afterward, not just inferred from assertions.
 
 - launchApp:
     clearState: true
-- takeScreenshot: 01-login-screen
+- takeScreenshot: 01-first-run-pin-setup
 
+# First run: no device PIN set yet — this is the actual first screen,
+# ahead of login (see RootNavigator.tsx's `!isUnlocked` check).
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "3"
+- tapOn: "4"
+- takeScreenshot: 02-pin-confirm-step
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "3"
+- tapOn: "4"
+
+- takeScreenshot: 03-login-screen
 # Username is pre-filled with the demo agent (agent@demo.local) —
 # only the password needs entering.
 - tapOn: "Password"
 - inputText: "DemoPass123!"
 - tapOn: "Sign In"
-- takeScreenshot: 02-first-run-pin-setup
-
-# First run: no device PIN set yet — set one, then confirm it.
-- tapOn: "1"
-- tapOn: "2"
-- tapOn: "3"
-- tapOn: "4"
-- takeScreenshot: 03-pin-confirm-step
-- tapOn: "1"
-- tapOn: "2"
-- tapOn: "3"
-- tapOn: "4"
 
 - takeScreenshot: 04-home-screen
 - assertVisible: "Sharma General Store"

@@ -157,23 +157,14 @@ jobs:
         working-directory: mobile
         run: |
           mkdir -p artifacts/maestro
-          touch /tmp/maestro-start-marker
           "$HOME/.maestro/bin/maestro" test e2e/salesman-flow.yaml \
-            --format junit --output artifacts/maestro/results.xml
+            --format junit --output artifacts/maestro/results.xml \
+            --test-output-dir artifacts/maestro/output
 
-      - name: Collect Maestro screenshots into artifacts
+      - name: List Maestro artifacts (diagnostic, always)
         if: always()
-        run: |
-          mkdir -p mobile/artifacts/maestro
-          # First-time Maestro setup here — exact default screenshot output
-          # path isn't guessed, so search broadly (mobile/, ~/.maestro, /tmp)
-          # for anything newer than the pre-run marker rather than assume one.
-          for dir in mobile "$HOME/.maestro" /tmp; do
-            find "$dir" -maxdepth 4 -iname "*.png" -newer /tmp/maestro-start-marker 2>/dev/null
-          done | sort -u | while read -r f; do
-            cp "$f" mobile/artifacts/maestro/ 2>/dev/null || true
-          done
-          ls -la mobile/artifacts/maestro/ || true
+        working-directory: mobile
+        run: find artifacts/maestro -type f 2>/dev/null || true
 
       - name: Logs (diagnostic, always)
         if: always()
