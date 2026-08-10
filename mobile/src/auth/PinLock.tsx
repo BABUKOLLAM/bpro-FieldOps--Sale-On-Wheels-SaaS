@@ -72,7 +72,7 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = await Keychain.getGenericPassword({
         service: PIN_KEYCHAIN_SERVICE,
-        authenticationPrompt: { title: 'Unlock Van Sales' },
+        authenticationPrompt: { title: 'Unlock bpro FieldOps' },
       });
       if (stored) {
         setIsUnlocked(true);

@@ -45,7 +45,7 @@ export type Dictionary = {
 export const dictionaries: Record<Locale, Dictionary> = {
   en: {
     nav: {
-      home: 'Van Sales',
+      home: 'bpro FieldOps',
       spotBilling: 'Spot Billing',
       trip: 'Trip',
       expense: 'Expense',
@@ -77,7 +77,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
   },
   hi: {
     nav: {
-      home: 'वैन सेल्स',
+      home: 'bpro FieldOps',
       spotBilling: 'स्पॉट बिलिंग',
       trip: 'ट्रिप',
       expense: 'खर्च',

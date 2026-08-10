@@ -16,7 +16,7 @@ export function buildUpiUri(
   if (!vpa) {
     return null;
   }
-  const payeeName = company?.displayName || company?.legalName || 'Van Sales';
+  const payeeName = company?.displayName || company?.legalName || 'bpro FieldOps';
   const params = new URLSearchParams({
     pa: vpa,
     pn: payeeName,

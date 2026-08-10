@@ -10,7 +10,7 @@ export default function Header({ authenticated }: { authenticated: boolean }) {
           <BrandLogo height={30} />
           <span className="hidden sm:block h-6 w-px bg-neutral-300 dark:bg-neutral-700" />
           <span className="hidden sm:block font-[family-name:var(--font-archivo)] text-sm font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
-            Van Sales
+            bpro FieldOps
           </span>
         </Link>
 

@@ -4,7 +4,7 @@
  * /login POSTs — auth and business data must always be fresh or fail
  * loudly, never served stale from cache.
  */
-const CACHE_NAME = "vansales-shell-v2";
+const CACHE_NAME = "vansales-shell-v3";
 const SHELL_URLS = ["/", "/login", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {

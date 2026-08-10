@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6">
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="text-center sm:text-left">
-            <p className="font-[family-name:var(--font-archivo)] text-sm font-bold text-neutral-900 dark:text-white">Van Sales</p>
+            <p className="font-[family-name:var(--font-archivo)] text-sm font-bold text-neutral-900 dark:text-white">bpro FieldOps</p>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               Field sales &amp; fleet management, built for Indian distributors.
             </p>
@@ -25,7 +25,7 @@ export default function Footer() {
 
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-neutral-200 dark:border-neutral-800 pt-6 sm:flex-row">
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            &copy; {new Date().getFullYear()} Van Sales. All rights reserved.
+            &copy; {new Date().getFullYear()} bpro FieldOps. All rights reserved.
           </p>
           <div className="flex items-center gap-2.5">
             <span className="text-xs text-neutral-500 dark:text-neutral-400">Designed &amp; developed by</span>

@@ -1,4 +1,4 @@
-# Van Sales SaaS — Field Sales & Fleet Management Platform
+# bpro FieldOps — Sales on Wheels
 
 Phase 1 MVP of a field/van sales platform: offline-first mobile billing app,
 web admin/back-office panel, and a Tally Prime sync layer. Built as a

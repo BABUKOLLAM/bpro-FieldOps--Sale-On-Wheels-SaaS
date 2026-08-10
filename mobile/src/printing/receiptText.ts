@@ -28,7 +28,7 @@ export function buildReceiptText({
   total,
 }: ReceiptInput): string {
   const rows = [
-    'Van Sales',
+    'bpro FieldOps',
     '-'.repeat(WIDTH),
     customerName,
     new Date().toLocaleString(),

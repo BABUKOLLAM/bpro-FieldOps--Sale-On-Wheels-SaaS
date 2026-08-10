@@ -31,7 +31,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Van Sales</Text>
+      <Text style={styles.title}>bpro FieldOps</Text>
       <Text style={styles.subtitle}>Field agent sign in</Text>
 
       <TextInput

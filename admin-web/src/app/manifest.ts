@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Van Sales — Field Sales & Fleet Management",
-    short_name: "Van Sales",
+    name: "bpro FieldOps — Sales on Wheels",
+    short_name: "bpro FieldOps",
     description: "Offline-first field sales, billing, and fleet management, by bpro Technologies & Consulting.",
     start_url: "/",
     scope: "/",

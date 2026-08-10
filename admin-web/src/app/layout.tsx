@@ -24,7 +24,7 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "Van Sales — Field Sales & Fleet Management",
+  title: "bpro FieldOps — Sales on Wheels",
   description:
     "Offline-first field sales, GST billing, Tally Prime sync, and fleet management. Designed & developed by Team bpro Technologies & Consulting.",
   manifest: "/manifest.webmanifest",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Van Sales",
+    title: "bpro FieldOps",
   },
 };
 

@@ -87,6 +87,6 @@ def email_report(to_email: str, fmt: str, filename: str, title: str, headers: li
         content = build_xlsx_bytes(title, headers, rows)
         mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ext = "xlsx"
-    email = EmailMessage(subject=f"Van Sales — {title}", body=f"Attached: {title}.", to=[to_email])
+    email = EmailMessage(subject=f"bpro FieldOps — {title}", body=f"Attached: {title}.", to=[to_email])
     email.attach(f"{filename}.{ext}", content, mime)
     email.send(fail_silently=False)

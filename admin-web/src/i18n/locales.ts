@@ -77,13 +77,13 @@ export const dictionaries: Record<Locale, Dictionary> = {
       },
     },
     login: {
-      heading: "Sign in to Van Sales",
+      heading: "Sign in to bpro FieldOps",
       subheading: "Access the back-office console for field, fleet & finance.",
       username: "Username",
       password: "Password",
       signIn: "Sign in",
       signingIn: "Signing in…",
-      backToHome: "← Back to Van Sales home",
+      backToHome: "← Back to bpro FieldOps home",
     },
     common: {
       save: "Save",
@@ -117,13 +117,13 @@ export const dictionaries: Record<Locale, Dictionary> = {
       },
     },
     login: {
-      heading: "वैन सेल्स में साइन इन करें",
+      heading: "bpro FieldOps में साइन इन करें",
       subheading: "फील्ड, फ्लीट और फाइनेंस के लिए बैक-ऑफिस कंसोल एक्सेस करें।",
       username: "उपयोगकर्ता नाम",
       password: "पासवर्ड",
       signIn: "साइन इन करें",
       signingIn: "साइन इन हो रहा है…",
-      backToHome: "← वैन सेल्स होम पर वापस जाएँ",
+      backToHome: "← bpro FieldOps होम पर वापस जाएँ",
     },
     common: {
       save: "सेव करें",

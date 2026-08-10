@@ -1,4 +1,4 @@
-# Van Sales — Mobile (React Native)
+# bpro FieldOps — Mobile (React Native)
 
 Offline-first field sales app: WatermelonDB (SQLite) local store, JWT auth
 gated by a device PIN/biometric lock, and a custom sync client against the

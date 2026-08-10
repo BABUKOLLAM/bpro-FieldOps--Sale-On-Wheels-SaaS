@@ -1,8 +1,9 @@
 # Architecture
 
-Phase 1 MVP + Phase 2 slices 1-3 of the Field Sales / Van Sales SaaS
-platform. This document covers what's implemented, the key design
-decisions, and what's deliberately deferred beyond this build.
+Phase 1 MVP + Phase 2 slices 1-3 of bpro FieldOps — Sales on Wheels
+(Field Sales / Van Sales SaaS). This document covers what's
+implemented, the key design decisions, and what's deliberately
+deferred beyond this build.
 
 ## Deployment model: isolated deployment per client
 

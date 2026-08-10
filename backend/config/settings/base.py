@@ -20,7 +20,7 @@ SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-only-change-me")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
-COMPANY_NAME = env("COMPANY_NAME", default="Van Sales")
+COMPANY_NAME = env("COMPANY_NAME", default="bpro FieldOps")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -159,7 +159,7 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Van Sales SaaS API",
+    "TITLE": "bpro FieldOps API",
     "DESCRIPTION": "Field sales, fleet management, and accounting-sync API.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,

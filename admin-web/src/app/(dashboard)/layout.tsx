@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3 nav-col:mx-0 nav-col:h-full nav-col:max-w-none nav-col:flex-col nav-col:items-stretch nav-col:justify-start nav-col:gap-5 nav-col:px-4 nav-col:py-5">
           <div className="flex items-center gap-8 nav-col:w-full nav-col:flex-col nav-col:items-stretch nav-col:gap-4">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">Van Sales Admin</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">bpro FieldOps Admin</span>
               <NavLayoutToggle />
             </div>
             <DashboardNav />
