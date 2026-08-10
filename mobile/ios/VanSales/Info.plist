@@ -40,6 +40,8 @@
 	<string>Used to attach an existing photo to an expense.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Used to print receipts on a paired Bluetooth thermal printer.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Used to unlock the app with Face ID instead of your device PIN.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

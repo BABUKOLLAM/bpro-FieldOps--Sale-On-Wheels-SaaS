@@ -40,20 +40,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const tokens = await getTokens();
-      if (tokens) {
-        const stored = await Keychain.getGenericPassword({
-          service: USER_KEYCHAIN_SERVICE,
-        });
-        if (stored) {
-          try {
-            setUser(JSON.parse(stored.password));
-          } catch {
-            // fall through — user stays null, login screen will show
+      try {
+        const tokens = await getTokens();
+        if (tokens) {
+          const stored = await Keychain.getGenericPassword({
+            service: USER_KEYCHAIN_SERVICE,
+          });
+          if (stored) {
+            try {
+              setUser(JSON.parse(stored.password));
+            } catch {
+              // fall through — user stays null, login screen will show
+            }
           }
         }
+      } catch {
+        // Keychain read failed — fall through to login screen rather than
+        // leaving isLoading stuck true forever.
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     })();
   }, []);
 

@@ -39,12 +39,25 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const existing = await Keychain.getGenericPassword({
-        service: PIN_KEYCHAIN_SERVICE,
-      });
-      setHasPinSet(Boolean(existing));
-      setBiometryType(await Keychain.getSupportedBiometryType());
-      setIsLoading(false);
+      try {
+        const existing = await Keychain.getGenericPassword({
+          service: PIN_KEYCHAIN_SERVICE,
+        });
+        setHasPinSet(Boolean(existing));
+        try {
+          setBiometryType(await Keychain.getSupportedBiometryType());
+        } catch {
+          // Biometry probe can reject (e.g. no biometry enrolled/configured
+          // on this device) — PIN entry still works without it.
+          setBiometryType(null);
+        }
+      } catch {
+        // Keychain read failed — fall through with no PIN set so the setup
+        // screen shows, rather than leaving isLoading stuck true forever.
+        setHasPinSet(false);
+      } finally {
+        setIsLoading(false);
+      }
     })();
   }, []);
 
