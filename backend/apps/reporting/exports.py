@@ -3,6 +3,7 @@ already shown on-screen elsewhere in admin-web. Report data is built once
 per request as (title, headers, rows) and rendered to whichever format
 was asked for — the same content either way, never two sources of truth."""
 
+import csv
 import io
 
 from django.core.mail import EmailMessage
@@ -30,6 +31,15 @@ def build_xlsx_bytes(title: str, headers: list[str], rows: list[list]) -> bytes:
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+def build_csv_bytes(title: str, headers: list[str], rows: list[list]) -> bytes:
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow(["" if v is None else v for v in row])
+    return buf.getvalue().encode("utf-8-sig")  # BOM so Excel opens non-ASCII (GSTIN/names) correctly
 
 
 def build_pdf_bytes(title: str, headers: list[str], rows: list[list]) -> bytes:

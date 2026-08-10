@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "apps.reporting",
     "apps.notifications",
     "apps.payments",
+    "apps.dataio",
 ]
 
 MIDDLEWARE = [

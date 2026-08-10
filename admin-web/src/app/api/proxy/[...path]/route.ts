@@ -44,7 +44,13 @@ async function forward(request: NextRequest, path: string[]) {
     return NextResponse.json(data, { status: backendResponse.status });
   }
   if (contentType.includes("text/")) {
-    return new NextResponse(await backendResponse.text(), { status: backendResponse.status });
+    // e.g. CSV downloads — preserve the real content-type and filename
+    // instead of defaulting to text/plain, or the browser won't offer a
+    // proper file save with the right name/extension.
+    const headers = new Headers({ "content-type": contentType });
+    const disposition = backendResponse.headers.get("content-disposition");
+    if (disposition) headers.set("content-disposition", disposition);
+    return new NextResponse(await backendResponse.text(), { status: backendResponse.status, headers });
   }
   // Binary payloads (xlsx/pdf report downloads, etc.) — .text() would
   // corrupt these, so read as raw bytes and preserve the filename header.

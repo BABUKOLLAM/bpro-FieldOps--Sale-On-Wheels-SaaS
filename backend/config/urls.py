@@ -23,6 +23,7 @@ urlpatterns = [
     path("api/notifications/", include("apps.notifications.urls")),
     path("api/payments/", include("apps.payments.urls")),
     path("api/governance/", include("apps.governance.urls")),
+    path("api/dataio/", include("apps.dataio.urls")),
 ]
 
 if settings.DEBUG:
