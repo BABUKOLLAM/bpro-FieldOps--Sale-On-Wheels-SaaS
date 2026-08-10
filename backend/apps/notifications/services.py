@@ -4,9 +4,10 @@ import urllib.request
 
 from django.conf import settings
 
-from .models import DeviceToken, MessageTemplate, NotificationGatewaySettings, NotificationLog, SmsLog
+from .models import DeviceToken, MessageTemplate, NotificationGatewaySettings, NotificationLog, SmsLog, WhatsAppLog
 
 FCM_SEND_URL = "https://fcm.googleapis.com/fcm/send"
+WHATSAPP_API_VERSION = "v19.0"
 
 # The exact strings each call site hardcoded before MessageTemplate
 # existed — used as a fallback so a deployment with no Master Settings
@@ -17,6 +18,9 @@ DEFAULT_TEMPLATES = {
     MessageTemplate.KEY_EXPENSE_REJECTED: ("Expense rejected", "Your {category} expense of ₹{amount} was rejected."),
     MessageTemplate.KEY_DELIVERY_OTP: (
         "", "Your OTP to confirm delivery of invoice {invoice_no} is {code}. Valid for {validity_minutes} minutes.",
+    ),
+    MessageTemplate.KEY_INVOICE_READY_WHATSAPP: (
+        "", "Hi {customer_name}, your invoice {invoice_no} dated {invoice_date} for Rs. {amount} has been generated. Thank you for your business!",
     ),
 }
 
@@ -103,3 +107,37 @@ def send_sms(phone: str, message: str) -> SmsLog:
             print(f"[sms:console-fallback-on-error] to={phone} message={message!r}")
 
     return SmsLog.objects.create(phone=phone, message=message, channel=channel)
+
+
+def send_whatsapp(phone: str, message: str) -> WhatsAppLog:
+    """WhatsApp Business Cloud API (Meta Graph API) sender. Same
+    console-fallback shape as send_sms: no phone_number_id/access_token
+    configured -> print instead of faking delivery. `phone` must be in
+    international format (e.g. "919876543210", no leading +) per the
+    Cloud API's requirement."""
+    phone_number_id = _resolve_gateway_setting("whatsapp_phone_number_id", "WHATSAPP_PHONE_NUMBER_ID")
+    access_token = _resolve_gateway_setting("whatsapp_access_token", "WHATSAPP_ACCESS_TOKEN")
+
+    if not phone_number_id or not access_token:
+        channel = WhatsAppLog.CHANNEL_CONSOLE
+        print(f"[whatsapp:console] to={phone} message={message!r}")
+    else:
+        channel = WhatsAppLog.CHANNEL_GATEWAY
+        api_url = f"https://graph.facebook.com/{WHATSAPP_API_VERSION}/{phone_number_id}/messages"
+        payload = json.dumps({
+            "messaging_product": "whatsapp",
+            "to": phone,
+            "type": "text",
+            "text": {"body": message},
+        }).encode("utf-8")
+        request = urllib.request.Request(
+            api_url, data=payload, method="POST",
+            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        )
+        try:
+            urllib.request.urlopen(request, timeout=10)
+        except urllib.error.URLError:
+            channel = WhatsAppLog.CHANNEL_CONSOLE
+            print(f"[whatsapp:console-fallback-on-error] to={phone} message={message!r}")
+
+    return WhatsAppLog.objects.create(phone=phone, message=message, channel=channel)

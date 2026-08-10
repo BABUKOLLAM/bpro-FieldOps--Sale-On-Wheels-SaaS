@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DeviceToken, NotificationLog
+from .models import DeviceToken, NotificationLog, WhatsAppLog
 
 
 @admin.register(DeviceToken)
@@ -15,3 +15,10 @@ class NotificationLogAdmin(admin.ModelAdmin):
     list_display = ("title", "user", "channel", "device_count", "created_at")
     list_filter = ("channel",)
     search_fields = ("title", "user__username")
+
+
+@admin.register(WhatsAppLog)
+class WhatsAppLogAdmin(admin.ModelAdmin):
+    list_display = ("phone", "channel", "created_at")
+    list_filter = ("channel",)
+    search_fields = ("phone",)

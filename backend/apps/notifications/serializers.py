@@ -28,10 +28,14 @@ class NotificationGatewaySettingsSerializer(serializers.ModelSerializer):
     # credentials show up in this codebase (ERPConnection, Webhook).
     has_fcm_server_key = serializers.SerializerMethodField()
     has_sms_gateway_api_key = serializers.SerializerMethodField()
+    has_whatsapp_access_token = serializers.SerializerMethodField()
 
     class Meta:
         model = NotificationGatewaySettings
-        fields = ["id", "sms_gateway_url", "has_fcm_server_key", "has_sms_gateway_api_key"]
+        fields = [
+            "id", "sms_gateway_url", "whatsapp_phone_number_id",
+            "has_fcm_server_key", "has_sms_gateway_api_key", "has_whatsapp_access_token",
+        ]
         read_only_fields = fields  # edits go through apps.governance — see apps/notifications/governance.py
 
     def get_has_fcm_server_key(self, obj):
@@ -39,6 +43,9 @@ class NotificationGatewaySettingsSerializer(serializers.ModelSerializer):
 
     def get_has_sms_gateway_api_key(self, obj):
         return bool(obj.sms_gateway_api_key)
+
+    def get_has_whatsapp_access_token(self, obj):
+        return bool(obj.whatsapp_access_token)
 
 
 class MessageTemplateSerializer(serializers.ModelSerializer):

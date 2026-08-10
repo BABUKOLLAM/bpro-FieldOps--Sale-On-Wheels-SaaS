@@ -13,7 +13,7 @@ from apps.core.exceptions import DomainError
 from apps.inventory.models import StockLedgerEntry
 from apps.inventory.services import post_stock_movement
 from apps.notifications.models import MessageTemplate
-from apps.notifications.services import render_template, send_sms
+from apps.notifications.services import render_template, send_sms, send_whatsapp
 
 from .models import CreditNote, DocumentSequence, Invoice, InvoiceDeliveryOTP, InvoiceLine, Receipt
 
@@ -320,7 +320,25 @@ def send_delivery_otp(invoice: Invoice) -> InvoiceDeliveryOTP:
         invoice_no=invoice.invoice_no or invoice.id, code=code, validity_minutes=OTP_VALIDITY_MINUTES,
     )
     send_sms(invoice.customer.phone, body)
+    send_whatsapp(invoice.customer.phone, body)
     return otp
+
+
+def notify_invoice_ready_whatsapp(invoice: Invoice):
+    """On-demand WhatsApp notice that an invoice is ready — a manual
+    trigger from admin-web's dashboard, not sent automatically on every
+    invoice (unlike the delivery OTP, which always needs a channel)."""
+    if not invoice.customer.phone:
+        raise DomainError("Customer has no phone number on file.", code="no_phone")
+
+    _, body = render_template(
+        MessageTemplate.KEY_INVOICE_READY_WHATSAPP,
+        customer_name=invoice.customer.name,
+        invoice_no=invoice.invoice_no or invoice.id,
+        invoice_date=invoice.invoice_date.strftime("%d-%b-%Y"),
+        amount=invoice.grand_total,
+    )
+    return send_whatsapp(invoice.customer.phone, body)
 
 
 @transaction.atomic

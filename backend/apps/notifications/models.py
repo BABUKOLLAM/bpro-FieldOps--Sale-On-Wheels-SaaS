@@ -70,20 +70,43 @@ class SmsLog(BaseModel):
         return f"SMS → {self.phone}"
 
 
+class WhatsAppLog(BaseModel):
+    """A record of every WhatsApp message the system attempted to send —
+    same console-fallback auditability as NotificationLog/SmsLog, see
+    apps.notifications.services.send_whatsapp. Used today for delivery
+    OTP (alongside SMS) and an on-demand "invoice ready" notice."""
+
+    CHANNEL_GATEWAY = "gateway"
+    CHANNEL_CONSOLE = "console"
+    CHANNEL_CHOICES = [(CHANNEL_GATEWAY, "WhatsApp Business API"), (CHANNEL_CONSOLE, "Console (no gateway configured)")]
+
+    phone = models.CharField(max_length=20)
+    message = models.TextField()
+    channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES)
+
+    def __str__(self):
+        return f"WhatsApp → {self.phone}"
+
+
 class NotificationGatewaySettings(BaseModel):
-    """Singleton row holding DB-backed overrides for the FCM/SMS gateway
-    config that used to be env-var-only (settings.FCM_SERVER_KEY,
-    settings.SMS_GATEWAY_URL, settings.SMS_GATEWAY_API_KEY). A blank
-    field here falls back to the env var — see
-    apps.notifications.services._resolve_gateway_setting — so a fresh
-    deployment with no Master Settings edit yet keeps working exactly as
-    before this model existed. Same singleton posture as
-    apps.company.Company; same Fernet-at-rest posture for the two secret
-    fields as apps.integrations.ERPConnection.credentials."""
+    """Singleton row holding DB-backed overrides for the FCM/SMS/WhatsApp
+    gateway config that used to be env-var-only (settings.FCM_SERVER_KEY,
+    settings.SMS_GATEWAY_URL, settings.SMS_GATEWAY_API_KEY,
+    settings.WHATSAPP_ACCESS_TOKEN). A blank field here falls back to the
+    env var — see apps.notifications.services._resolve_gateway_setting —
+    so a fresh deployment with no Master Settings edit yet keeps working
+    exactly as before this model existed. Same singleton posture as
+    apps.company.Company; same Fernet-at-rest posture for the secret
+    fields as apps.integrations.ERPConnection.credentials.
+    whatsapp_phone_number_id is the WhatsApp Business Cloud API's public
+    sender identifier (part of the API URL, not a secret) — only the
+    access token needs encryption."""
 
     sms_gateway_url = models.URLField(blank=True)
+    whatsapp_phone_number_id = models.CharField(max_length=50, blank=True)
     _fcm_server_key_encrypted = models.TextField(blank=True, db_column="fcm_server_key_encrypted")
     _sms_gateway_api_key_encrypted = models.TextField(blank=True, db_column="sms_gateway_api_key_encrypted")
+    _whatsapp_access_token_encrypted = models.TextField(blank=True, db_column="whatsapp_access_token_encrypted")
 
     def clean(self):
         if NotificationGatewaySettings.objects.exclude(pk=self.pk).exists():
@@ -113,6 +136,14 @@ class NotificationGatewaySettings(BaseModel):
     def sms_gateway_api_key(self, value: str):
         self._sms_gateway_api_key_encrypted = encrypt_json({"value": value}) if value else ""
 
+    @property
+    def whatsapp_access_token(self) -> str:
+        return decrypt_json(self._whatsapp_access_token_encrypted).get("value", "")
+
+    @whatsapp_access_token.setter
+    def whatsapp_access_token(self, value: str):
+        self._whatsapp_access_token_encrypted = encrypt_json({"value": value}) if value else ""
+
 
 class MessageTemplate(BaseModel):
     """DB-backed override for a notification's title/body, replacing what
@@ -128,10 +159,12 @@ class MessageTemplate(BaseModel):
     KEY_EXPENSE_APPROVED = "expense_approved"
     KEY_EXPENSE_REJECTED = "expense_rejected"
     KEY_DELIVERY_OTP = "delivery_otp"
+    KEY_INVOICE_READY_WHATSAPP = "invoice_ready_whatsapp"
     KEY_CHOICES = [
         (KEY_EXPENSE_APPROVED, "Expense approved (push)"),
         (KEY_EXPENSE_REJECTED, "Expense rejected (push)"),
-        (KEY_DELIVERY_OTP, "Delivery OTP (SMS)"),
+        (KEY_DELIVERY_OTP, "Delivery OTP (SMS + WhatsApp)"),
+        (KEY_INVOICE_READY_WHATSAPP, "Invoice ready (WhatsApp)"),
     ]
 
     key = models.CharField(max_length=50, choices=KEY_CHOICES, unique=True)

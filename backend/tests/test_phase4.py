@@ -187,6 +187,7 @@ def test_message_template_list_api_auto_seeds_defaults(admin):
     keys = {row["key"] for row in response.data["results"]}
     assert keys == {
         MessageTemplate.KEY_EXPENSE_APPROVED, MessageTemplate.KEY_EXPENSE_REJECTED, MessageTemplate.KEY_DELIVERY_OTP,
+        MessageTemplate.KEY_INVOICE_READY_WHATSAPP,
     }
 
 

@@ -11,7 +11,7 @@ from apps.governance.services import register_governed_model
 
 from .models import MessageTemplate, NotificationGatewaySettings
 
-NOTIFICATION_GATEWAY_SETTINGS_GOVERNED_FIELDS = ["sms_gateway_url"]
+NOTIFICATION_GATEWAY_SETTINGS_GOVERNED_FIELDS = ["sms_gateway_url", "whatsapp_phone_number_id"]
 MESSAGE_TEMPLATE_GOVERNED_FIELDS = ["title_template", "body_template"]
 
 
