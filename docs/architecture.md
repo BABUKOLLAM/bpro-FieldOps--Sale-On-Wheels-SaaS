@@ -211,16 +211,60 @@ Added on top of slice 2 (FM-05, FM-07, FM-08, FM-11, FM-12, FM-13):
   "compliance status" (vehicle document/insurance/PUC expiry — not built)
   are both omitted rather than faked.
 
+## Multi-tenancy, governance, and BRD completion slices (undocumented above, shipped since)
+
+Everything below this point postdates the phase-by-phase narrative above,
+which was never updated as later work landed. Rather than rewrite the
+whole document, this section records what's actually true today for the
+items that section most directly contradicts:
+
+- **Multi-tenancy**: the "isolated deployment per client" model described
+  at the top of this document was superseded by `apps.tenancy` —
+  database-per-tenant with dynamic routing from one shared deployment
+  (control-plane `Tenant`/`PlatformAdmin` models, a DB router + contextvar-
+  based per-request tenant selection, `TenantResolutionMiddleware`). See
+  `apps/tenancy/`.
+- **Self-service tenant registry**: provisioning a new client no longer
+  requires shell access. `apps.tenancy.provisioning.provision_tenant()`
+  (creates the database, migrates it, seeds roles) is called both by the
+  `provision_tenant` management command and by a PlatformAdmin-only web
+  API (`POST /tenants/` on the platform URL namespace, JWT-authenticated
+  via a separate PlatformAdmin identity — see `apps/tenancy/auth.py`). A
+  self-service request only ever supplies `slug`/`name`; every DB
+  connection detail is derived server-side from the control DB's own
+  account, never accepted from the caller.
+- **Master Settings + governance**: a generic propose/approve
+  `ChangeRequest` workflow (`apps.governance`) now gates edits to Company/
+  GST/ERP/Payment/Webhook/Notification-gateway/E-way-bill-threshold
+  settings, plus Role permission edits — consolidated in admin-web's
+  Master Settings hub.
+- **Route optimization** (FM-07) now runs nearest-neighbor construction
+  followed by a 2-opt local-search improvement pass
+  (`apps.customers.route_optimization`), removing the crossing/zig-zag
+  paths nearest-neighbor alone produces — still not a capacity/traffic-
+  aware VRP solver.
+- **E-way bill generation**: `apps.sales.eway_bill` builds a NIC-schema-
+  shaped payload and a printable draft PDF per invoice, with a
+  governance-gated configurable value threshold. No live NIC/GSP API
+  account exists in this deployment, so a generated bill is always a
+  local draft (`EwayBill.status` never reaches `filed`, `ewb_number`
+  never fabricated) — ready for manual filing or a GSP bulk-upload once
+  a client has real credentials.
+- **WhatsApp integration**: `apps.notifications.services.send_whatsapp`
+  (WhatsApp Business Cloud API-ready, console-fallback like the existing
+  FCM/SMS senders) is wired into delivery-OTP (alongside SMS) and a new
+  on-demand "invoice ready" notice.
+- **Bulk master-data import/export**: `apps.dataio` — CSV/Excel import
+  and export for products, price lists, staff, routes, customers,
+  vehicles, and godowns, with FK-by-code resolution and an upsert-with-
+  per-row-error report.
+
 ## What's deliberately out of scope for this build
 
 Beyond the BRD's own Phase 1/Phase 2 slice boundaries (Section 18):
 
-- Route optimization beyond the nearest-neighbor heuristic above, geofencing (Phase 3/Section 20 items)
-- True background GPS tracking (native project config not attempted here — see slice 2), idle-time/route-deviation analytics, OTP-based proof of delivery, multi-language UI
-- Third-party GPS/telematics hardware integration (FM-06) and vehicle document/compliance expiry tracking (FM-16) — no vendor hardware/API to integrate with, and FM-16 is a Phase 3 item respectively
-- Busy/Marg connectors (the connector interface is ready; only Tally is implemented)
+- Geofencing beyond the basic model already in place (Section 20 item)
+- Third-party GPS/telematics hardware integration (FM-06) — no vendor hardware/API to integrate with
 - Full WatermelonDB per-table sync protocol (the pull endpoint is a pragmatic fixed-collection version)
-- Automated central client registry (see `docs/PROVISIONING.md` — provisioning is manual/scripted per client for now)
-- Payment gateway integration, e-way bill generation, WhatsApp integration (Section 20 future roadmap)
-- Server-side Excel/PDF report generation + email delivery (CSV export substituted)
-- Busy/Marg integration — the one remaining Phase 2 slice, not started
+- Going live with real vendor credentials for OTP/SMS/FCM/WhatsApp/payment-gateway/e-way-bill-GSP — every one of these is built vendor-ready with a console/local-draft fallback (see the section above and earlier phases), but actually sending requires a client's own account, which no deployment of this repo ships with
+- Server-side Excel/PDF report generation + email delivery for the Fleet Dashboard specifically (CSV export substituted there; other reports do have Excel/PDF/email — see `apps.reporting`)
