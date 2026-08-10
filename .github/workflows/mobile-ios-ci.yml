@@ -76,6 +76,15 @@ jobs:
 
       - name: Boot Simulator
         run: |
+          # Disabling this is a documented fix for iOS Simulator text-entry
+          # automation: when the Simulator thinks a hardware keyboard is
+          # connected (common on headless CI runners), it suppresses the
+          # software keyboard, and XCTest's text-injection path — the one
+          # Maestro's inputText uses — silently fails to deliver keystrokes
+          # into secureTextEntry fields specifically (plain fields are less
+          # affected). Matches what we saw: tapOn found the password field
+          # fine, inputText reported success, but nothing was ever typed.
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
           UDID=$(xcrun simctl create "CI-${SIM_DEVICE// /-}" "$SIM_DEVICE")
           echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
