@@ -27,6 +27,7 @@ type Company = {
   display_name: string;
   fy_start_month: number;
   is_active: boolean;
+  upi_vpa: string;
   logo: string | null;
   gst_registrations: GSTRegistration[];
 };
@@ -46,8 +47,10 @@ type Webhook = { id: string; name: string; url: string; event_types: string[]; i
 type NotificationGatewaySettings = {
   id: string;
   sms_gateway_url: string;
+  whatsapp_phone_number_id: string;
   has_fcm_server_key: boolean;
   has_sms_gateway_api_key: boolean;
+  has_whatsapp_access_token: boolean;
 };
 
 type MessageTemplate = {
@@ -58,8 +61,17 @@ type MessageTemplate = {
   body_template: string;
 };
 
+type EwayBillSettings = {
+  id: string;
+  threshold_amount: string;
+  is_active: boolean;
+};
+
 export default async function MasterSettingsPage() {
-  const [companies, erpConnections, paymentConnections, webhooks, notificationGateway, messageTemplates, pending] =
+  const [
+    companies, erpConnections, paymentConnections, webhooks, notificationGateway, messageTemplates,
+    ewayBillSettings, pending,
+  ] =
     await Promise.all([
       apiGet<Paginated<Company>>("/api/company/companies/"),
       apiGet<Paginated<ERPConnection>>("/api/integrations/erp-connections/"),
@@ -67,6 +79,7 @@ export default async function MasterSettingsPage() {
       apiGet<Paginated<Webhook>>("/api/integrations/webhooks/"),
       apiGet<Paginated<NotificationGatewaySettings>>("/api/notifications/gateway-settings/"),
       apiGet<Paginated<MessageTemplate>>("/api/notifications/message-templates/"),
+      apiGet<Paginated<EwayBillSettings>>("/api/sales/eway-bill-settings/"),
       apiGet<Paginated<ChangeRequest>>("/api/governance/change-requests/?status=pending").catch(
         () => ({ count: 0, results: [] }) as Paginated<ChangeRequest>
       ),
@@ -74,6 +87,7 @@ export default async function MasterSettingsPage() {
 
   const company = companies.results[0];
   const gatewaySettings = notificationGateway.results[0];
+  const ewayBill = ewayBillSettings.results[0];
   const logoUrl = company?.logo
     ? company.logo.startsWith("http")
       ? company.logo
@@ -121,6 +135,10 @@ export default async function MasterSettingsPage() {
               { name: "legal_name", label: "Legal name", type: "text", value: company.legal_name },
               { name: "display_name", label: "Display name", type: "text", value: company.display_name },
               { name: "fy_start_month", label: "FY start month (1-12)", type: "number", value: company.fy_start_month },
+              {
+                name: "upi_vpa", label: "UPI VPA (payee ID for point-of-sale QR codes)", type: "text",
+                value: company.upi_vpa,
+              },
               { name: "is_active", label: "Active", type: "boolean", value: company.is_active },
             ]}
           />
@@ -246,6 +264,37 @@ export default async function MasterSettingsPage() {
             targetId={gatewaySettings.id}
             fields={[
               { name: "sms_gateway_url", label: "SMS gateway URL", type: "url", value: gatewaySettings.sms_gateway_url },
+            ]}
+          />
+          <SettingsCard
+            title="WhatsApp Business Gateway"
+            subtitle="The access token is Django-admin-only (never shown here) — only the phone number ID is editable via approval. Without both configured, WhatsApp sends fall back to a console log (see the audit trail in Django admin)."
+            badges={[
+              gatewaySettings.has_whatsapp_access_token ? "Access token configured" : "Access token not configured",
+            ]}
+            targetType="notification-gateway-settings"
+            targetId={gatewaySettings.id}
+            fields={[
+              {
+                name: "whatsapp_phone_number_id", label: "WhatsApp phone number ID", type: "text",
+                value: gatewaySettings.whatsapp_phone_number_id,
+              },
+            ]}
+          />
+        </section>
+      )}
+
+      {ewayBill && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">E-way Bill</h2>
+          <SettingsCard
+            title="Generation threshold"
+            subtitle="Invoices at or above this value are flagged as needing an e-way bill on the dashboard. No live government/GSP filing is connected — generated bills are local drafts for manual filing or a GSP bulk-upload."
+            targetType="eway-bill-settings"
+            targetId={ewayBill.id}
+            fields={[
+              { name: "threshold_amount", label: "Threshold amount (Rs.)", type: "number", value: Number(ewayBill.threshold_amount) },
+              { name: "is_active", label: "Require e-way bills", type: "boolean", value: ewayBill.is_active },
             ]}
           />
         </section>

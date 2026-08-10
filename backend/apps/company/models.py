@@ -24,6 +24,12 @@ class Company(BaseModel):
         "inventory.Godown", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     is_active = models.BooleanField(default=True)
+    upi_vpa = models.CharField(
+        max_length=100, blank=True,
+        help_text="Payee UPI ID (e.g. yourcompany@okhdfcbank) that point-of-sale QR codes pay into. "
+        "Blank means UPI QR codes are unavailable — no gateway account is required, this is a "
+        "static upi://pay deep link any UPI app can scan.",
+    )
     logo = models.ImageField(
         upload_to="branding/", null=True, blank=True,
         help_text="Shown on the GST invoice PDF header. Uploaded directly (not via Master Settings "

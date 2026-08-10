@@ -9,7 +9,7 @@ from apps.governance.services import register_governed_model
 
 from .models import Company, GSTRegistration
 
-COMPANY_GOVERNED_FIELDS = ["legal_name", "display_name", "fy_start_month", "is_active"]
+COMPANY_GOVERNED_FIELDS = ["legal_name", "display_name", "fy_start_month", "is_active", "upi_vpa"]
 GST_REGISTRATION_GOVERNED_FIELDS = [
     "state", "gstin", "address_line1", "address_line2", "city", "pincode", "is_default",
 ]

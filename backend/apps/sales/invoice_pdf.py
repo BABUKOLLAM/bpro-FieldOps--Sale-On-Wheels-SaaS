@@ -14,6 +14,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from .models import Invoice
+from .upi_qr import build_upi_qr_png, build_upi_uri
 
 _STYLES = getSampleStyleSheet()
 _TITLE_STYLE = ParagraphStyle("InvoiceTitle", parent=_STYLES["Title"], alignment=2, fontSize=16)
@@ -159,9 +160,19 @@ def build_invoice_pdf_bytes(invoice: Invoice) -> bytes:
     elements.append(Spacer(1, 6 * mm))
 
     totals = _totals_table(invoice)
-    totals_wrapper = Table([[totals]], colWidths=[480])
-    totals_wrapper.setStyle(TableStyle([("ALIGN", (0, 0), (-1, -1), "RIGHT")]))
-    elements.append(totals_wrapper)
+    upi_uri = build_upi_uri(invoice)
+    if upi_uri:
+        # §18: a static upi://pay QR, not a live gateway charge — any UPI
+        # app can scan and pay this exact amount straight to Company.upi_vpa.
+        qr_image = Image(io.BytesIO(build_upi_qr_png(upi_uri)), width=26 * mm, height=26 * mm)
+        qr_block = [qr_image, Paragraph("Scan to pay via UPI", _SMALL_STYLE)]
+        footer = Table([[qr_block, totals]], colWidths=[140, 340])
+        footer.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("ALIGN", (1, 0), (1, -1), "RIGHT")]))
+        elements.append(footer)
+    else:
+        totals_wrapper = Table([[totals]], colWidths=[480])
+        totals_wrapper.setStyle(TableStyle([("ALIGN", (0, 0), (-1, -1), "RIGHT")]))
+        elements.append(totals_wrapper)
 
     doc.build(elements)
     return buf.getvalue()

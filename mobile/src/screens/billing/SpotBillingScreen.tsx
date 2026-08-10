@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Modal,
   Share,
   StyleSheet,
   Text,
@@ -13,6 +14,7 @@ import { Q } from '@nozbe/watermelondb';
 import { v4 as uuidv4 } from 'uuid';
 import { Camera } from 'react-native-camera-kit';
 import SignatureScreen from 'react-native-signature-canvas';
+import QRCode from 'react-native-qrcode-svg';
 import { database } from '../../db';
 import Customer from '../../db/models/Customer';
 import Item from '../../db/models/Item';
@@ -26,6 +28,8 @@ import { apiPostJson } from '../../api/client';
 import { buildReceiptText } from '../../printing/receiptText';
 import { printReceipt } from '../../printing/bluetoothPrinter';
 import { colors } from '../../theme/colors';
+import { getCompanyConfig, type CompanyConfig } from '../../config/companyConfig';
+import { buildUpiUri } from '../../payments/upiQr';
 
 type CartLine = { item: Item; rate: number; qty: string };
 
@@ -60,6 +64,12 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [companyConfig, setCompanyConfig] = useState<CompanyConfig | null>(null);
+  const [showUpiQr, setShowUpiQr] = useState(false);
+
+  useEffect(() => {
+    getCompanyConfig().then(setCompanyConfig);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -128,6 +138,21 @@ export default function SpotBillingScreen({ route, navigation }: any) {
     0
   );
   const estimatedTotal = estimatedSubtotal + estimatedTax;
+
+  const upiUri = savedInvoice
+    ? buildUpiUri(companyConfig, savedInvoice.grandTotal, savedInvoice.serverId.slice(0, 8))
+    : null;
+
+  function handleShowUpiQr() {
+    if (!upiUri) {
+      Alert.alert(
+        'UPI not configured',
+        'No UPI ID has been set up for this deployment yet — ask your admin to add one in Master Settings.'
+      );
+      return;
+    }
+    setShowUpiQr(true);
+  }
 
   async function handleSave() {
     if (!customer) {
@@ -405,6 +430,12 @@ export default function SpotBillingScreen({ route, navigation }: any) {
               {printing ? 'Printing…' : 'Print via Bluetooth'}
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.receiptActionButton}
+            onPress={handleShowUpiQr}
+          >
+            <Text style={styles.receiptActionButtonText}>Collect via UPI</Text>
+          </TouchableOpacity>
         </View>
         <TouchableOpacity
           style={styles.skipButton}
@@ -412,6 +443,34 @@ export default function SpotBillingScreen({ route, navigation }: any) {
         >
           <Text style={styles.skipButtonText}>Skip signature</Text>
         </TouchableOpacity>
+
+        <Modal
+          visible={showUpiQr}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowUpiQr(false)}
+        >
+          <View style={styles.qrModalBackdrop}>
+            <View style={styles.qrModalCard}>
+              <Text style={styles.customerName}>Scan to pay via UPI</Text>
+              {upiUri && (
+                <View style={styles.qrCodeWrapper}>
+                  <QRCode value={upiUri} size={220} />
+                </View>
+              )}
+              <Text style={styles.customerMeta}>
+                ₹{savedInvoice.grandTotal.toFixed(2)} to{' '}
+                {companyConfig?.displayName || companyConfig?.legalName}
+              </Text>
+              <TouchableOpacity
+                style={styles.tripButtonLike}
+                onPress={() => setShowUpiQr(false)}
+              >
+                <Text style={styles.tripButtonLikeText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -547,6 +606,27 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 13,
     fontWeight: '600',
+  },
+  qrModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  qrModalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+  },
+  qrCodeWrapper: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
+    marginVertical: 16,
   },
   itemRow: {
     flexDirection: 'row',

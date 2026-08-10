@@ -9,7 +9,7 @@ from apps.accounts.constants import (
     PERM_ATTENDANCE_CREATE_OWN, PERM_EXPENSES_CREATE_OWN, PERM_FLEET_TRIP_MANAGE_OWN, PERM_SALES_INVOICE_CREATE,
 )
 from apps.catalog.models import Item, PriceList, Scheme
-from apps.company.models import GSTRegistration
+from apps.company.models import Company, GSTRegistration
 from apps.customers.models import Beat, Customer
 from apps.fleet.models import Trip
 from apps.inventory.models import VanStock
@@ -76,8 +76,21 @@ class PullView(APIView):
             van_stock_qs = van_stock_qs.filter(updated_at__gt=since_dt)
             gst_registrations_qs = gst_registrations_qs.filter(updated_at__gt=since_dt)
 
+        # Singleton, always sent in full (never filtered by `since`) — see
+        # apps.company.models.Company docstring; the payload is a handful
+        # of strings, so there's no size concern in always including it.
+        # This lets SpotBillingScreen build a §18 UPI QR fully offline,
+        # without a network round trip at the point of sale itself.
+        company = Company.objects.first()
+        company_data = {
+            "legal_name": company.legal_name if company else "",
+            "display_name": company.display_name if company else "",
+            "upi_vpa": company.upi_vpa if company else "",
+        }
+
         data = {
             "server_timestamp": timezone.now(),
+            "company": company_data,
             "gst_registrations": gst_registrations_qs,
             "items": items_qs,
             "price_lists": price_lists_qs,

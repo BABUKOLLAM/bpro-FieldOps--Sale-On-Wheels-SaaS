@@ -13,6 +13,7 @@ import TripCheckpoint from '../db/models/TripCheckpoint';
 import Expense from '../db/models/Expense';
 import LocationPing from '../db/models/LocationPing';
 import Attendance from '../db/models/Attendance';
+import { saveCompanyConfig } from '../config/companyConfig';
 
 /**
  * Custom sync client matching the backend's apps.mobile_sync pull/push
@@ -106,6 +107,14 @@ export async function pull(): Promise<void> {
       await upsertBeatCustomers(beat.id, beat.stops || []);
     }
   });
+
+  if (data.company) {
+    await saveCompanyConfig({
+      legalName: data.company.legal_name,
+      displayName: data.company.display_name,
+      upiVpa: data.company.upi_vpa,
+    });
+  }
 
   lastPulledAt = data.server_timestamp;
 }
