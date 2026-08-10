@@ -30,25 +30,32 @@ export default function PinGateScreen() {
       return;
     }
 
-    if (!hasPinSet) {
-      if (!confirmStage) {
-        setFirstEntry(next);
-        setConfirmStage(true);
-        setEntry('');
-      } else if (next === firstEntry) {
-        await setPin(next);
+    try {
+      if (!hasPinSet) {
+        if (!confirmStage) {
+          setFirstEntry(next);
+          setConfirmStage(true);
+          setEntry('');
+        } else if (next === firstEntry) {
+          await setPin(next);
+        } else {
+          setError('PINs did not match. Try again.');
+          setConfirmStage(false);
+          setFirstEntry('');
+          setEntry('');
+        }
       } else {
-        setError('PINs did not match. Try again.');
-        setConfirmStage(false);
-        setFirstEntry('');
-        setEntry('');
+        const ok = await unlockWithPin(next);
+        if (!ok) {
+          setError('Incorrect PIN.');
+          setEntry('');
+        }
       }
-    } else {
-      const ok = await unlockWithPin(next);
-      if (!ok) {
-        setError('Incorrect PIN.');
-        setEntry('');
-      }
+    } catch {
+      setError('Something went wrong. Try again.');
+      setConfirmStage(false);
+      setFirstEntry('');
+      setEntry('');
     }
   }
 

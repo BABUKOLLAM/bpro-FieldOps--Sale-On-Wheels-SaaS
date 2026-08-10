@@ -62,10 +62,21 @@ export function PinProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setPin = useCallback(async (pin: string) => {
-    await Keychain.setGenericPassword('device-pin', pin, {
-      service: PIN_KEYCHAIN_SERVICE,
-      accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
-    });
+    try {
+      await Keychain.setGenericPassword('device-pin', pin, {
+        service: PIN_KEYCHAIN_SERVICE,
+        accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY_OR_DEVICE_PASSCODE,
+      });
+    } catch {
+      // The access-control write requires a device passcode or enrolled
+      // biometry to be configured — neither is guaranteed (e.g. a fresh
+      // simulator, or a real device the owner never set a passcode on).
+      // Fall back to plain storage; the app's own PIN gate still protects
+      // access either way.
+      await Keychain.setGenericPassword('device-pin', pin, {
+        service: PIN_KEYCHAIN_SERVICE,
+      });
+    }
     setHasPinSet(true);
     setIsUnlocked(true);
   }, []);

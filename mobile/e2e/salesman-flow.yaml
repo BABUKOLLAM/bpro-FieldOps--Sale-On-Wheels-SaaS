@@ -37,6 +37,13 @@ appId: org.reactjs.native.example.VanSales
 - tapOn: "3"
 - tapOn: "4"
 
+# The 4th confirm digit triggers an async Keychain write (setPin) before
+# RootNavigator switches away from the PIN gate to the login screen — not
+# instant, so wait for the actual next screen rather than assuming it's
+# already there.
+- extendedWaitUntil:
+    visible: "Password"
+    timeout: 15000
 - takeScreenshot: 03-login-screen
 # Username is pre-filled with the demo agent (agent@demo.local) —
 # only the password needs entering.
