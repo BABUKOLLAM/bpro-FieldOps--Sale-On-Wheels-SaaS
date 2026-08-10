@@ -12,13 +12,23 @@ export type Dictionary = {
     fleet: string;
     masterData: string;
     masterSettings: string;
+    importExport: string;
     approvals: string;
     reports: string;
+    alerts: string;
     targets: string;
     users: string;
     roles: string;
     notifications: string;
     payments: string;
+    groups: {
+      overview: string;
+      fleetSync: string;
+      master: string;
+      insights: string;
+      access: string;
+      alertsPayments: string;
+    };
   };
   login: {
     heading: string;
@@ -48,13 +58,23 @@ export const dictionaries: Record<Locale, Dictionary> = {
       fleet: "Fleet",
       masterData: "Master Data",
       masterSettings: "Master Settings",
+      importExport: "Import / Export",
       approvals: "Approvals & Sync",
       reports: "Reports",
+      alerts: "Alerts",
       targets: "Targets",
       users: "Users",
       roles: "Roles",
       notifications: "Notifications",
       payments: "Payments",
+      groups: {
+        overview: "Overview",
+        fleetSync: "Fleet & Sync",
+        master: "Master",
+        insights: "Insights",
+        access: "Access",
+        alertsPayments: "Alerts & Payments",
+      },
     },
     login: {
       heading: "Sign in to Van Sales",
@@ -78,13 +98,23 @@ export const dictionaries: Record<Locale, Dictionary> = {
       fleet: "फ्लीट",
       masterData: "मास्टर डेटा",
       masterSettings: "मास्टर सेटिंग्स",
+      importExport: "आयात / निर्यात",
       approvals: "अनुमोदन और सिंक",
       reports: "रिपोर्ट",
+      alerts: "अलर्ट",
       targets: "लक्ष्य",
       users: "उपयोगकर्ता",
       roles: "भूमिकाएँ",
       notifications: "सूचनाएं",
       payments: "भुगतान",
+      groups: {
+        overview: "अवलोकन",
+        fleetSync: "फ्लीट और सिंक",
+        master: "मास्टर",
+        insights: "इनसाइट्स",
+        access: "एक्सेस",
+        alertsPayments: "अलर्ट और भुगतान",
+      },
     },
     login: {
       heading: "वैन सेल्स में साइन इन करें",

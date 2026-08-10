@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import "./globals.css";
@@ -47,12 +46,16 @@ export const viewport: Viewport = {
   themeColor: "#05113B",
 };
 
-const THEME_INIT_SCRIPT = `
+const CHROME_INIT_SCRIPT = `
 (function () {
   try {
-    var stored = localStorage.getItem("theme");
-    var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var storedTheme = localStorage.getItem("theme");
+    var dark = storedTheme ? storedTheme === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
     document.documentElement.classList.toggle("dark", dark);
+  } catch (e) {}
+  try {
+    var storedNavLayout = localStorage.getItem("navLayout");
+    document.documentElement.setAttribute("data-nav-layout", storedNavLayout === "column" ? "column" : "row");
   } catch (e) {}
 })();
 `;
@@ -65,9 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {THEME_INIT_SCRIPT}
-        </Script>
+        <script dangerouslySetInnerHTML={{ __html: CHROME_INIT_SCRIPT }} />
         <LanguageProvider>
           {children}
           <ServiceWorkerRegister />
