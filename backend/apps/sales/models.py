@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 
 from apps.company.constants import INDIAN_STATES
@@ -151,6 +153,71 @@ class InvoiceLine(BaseModel):
 
     def __str__(self):
         return f"{self.item.sku} x{self.qty}"
+
+
+class EwayBillSettings(BaseModel):
+    """Singleton — the invoice-value threshold above which an e-way bill
+    is expected (BRD default Rs. 50,000; some states set a different
+    intra-state threshold, hence configurable rather than hardcoded).
+    Governed via apps.governance so a back-office admin can adjust it
+    without a redeploy. No live GSP/NIC connection exists yet — see
+    EwayBill.ewb_number's docstring for why."""
+
+    threshold_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("50000"))
+    is_active = models.BooleanField(default=True)
+
+    @classmethod
+    def get_solo(cls):
+        obj = cls.objects.first()
+        return obj if obj is not None else cls.objects.create()
+
+    def __str__(self):
+        return f"E-way bill settings (Rs. {self.threshold_amount} threshold)"
+
+
+class EwayBill(BaseModel):
+    """A locally-generated e-way bill record for one invoice: a
+    NIC-schema-shaped JSON payload plus a printable document, ready to
+    file manually on the government portal or hand off to a GSP
+    (GST Suvidha Provider) bulk-upload tool. There is no live NIC/GSP API
+    connection wired up in this build (that needs a client's own
+    registered API credentials, which this deployment doesn't have) —
+    `status` therefore never reaches FILED here, and `ewb_number` stays
+    blank until a real integration is connected and actually files it.
+    Building a fake-looking government EWB number would be actively
+    misleading for a compliance document, so this deliberately doesn't."""
+
+    STATUS_DRAFT = "draft"
+    STATUS_FILED = "filed"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Draft (not filed with the government)"),
+        (STATUS_FILED, "Filed"),
+        (STATUS_CANCELLED, "Cancelled"),
+    ]
+
+    MODE_ROAD = "road"
+    MODE_RAIL = "rail"
+    MODE_AIR = "air"
+    MODE_SHIP = "ship"
+    MODE_CHOICES = [(MODE_ROAD, "Road"), (MODE_RAIL, "Rail"), (MODE_AIR, "Air"), (MODE_SHIP, "Ship")]
+
+    invoice = models.OneToOneField(Invoice, on_delete=models.CASCADE, related_name="eway_bill")
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    transport_mode = models.CharField(max_length=10, choices=MODE_CHOICES, default=MODE_ROAD)
+    vehicle_no = models.CharField(max_length=20, blank=True)
+    transporter_id = models.CharField(max_length=15, blank=True, help_text="Transporter's GSTIN, if any.")
+    transporter_name = models.CharField(max_length=255, blank=True)
+    distance_km = models.PositiveIntegerField(default=0)
+    payload = models.JSONField(default=dict, blank=True)
+    ewb_number = models.CharField(
+        max_length=20, blank=True,
+        help_text="The real government-issued EWB number — only ever populated once a live GSP/NIC connection files this bill.",
+    )
+    valid_until = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"EWB draft for {self.invoice.invoice_no or self.invoice_id} ({self.get_status_display()})"
 
 
 class Receipt(BaseModel):

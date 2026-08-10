@@ -6,14 +6,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.constants import (
-    PERM_CUSTOMERS_CREDIT_OVERRIDE, PERM_SALES_INVOICE_CREATE, PERM_SALES_ORDER_CREATE,
-    PERM_SALES_RECEIPT_CREATE, PERM_SALES_RETURN_CREATE, PERM_SALES_VIEW_ALL,
+    PERM_CUSTOMERS_CREDIT_OVERRIDE, PERM_MASTER_SETTINGS_MANAGE, PERM_SALES_INVOICE_CREATE,
+    PERM_SALES_ORDER_CREATE, PERM_SALES_RECEIPT_CREATE, PERM_SALES_RETURN_CREATE, PERM_SALES_VIEW_ALL,
 )
+from apps.accounts.permissions import HasRolePermission
 
+from .eway_bill import eway_bill_pdf_response, generate_eway_bill
 from .invoice_pdf import invoice_pdf_response
-from .models import CreditNote, Invoice, Receipt, SalesOrder
-from .serializers import CreditNoteSerializer, InvoiceSerializer, ReceiptSerializer, SalesOrderSerializer
-from .services import send_delivery_otp, verify_delivery_otp
+from .models import CreditNote, EwayBillSettings, Invoice, Receipt, SalesOrder
+from .serializers import (
+    CreditNoteSerializer, EwayBillGenerateSerializer, EwayBillSerializer, EwayBillSettingsSerializer,
+    InvoiceSerializer, ReceiptSerializer, SalesOrderSerializer,
+)
+from .services import notify_invoice_ready_whatsapp, send_delivery_otp, verify_delivery_otp
+from .upi_qr import build_upi_uri
 
 
 def _can_view_all(user):
@@ -90,6 +96,16 @@ class InvoiceViewSet(OwnScopedViewSet):
         send_delivery_otp(invoice)
         return Response({"sent": True})
 
+    @action(detail=True, methods=["post"], url_path="notify-whatsapp")
+    def notify_whatsapp(self, request, pk=None):
+        """On-demand: tell the customer via WhatsApp that this invoice is
+        ready. See apps.notifications.services.send_whatsapp for why this
+        is always a real attempt (console-logged if no gateway is
+        configured), never a faked "sent" result."""
+        invoice = self.get_object()
+        log = notify_invoice_ready_whatsapp(invoice)
+        return Response({"sent": True, "channel": log.channel})
+
     @action(detail=True, methods=["post"], url_path="verify-delivery-otp")
     def verify_delivery_otp_action(self, request, pk=None):
         invoice = self.get_object()
@@ -106,6 +122,62 @@ class InvoiceViewSet(OwnScopedViewSet):
         check is needed here."""
         invoice = self.get_object()
         return invoice_pdf_response(invoice)
+
+    @action(detail=True, methods=["get"], url_path="upi-qr")
+    def upi_qr(self, request, pk=None):
+        """§18 point-of-sale UPI QR — a static upi://pay deep link built
+        from Company.upi_vpa (see apps.sales.upi_qr). No live payment
+        gateway involved. get_object() already scopes to the requesting
+        agent's own invoices unless they hold a view-all permission
+        (OwnScopedViewSet)."""
+        invoice = self.get_object()
+        company = invoice.gst_registration.company
+        uri = build_upi_uri(invoice)
+        return Response({
+            "available": uri is not None,
+            "upi_uri": uri,
+            "vpa": company.upi_vpa or None,
+            "payee_name": company.display_name or company.legal_name,
+            "amount": str(invoice.grand_total),
+        })
+
+    @action(detail=True, methods=["get", "post"], url_path="eway-bill")
+    def eway_bill(self, request, pk=None):
+        """GST logistics: generate (POST) or fetch (GET) this invoice's
+        e-way bill draft — see apps.sales.eway_bill for why it's always a
+        local draft, never a filed government EWB. get_object() already
+        scopes to the requesting agent's own invoices (OwnScopedViewSet)."""
+        invoice = self.get_object()
+        if request.method == "GET":
+            if not hasattr(invoice, "eway_bill"):
+                return Response({"detail": "No e-way bill generated for this invoice yet."}, status=404)
+            return Response(EwayBillSerializer(invoice.eway_bill).data)
+
+        input_serializer = EwayBillGenerateSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        ewb = generate_eway_bill(invoice, **input_serializer.validated_data)
+        return Response(EwayBillSerializer(ewb).data)
+
+    @action(detail=True, methods=["get"], url_path="eway-bill-pdf")
+    def eway_bill_pdf(self, request, pk=None):
+        invoice = self.get_object()
+        if not hasattr(invoice, "eway_bill"):
+            return Response({"detail": "No e-way bill generated for this invoice yet."}, status=404)
+        return eway_bill_pdf_response(invoice.eway_bill)
+
+
+class EwayBillSettingsViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only — the threshold_amount/is_active governed fields are
+    edited only via apps.governance's propose/approve flow, same pattern
+    as NotificationGatewaySettings."""
+
+    serializer_class = EwayBillSettingsSerializer
+    permission_classes = [HasRolePermission]
+    required_permission_code = PERM_MASTER_SETTINGS_MANAGE
+
+    def get_queryset(self):
+        EwayBillSettings.get_solo()
+        return EwayBillSettings.objects.all()
 
 
 class ReceiptViewSet(OwnScopedViewSet):

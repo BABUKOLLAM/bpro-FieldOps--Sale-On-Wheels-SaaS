@@ -1,4 +1,6 @@
 import { apiGet } from "@/lib/api";
+import EwayBillCell from "./EwayBillCell";
+import WhatsAppNotifyButton from "./WhatsAppNotifyButton";
 
 type DashboardData = {
   date: string;
@@ -90,12 +92,14 @@ export default async function DashboardPage() {
               <th className="px-5 py-2 font-medium">Sync</th>
               <th className="px-5 py-2 font-medium">Signature</th>
               <th className="px-5 py-2 font-medium">Invoice PDF</th>
+              <th className="px-5 py-2 font-medium">E-way Bill</th>
+              <th className="px-5 py-2 font-medium">WhatsApp</th>
             </tr>
           </thead>
           <tbody>
             {data.recent_invoices.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-5 py-6 text-center text-slate-400">
+                <td colSpan={10} className="px-5 py-6 text-center text-slate-400">
                   No invoices yet today.
                 </td>
               </tr>
@@ -131,6 +135,12 @@ export default async function DashboardPage() {
                   >
                     Download
                   </a>
+                </td>
+                <td className="px-5 py-2">
+                  <EwayBillCell invoiceId={inv.id} />
+                </td>
+                <td className="px-5 py-2">
+                  <WhatsAppNotifyButton invoiceId={inv.id} />
                 </td>
               </tr>
             ))}

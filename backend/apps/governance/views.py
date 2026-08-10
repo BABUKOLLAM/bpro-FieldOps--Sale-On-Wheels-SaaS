@@ -1,4 +1,7 @@
+import json
+
 from django.contrib.contenttypes.models import ContentType
+from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, viewsets
@@ -55,7 +58,14 @@ class ChangeRequestViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                 "proposed_changes": [f"Fields not governed for '{data['target_type']}': {sorted(unknown_fields)}"]
             })
 
-        previous_snapshot = {field: getattr(target, field) for field in changes}
+        # getattr() returns the raw Python value (e.g. a Decimal for a
+        # DecimalField), which the JSONField's driver can't serialize on
+        # its own — round-trip through DjangoJSONEncoder first, the same
+        # encoder Django itself uses for exactly this (Decimal, date,
+        # datetime, UUID, ...).
+        previous_snapshot = json.loads(json.dumps(
+            {field: getattr(target, field) for field in changes}, cls=DjangoJSONEncoder,
+        ))
 
         change_request = ChangeRequest.objects.create(
             content_type=ContentType.objects.get_for_model(model),

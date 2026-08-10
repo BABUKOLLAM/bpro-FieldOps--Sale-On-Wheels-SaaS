@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.core.serializers import ClientGeneratedIdMixin
 
 from .models import (
-    CreditNote, CreditNoteLine, Invoice, InvoiceLine, PaymentAllocation,
+    CreditNote, CreditNoteLine, EwayBill, EwayBillSettings, Invoice, InvoiceLine, PaymentAllocation,
     Receipt, SalesOrder, SalesOrderLine,
 )
 
@@ -150,3 +150,28 @@ class CreditNoteSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
 
         finalize_credit_note(credit_note)
         return credit_note
+
+
+class EwayBillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EwayBill
+        fields = [
+            "id", "invoice", "status", "transport_mode", "vehicle_no", "transporter_id",
+            "transporter_name", "distance_km", "payload", "ewb_number", "valid_until", "created_at",
+        ]
+        read_only_fields = ["invoice", "status", "payload", "ewb_number", "valid_until", "created_at"]
+
+
+class EwayBillGenerateSerializer(serializers.Serializer):
+    transport_mode = serializers.ChoiceField(choices=EwayBill.MODE_CHOICES, default=EwayBill.MODE_ROAD)
+    vehicle_no = serializers.CharField(max_length=20, required=False, allow_blank=True, default="")
+    transporter_id = serializers.CharField(max_length=15, required=False, allow_blank=True, default="")
+    transporter_name = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    distance_km = serializers.IntegerField(min_value=0, default=0)
+
+
+class EwayBillSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EwayBillSettings
+        fields = ["id", "threshold_amount", "is_active"]
+        read_only_fields = fields
