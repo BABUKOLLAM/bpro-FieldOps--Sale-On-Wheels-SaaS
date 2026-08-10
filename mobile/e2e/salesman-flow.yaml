@@ -12,6 +12,14 @@ appId: org.reactjs.native.example.VanSales
 
 - launchApp:
     clearState: true
+# A cold `clearState: true` launch has to download and parse the full
+# ~9MB dev JS bundle from Metro plus initialize WatermelonDB's SQLite
+# adapter before anything renders — the previous run's screenshot at
+# this point was a plain black screen, confirming this genuinely needs
+# more than Maestro's normal per-command wait/retry allowance.
+- extendedWaitUntil:
+    visible: "Set a device PIN"
+    timeout: 30000
 - takeScreenshot: 01-first-run-pin-setup
 
 # First run: no device PIN set yet — this is the actual first screen,
