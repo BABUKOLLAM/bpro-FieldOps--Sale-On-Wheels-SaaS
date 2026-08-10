@@ -45,7 +45,15 @@ jobs:
         run: pod install --repo-update
 
       # ---------- Tier 1: compile ----------
-      - name: Build for iOS Simulator (compile only, no code signing)
+      # Ad-hoc signing (CODE_SIGN_IDENTITY="-"), not CODE_SIGNING_ALLOWED=NO:
+      # an unsigned .app has no code signature at all, and the Simulator's
+      # keychaind refuses Keychain Services calls for a process it can't
+      # resolve entitlements for (surfaces as NOT_CODESIGNED in the
+      # container manager log, and as opaque Keychain write failures in the
+      # app itself — see PinLock.tsx). Ad-hoc signing needs no Apple
+      # Developer certificate or provisioning profile, just a local
+      # self-signed identity Xcode generates on the fly.
+      - name: Build for iOS Simulator (ad-hoc signed, no provisioning profile)
         working-directory: mobile/ios
         run: |
           xcodebuild \
@@ -55,7 +63,9 @@ jobs:
             -sdk iphonesimulator \
             -destination "platform=iOS Simulator,name=${SIM_DEVICE}" \
             -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
             ARCHS=${SIM_ARCH} ONLY_ACTIVE_ARCH=NO \
             build
 
