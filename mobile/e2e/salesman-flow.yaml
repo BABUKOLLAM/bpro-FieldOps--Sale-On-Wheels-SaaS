@@ -1,0 +1,65 @@
+appId: org.reactjs.native.example.VanSales
+---
+# Full salesman workflow, driven against the real backend running on the
+# CI runner (seed_demo_data's fixed dataset — see backend/apps/core/
+# management/commands/seed_demo_data.py): login, first-run PIN setup,
+# home/route list, trip start, an outlet check-in, a Spot Billing sale,
+# skip signature, sync. A screenshot is taken at every meaningful step
+# so a failure — or a passing run — is visually inspectable afterward,
+# not just inferred from assertions.
+
+- launchApp:
+    clearState: true
+- takeScreenshot: 01-login-screen
+
+# Username is pre-filled with the demo agent (agent@demo.local) —
+# only the password needs entering.
+- tapOn: "Password"
+- inputText: "DemoPass123!"
+- tapOn: "Sign In"
+- takeScreenshot: 02-first-run-pin-setup
+
+# First run: no device PIN set yet — set one, then confirm it.
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "3"
+- tapOn: "4"
+- takeScreenshot: 03-pin-confirm-step
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "3"
+- tapOn: "4"
+
+- takeScreenshot: 04-home-screen
+- assertVisible: "Sharma General Store"
+- assertVisible: "City Mart"
+- assertVisible: "Green Valley Supermarket"
+
+- tapOn: "Start Trip"
+- takeScreenshot: 05-start-trip-form
+- tapOn: "Starting odometer reading"
+- inputText: "10500"
+- tapOn: "Start Trip"
+- takeScreenshot: 06-trip-in-progress
+
+# Check in at the first stop.
+- tapOn: "Sharma General Store"
+- takeScreenshot: 07-outlet-checked-in
+
+- back
+- takeScreenshot: 08-home-with-trip-active
+
+# Spot Billing at the checked-in outlet.
+- tapOn: "Sharma General Store"
+- takeScreenshot: 09-spot-billing-screen
+- tapOn:
+    id: "qty-input-SKU-001"
+- inputText: "3"
+- takeScreenshot: 10-cart-with-item
+- tapOn: "Save Invoice"
+- takeScreenshot: 11-invoice-saved-signature-step
+- tapOn: "Skip signature"
+- takeScreenshot: 12-back-on-home
+
+- tapOn: "Sync Now"
+- takeScreenshot: 13-synced

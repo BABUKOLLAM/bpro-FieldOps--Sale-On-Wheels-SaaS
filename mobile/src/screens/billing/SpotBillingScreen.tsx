@@ -506,6 +506,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
               </Text>
             </View>
             <TextInput
+              testID={`qty-input-${item.sku}`}
               style={styles.qtyInput}
               keyboardType="numeric"
               placeholder="0"

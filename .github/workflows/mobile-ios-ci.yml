@@ -2,9 +2,9 @@ name: mobile-ios-ci
 
 on:
   push:
-    paths: ["mobile/**", ".github/workflows/mobile-ios-ci.yml"]
+    paths: ["mobile/**", "backend/**", ".github/workflows/mobile-ios-ci.yml"]
   pull_request:
-    paths: ["mobile/**", ".github/workflows/mobile-ios-ci.yml"]
+    paths: ["mobile/**", "backend/**", ".github/workflows/mobile-ios-ci.yml"]
   workflow_dispatch: {}
 
 env:
@@ -15,14 +15,14 @@ env:
   SIM_ARCH: x86_64
   SIM_DEVICE: "iPhone 15"
   APP_BUNDLE_ID: org.reactjs.native.example.VanSales
+  # Same value backend-ci.yml uses for its Postgres-backed test run —
+  # a fixed dev-only key, not a real secret.
+  FIELD_ENCRYPTION_KEY: b142MqNTXKs46wWNs1s02ZIpPmFWhoAAy6P1Hy4AMxU=
 
 jobs:
   build:
     runs-on: macos-14
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: mobile
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +37,7 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install JS dependencies
+        working-directory: mobile
         run: npm ci
 
       - name: Install CocoaPods
@@ -71,6 +72,7 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
 
       - name: Start Metro bundler
+        working-directory: mobile
         run: |
           nohup npx react-native start --port 8081 > /tmp/metro.log 2>&1 &
           for i in $(seq 1 30); do
@@ -78,29 +80,114 @@ jobs:
             sleep 2
           done
 
+      - name: Pre-grant location permission (avoids a blocking system prompt)
+        run: xcrun simctl privacy "$SIM_UDID" grant location "$APP_BUNDLE_ID" || true
+
       - name: Install & launch app
+        working-directory: mobile
         run: |
-          APP_PATH=$(find ios/build/Build/Products -maxdepth 1 -name "*.app" | head -1)
+          APP_PATH=$(find ios/build/Build/Products -maxdepth 2 -name "*.app" | head -1)
           echo "App path: $APP_PATH"
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found — listing Products tree for diagnosis:"
+            find ios/build/Build/Products -maxdepth 3
+            exit 1
+          fi
           xcrun simctl install "$SIM_UDID" "$APP_PATH"
           xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID"
           sleep 10
 
       - name: Screenshot launch screen
+        working-directory: mobile
         run: |
           mkdir -p artifacts
-          xcrun simctl io "$SIM_UDID" screenshot artifacts/01-launch.png
+          xcrun simctl io "$SIM_UDID" screenshot artifacts/tier2-01-launch.png
 
-      - name: Metro log (diagnostic, always)
+      # ---------- Tier 3: real backend + automated salesman flow ----------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements/dev.txt
+
+      - name: Start Postgres + Redis (Homebrew)
+        run: |
+          brew install postgresql@15 redis
+          brew services start postgresql@15
+          brew services start redis
+          for i in $(seq 1 30); do
+            /opt/homebrew/opt/postgresql@15/bin/pg_isready && break
+            sleep 2
+          done
+          /opt/homebrew/opt/postgresql@15/bin/createuser -s vansales || true
+          /opt/homebrew/opt/postgresql@15/bin/psql -U vansales -d postgres -c "ALTER USER vansales PASSWORD 'vansales';"
+          /opt/homebrew/opt/postgresql@15/bin/createdb -U vansales vansales || true
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements/dev.txt
+
+      - name: Migrate + seed demo data
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.dev
+          POSTGRES_HOST: localhost
+        run: |
+          python manage.py migrate
+          python manage.py seed_demo_data
+
+      - name: Start Django server
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.dev
+          POSTGRES_HOST: localhost
+        run: |
+          nohup python manage.py runserver 0.0.0.0:8000 > /tmp/django.log 2>&1 &
+          for i in $(seq 1 30); do
+            nc -z localhost 8000 && break
+            sleep 2
+          done
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run salesman E2E flow
+        working-directory: mobile
+        run: |
+          mkdir -p artifacts/maestro
+          touch /tmp/maestro-start-marker
+          "$HOME/.maestro/bin/maestro" test e2e/salesman-flow.yaml \
+            --format junit --output artifacts/maestro/results.xml
+
+      - name: Collect Maestro screenshots into artifacts
         if: always()
-        run: cat /tmp/metro.log || true
+        run: |
+          mkdir -p mobile/artifacts/maestro
+          # First-time Maestro setup here — exact default screenshot output
+          # path isn't guessed, so search broadly (mobile/, ~/.maestro, /tmp)
+          # for anything newer than the pre-run marker rather than assume one.
+          for dir in mobile "$HOME/.maestro" /tmp; do
+            find "$dir" -maxdepth 4 -iname "*.png" -newer /tmp/maestro-start-marker 2>/dev/null
+          done | sort -u | while read -r f; do
+            cp "$f" mobile/artifacts/maestro/ 2>/dev/null || true
+          done
+          ls -la mobile/artifacts/maestro/ || true
 
-      - name: Upload screenshot + logs
+      - name: Logs (diagnostic, always)
+        if: always()
+        run: |
+          echo "--- Metro ---"; cat /tmp/metro.log || true
+          echo "--- Django ---"; cat /tmp/django.log || true
+
+      - name: Upload screenshots + logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-tier2-screenshots
+          name: mobile-ci-artifacts
           path: |
             mobile/artifacts/**
             /tmp/metro.log
+            /tmp/django.log
           if-no-files-found: warn
