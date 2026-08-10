@@ -7,6 +7,15 @@ on:
     paths: ["mobile/**", ".github/workflows/mobile-ios-ci.yml"]
   workflow_dispatch: {}
 
+env:
+  # PrinterSDK's arm64 slice is device-tagged (pre-dates Apple Silicon's
+  # arm64-simulator platform tag) — see the Podfile post_install comment.
+  # Building the simulator target as x86_64 (via Rosetta) sidesteps it
+  # without dropping the pod.
+  SIM_ARCH: x86_64
+  SIM_DEVICE: "iPhone 15"
+  APP_BUNDLE_ID: org.reactjs.native.example.VanSales
+
 jobs:
   build:
     runs-on: macos-14
@@ -34,6 +43,7 @@ jobs:
         working-directory: mobile/ios
         run: pod install --repo-update
 
+      # ---------- Tier 1: compile ----------
       - name: Build for iOS Simulator (compile only, no code signing)
         working-directory: mobile/ios
         run: |
@@ -42,7 +52,55 @@ jobs:
             -scheme VanSales \
             -configuration Debug \
             -sdk iphonesimulator \
-            -destination "generic/platform=iOS Simulator" \
+            -destination "platform=iOS Simulator,name=${SIM_DEVICE}" \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
+            ARCHS=${SIM_ARCH} ONLY_ACTIVE_ARCH=NO \
             build
+
+      # ---------- Tier 2: boot, launch, screenshot ----------
+      - name: List available simulators (diagnostic)
+        if: always()
+        run: xcrun simctl list devices available
+
+      - name: Boot Simulator
+        run: |
+          UDID=$(xcrun simctl create "CI-${SIM_DEVICE// /-}" "$SIM_DEVICE")
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Start Metro bundler
+        run: |
+          nohup npx react-native start --port 8081 > /tmp/metro.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8081/status && break
+            sleep 2
+          done
+
+      - name: Install & launch app
+        run: |
+          APP_PATH=$(find ios/build/Build/Products -maxdepth 1 -name "*.app" | head -1)
+          echo "App path: $APP_PATH"
+          xcrun simctl install "$SIM_UDID" "$APP_PATH"
+          xcrun simctl launch "$SIM_UDID" "$APP_BUNDLE_ID"
+          sleep 10
+
+      - name: Screenshot launch screen
+        run: |
+          mkdir -p artifacts
+          xcrun simctl io "$SIM_UDID" screenshot artifacts/01-launch.png
+
+      - name: Metro log (diagnostic, always)
+        if: always()
+        run: cat /tmp/metro.log || true
+
+      - name: Upload screenshot + logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-tier2-screenshots
+          path: |
+            mobile/artifacts/**
+            /tmp/metro.log
+          if-no-files-found: warn

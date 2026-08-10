@@ -43,5 +43,24 @@ target 'VanSales' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # react-native-thermal-receipt-printer vendors a prebuilt PrinterSDK
+    # static lib whose arm64 slice is tagged for real devices only (a
+    # legacy build predating Apple Silicon's arm64 *simulator* platform
+    # tag) — linking it into an arm64 Simulator build fails with "building
+    # for iOS-simulator, but linking in object file built for iOS". Its
+    # x86_64 slice IS simulator-tagged, so force Simulator builds onto
+    # x86_64 (via Rosetta on Apple Silicon runners) rather than dropping
+    # the pod — this keeps Bluetooth printing intact for real-device
+    # builds, which is the only place it can actually be exercised anyway
+    # (no Bluetooth radio in Simulator).
+    installer.pods_project.build_configurations.each do |config|
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+    end
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+      end
+    end
   end
 end
