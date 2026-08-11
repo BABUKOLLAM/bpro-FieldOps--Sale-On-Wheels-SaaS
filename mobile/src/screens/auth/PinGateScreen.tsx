@@ -13,6 +13,9 @@ const PIN_LENGTH = 4;
 export default function PinGateScreen() {
   const {
     hasPinSet,
+    initError,
+    retryInit,
+    pinProtected,
     setPin,
     unlockWithPin,
     unlockWithBiometrics,
@@ -22,6 +25,12 @@ export default function PinGateScreen() {
   const [confirmStage, setConfirmStage] = useState(false);
   const [firstEntry, setFirstEntry] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  function resetPinSetup() {
+    setConfirmStage(false);
+    setFirstEntry('');
+    setEntry('');
+  }
 
   async function handleDigit(digit: string) {
     const next = (entry + digit).slice(0, PIN_LENGTH);
@@ -40,9 +49,7 @@ export default function PinGateScreen() {
           await setPin(next);
         } else {
           setError('PINs did not match. Try again.');
-          setConfirmStage(false);
-          setFirstEntry('');
-          setEntry('');
+          resetPinSetup();
         }
       } else {
         const ok = await unlockWithPin(next);
@@ -53,10 +60,27 @@ export default function PinGateScreen() {
       }
     } catch {
       setError('Something went wrong. Try again.');
-      setConfirmStage(false);
-      setFirstEntry('');
-      setEntry('');
+      resetPinSetup();
     }
+  }
+
+  // A Keychain read failure isn't the same as "no PIN configured" — see
+  // PinLock.tsx's loadPinState. Never fall through to the setup pad on
+  // this: that would let a transient error be "fixed" by silently
+  // overwriting a PIN that may already exist.
+  if (initError) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Unable to verify PIN status</Text>
+        <Text style={styles.error}>
+          The device's secure storage couldn't be read. This can happen right
+          after a restart, before the device is unlocked once.
+        </Text>
+        <TouchableOpacity style={styles.biometricButton} onPress={retryInit}>
+          <Text style={styles.biometricText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   const title = !hasPinSet
@@ -98,7 +122,7 @@ export default function PinGateScreen() {
         )}
       </View>
 
-      {hasPinSet && biometryType && (
+      {hasPinSet && pinProtected && biometryType && (
         <TouchableOpacity
           style={styles.biometricButton}
           onPress={unlockWithBiometrics}

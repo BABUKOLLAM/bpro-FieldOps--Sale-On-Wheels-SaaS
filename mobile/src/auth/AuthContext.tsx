@@ -43,20 +43,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const tokens = await getTokens();
         if (tokens) {
-          const stored = await Keychain.getGenericPassword({
-            service: USER_KEYCHAIN_SERVICE,
-          });
-          if (stored) {
-            try {
-              setUser(JSON.parse(stored.password));
-            } catch {
-              // fall through — user stays null, login screen will show
+          try {
+            const stored = await Keychain.getGenericPassword({
+              service: USER_KEYCHAIN_SERVICE,
+            });
+            if (stored) {
+              try {
+                setUser(JSON.parse(stored.password));
+              } catch {
+                // Corrupt cache — fall through, user stays null.
+              }
             }
+          } catch (err) {
+            // Tokens are valid, but the cached-profile read itself failed
+            // (e.g. a transient Keychain fault). Leaving the tokens in
+            // place while silently showing the login screen would be an
+            // undiagnosable half-logged-out state — the tokens sit unused
+            // until some later launch happens to work. Clear them so "no
+            // session" is actually true, and log why, instead of leaving
+            // a stale, invisible session behind.
+            console.warn(
+              'AuthContext: cached user profile unreadable, clearing session —',
+              err
+            );
+            await clearTokens().catch(() => {});
           }
         }
       } catch {
-        // Keychain read failed — fall through to login screen rather than
-        // leaving isLoading stuck true forever.
+        // getTokens() itself failed — there's nothing valid to clean up.
       } finally {
         setIsLoading(false);
       }
