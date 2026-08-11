@@ -51,8 +51,22 @@ appId: org.reactjs.native.example.VanSales
 # TextInput's native responder (Maestro reported the tap+type as
 # successful, but the typed text never landed — 8.9s for 13 characters
 # was the tell). testID targeting is unambiguous and actually focuses it.
+#
+# Even with testID targeting, a second race remains: this password field
+# is the first *system* keyboard shown all session (the PIN pad above is
+# a custom digit grid), and on a freshly cold-started simulator the tap
+# can be reported "completed" by the accessibility layer before iOS has
+# actually finished bringing the keyboard up and wiring the responder.
+# A run on 2026-08-11 showed the tell for that: no swipe-typing tutorial
+# ever appeared (it's keyboard-triggered, so its absence means the
+# keyboard interaction never properly started) and the password field
+# was later found completely empty — not just missing the swipe-tutorial
+# dismissal, the typed characters never landed at all. Waiting for the
+# keyboard's slide-up animation to finish before typing closes that race.
 - tapOn:
     id: "password-input"
+- waitForAnimationToEnd:
+    timeout: 5000
 - inputText: "DemoPass123!"
 # This is the first real system keyboard shown all session (the PIN pad
 # above is a custom digit grid, not the OS keyboard) — on a fresh
