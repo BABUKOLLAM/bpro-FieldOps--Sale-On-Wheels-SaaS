@@ -36,20 +36,20 @@ export default function CustomerForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4">
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4">
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Code</label>
-        <input required value={code} onChange={(e) => setCode(e.target.value)} className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100" />
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Code</label>
+        <input required value={code} onChange={(e) => setCode(e.target.value)} className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Name</label>
-        <input required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-56 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100" />
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Name</label>
+        <input required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-56 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Credit Limit</label>
-        <input type="number" min="0" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100" />
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Credit Limit</label>
+        <input type="number" min="0" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100" />
       </div>
-      <button type="submit" disabled={submitting} className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60">
+      <button type="submit" disabled={submitting} className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60">
         {submitting ? "Adding…" : "Add Customer"}
       </button>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}

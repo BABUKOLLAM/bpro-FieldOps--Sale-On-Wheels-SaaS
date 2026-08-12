@@ -21,20 +21,20 @@ export default function RoleRow({ role }: { role: Role }) {
   const [editing, setEditing] = useState(false);
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+    <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             {ROLE_LABELS[role.name] || role.name}
           </h3>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
             {role.permissions.length} permission{role.permissions.length === 1 ? "" : "s"} ·{" "}
             {role.is_active ? "Active" : "Inactive"}
           </p>
         </div>
         <button
           onClick={() => setEditing((v) => !v)}
-          className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
+          className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500"
         >
           {editing ? "Close" : "Edit permissions"}
         </button>
@@ -45,7 +45,7 @@ export default function RoleRow({ role }: { role: Role }) {
           {role.permissions.map((code) => (
             <span
               key={code}
-              className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300"
+              className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-xs text-neutral-600 dark:text-neutral-300"
             >
               {PERMISSION_LABELS[code] || code}
             </span>

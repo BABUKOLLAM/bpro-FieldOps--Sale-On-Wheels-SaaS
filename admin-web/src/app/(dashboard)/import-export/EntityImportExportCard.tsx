@@ -17,7 +17,7 @@ export type ImportJob = {
   created_at: string;
 };
 
-const LINK_CLASS = "font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500";
+const LINK_CLASS = "font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500";
 
 export default function EntityImportExportCard({
   entity,
@@ -58,30 +58,30 @@ export default function EntityImportExportCard({
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{entity.label}</h2>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Columns: {entity.columns.join(", ")}</p>
+    <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4">
+      <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{entity.label}</h2>
+      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Columns: {entity.columns.join(", ")}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-1 text-xs">
-        <span className="text-slate-400 dark:text-slate-500">Template:</span>
+        <span className="text-neutral-400 dark:text-neutral-500">Template:</span>
         <a className={LINK_CLASS} href={`/api/proxy/dataio/entities/${entity.slug}/template?filetype=xlsx`}>
           xlsx
         </a>
-        <span className="text-slate-300 dark:text-slate-600">/</span>
+        <span className="text-neutral-300 dark:text-neutral-600">/</span>
         <a className={LINK_CLASS} href={`/api/proxy/dataio/entities/${entity.slug}/template?filetype=csv`}>
           csv
         </a>
-        <span className="ml-3 text-slate-400 dark:text-slate-500">Export:</span>
+        <span className="ml-3 text-neutral-400 dark:text-neutral-500">Export:</span>
         <a className={LINK_CLASS} href={`/api/proxy/dataio/entities/${entity.slug}/export?filetype=xlsx`}>
           xlsx
         </a>
-        <span className="text-slate-300 dark:text-slate-600">/</span>
+        <span className="text-neutral-300 dark:text-neutral-600">/</span>
         <a className={LINK_CLASS} href={`/api/proxy/dataio/entities/${entity.slug}/export?filetype=csv`}>
           csv
         </a>
       </div>
 
-      <label className="mt-3 inline-flex cursor-pointer items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60">
+      <label className="mt-3 inline-flex cursor-pointer items-center rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60">
         {uploading ? "Importing…" : "Upload to import"}
         <input
           ref={inputRef}
@@ -96,8 +96,8 @@ export default function EntityImportExportCard({
       {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
 
       {result && (
-        <div className="mt-3 rounded-md bg-slate-50 dark:bg-slate-800 p-2 text-xs">
-          <p className="font-medium text-slate-700 dark:text-slate-200">
+        <div className="mt-3 rounded-md bg-neutral-50 dark:bg-neutral-800 p-2 text-xs">
+          <p className="font-medium text-neutral-700 dark:text-neutral-200">
             {result.created_count} created, {result.updated_count} updated
             {result.error_count > 0 && `, ${result.error_count} error${result.error_count === 1 ? "" : "s"}`}
           </p>
@@ -114,7 +114,7 @@ export default function EntityImportExportCard({
       )}
 
       {recentJobs.length > 0 && (
-        <details className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+        <details className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
           <summary className="cursor-pointer select-none">Recent imports</summary>
           <ul className="mt-1 space-y-1">
             {recentJobs.map((job) => (

@@ -22,8 +22,8 @@ export default async function RolesPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Roles</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Roles</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Roles are seeded per deployment. Permission changes go through Master Settings approval — Super Admin,
           Admin, and IT Head may propose; only Super Admin and Admin may approve (AR-06).
         </p>
@@ -31,7 +31,7 @@ export default async function RolesPage() {
 
       {pendingChanges.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Pending changes ({pendingChanges.length})
           </h2>
           <div className="space-y-2">

@@ -25,7 +25,7 @@ export default function WhatsAppNotifyButton({ invoiceId }: { invoiceId: string 
       type="button"
       onClick={handleClick}
       disabled={state === "sending"}
-      className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 disabled:opacity-60"
+      className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 disabled:opacity-60"
     >
       {state === "sending" ? "Sending…" : state === "error" ? "Retry WhatsApp" : "Notify WhatsApp"}
     </button>

@@ -42,7 +42,7 @@ export default function BeatTemplateStopForm({ templateId, customers }: { templa
         required
         value={customerId}
         onChange={(e) => setCustomerId(e.target.value)}
-        className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1 text-xs text-slate-900 dark:text-slate-100"
+        className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100"
       >
         <option value="">Add outlet…</option>
         {customers.map((c) => (
@@ -57,12 +57,12 @@ export default function BeatTemplateStopForm({ templateId, customers }: { templa
         value={visitSequence}
         onChange={(e) => setVisitSequence(e.target.value)}
         title="Visit sequence"
-        className="w-14 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1 text-xs text-slate-900 dark:text-slate-100"
+        className="w-14 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100"
       />
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-60"
+        className="rounded-md bg-neutral-100 dark:bg-neutral-800 px-3 py-1 text-xs font-medium text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-60"
       >
         {submitting ? "Adding…" : "Add stop"}
       </button>

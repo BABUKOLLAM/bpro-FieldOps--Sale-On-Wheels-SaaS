@@ -36,24 +36,24 @@ export default function ChangeRequestRow({ changeRequest }: { changeRequest: Cha
   }
 
   return (
-    <div className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3">
+    <div className="rounded-lg border border-orange-300 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-900 dark:text-slate-50">{changeRequest.target_label}</p>
-          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{changeRequest.target_label}</p>
+          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
             Proposed by {changeRequest.requested_by_username} ·{" "}
             {new Date(changeRequest.requested_at).toLocaleString()}
           </p>
           {changeRequest.reason && (
-            <p className="mt-1 text-xs italic text-slate-600 dark:text-slate-300">&ldquo;{changeRequest.reason}&rdquo;</p>
+            <p className="mt-1 text-xs italic text-neutral-600 dark:text-neutral-300">&ldquo;{changeRequest.reason}&rdquo;</p>
           )}
           <dl className="mt-2 space-y-0.5 text-xs">
             {Object.entries(changeRequest.proposed_changes).map(([field, value]) => (
               <div key={field} className="flex flex-wrap gap-1">
-                <dt className="font-medium text-slate-600 dark:text-slate-300">{field}:</dt>
-                <dd className="text-slate-500 dark:text-slate-400">
+                <dt className="font-medium text-neutral-600 dark:text-neutral-300">{field}:</dt>
+                <dd className="text-neutral-500 dark:text-neutral-400">
                   {JSON.stringify(changeRequest.previous_snapshot[field])} →{" "}
-                  <span className="font-medium text-slate-900 dark:text-slate-50">{JSON.stringify(value)}</span>
+                  <span className="font-medium text-neutral-900 dark:text-neutral-50">{JSON.stringify(value)}</span>
                 </dd>
               </div>
             ))}
@@ -70,7 +70,7 @@ export default function ChangeRequestRow({ changeRequest }: { changeRequest: Cha
           <button
             onClick={() => review("reject")}
             disabled={submitting !== null}
-            className="rounded-md bg-slate-200 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-60"
+            className="rounded-md bg-neutral-200 dark:bg-neutral-800 px-3 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-700 disabled:opacity-60"
           >
             {submitting === "reject" ? "Rejecting…" : "Reject"}
           </button>

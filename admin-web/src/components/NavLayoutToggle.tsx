@@ -22,7 +22,7 @@ export default function NavLayoutToggle() {
       onClick={toggle}
       title={isColumn ? "Switch menu to top row" : "Switch menu to side column"}
       aria-label={isColumn ? "Switch menu to top row" : "Switch menu to side column"}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-indigo-600 dark:hover:bg-slate-800 dark:hover:text-indigo-400"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 hover:text-amber-600 dark:hover:bg-neutral-800 dark:hover:text-amber-400"
     >
       {isColumn === null ? null : isColumn ? (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4">

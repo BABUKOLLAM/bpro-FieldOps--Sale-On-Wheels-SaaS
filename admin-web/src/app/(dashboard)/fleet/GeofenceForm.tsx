@@ -44,23 +44,23 @@ export default function GeofenceForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Zone name</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Zone name</label>
         <input
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-40 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-40 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Type</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Type</label>
         <select
           value={zoneType}
           onChange={(e) => setZoneType(e.target.value)}
-          className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           <option value="warehouse">Warehouse</option>
           <option value="depot">Depot</option>
@@ -68,39 +68,39 @@ export default function GeofenceForm() {
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Latitude</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Latitude</label>
         <input
           required
           value={latitude}
           onChange={(e) => setLatitude(e.target.value)}
           placeholder="19.076000"
-          className="mt-1 w-28 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-28 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Longitude</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Longitude</label>
         <input
           required
           value={longitude}
           onChange={(e) => setLongitude(e.target.value)}
           placeholder="72.877700"
-          className="mt-1 w-28 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-28 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Radius (m)</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Radius (m)</label>
         <input
           type="number"
           min="10"
           value={radius}
           onChange={(e) => setRadius(e.target.value)}
-          className="mt-1 w-24 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
       >
         {submitting ? "Adding…" : "Add Zone"}
       </button>

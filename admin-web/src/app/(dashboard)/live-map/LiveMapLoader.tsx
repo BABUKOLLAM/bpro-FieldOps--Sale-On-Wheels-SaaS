@@ -11,7 +11,7 @@ import type LiveMapClientType from "./LiveMapClient";
 const LiveMapClient = dynamic(() => import("./LiveMapClient"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[600px] items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 text-sm text-slate-400">
+    <div className="flex h-[600px] items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 text-sm text-neutral-400">
       Loading map…
     </div>
   ),

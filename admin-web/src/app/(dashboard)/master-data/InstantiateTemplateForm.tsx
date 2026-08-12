@@ -45,12 +45,12 @@ export default function InstantiateTemplateForm({ templateId, agents }: { templa
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="New route name (optional)"
-        className="w-48 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1 text-xs text-slate-900 dark:text-slate-100"
+        className="w-48 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100"
       />
       <select
         value={agentId}
         onChange={(e) => setAgentId(e.target.value)}
-        className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1 text-xs text-slate-900 dark:text-slate-100"
+        className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100"
       >
         <option value="">Unassigned</option>
         {agents.map((a) => (

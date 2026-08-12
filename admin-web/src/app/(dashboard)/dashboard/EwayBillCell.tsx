@@ -53,20 +53,20 @@ export default function EwayBillCell({ invoiceId }: { invoiceId: string }) {
   }
 
   if (ewb === undefined) {
-    return <span className="text-xs text-slate-400">…</span>;
+    return <span className="text-xs text-neutral-400">…</span>;
   }
 
   if (ewb) {
     return (
       <div className="text-xs">
-        <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+        <span className="inline-block rounded-full bg-orange-100 px-2 py-0.5 font-medium text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
           draft
         </span>
         <a
           href={`/api/proxy/sales/invoices/${invoiceId}/eway-bill-pdf`}
           target="_blank"
           rel="noreferrer"
-          className="ml-2 font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
+          className="ml-2 font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500"
         >
           Download
         </a>
@@ -79,7 +79,7 @@ export default function EwayBillCell({ invoiceId }: { invoiceId: string }) {
       <button
         type="button"
         onClick={() => setShowForm(true)}
-        className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
+        className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500"
       >
         Generate
       </button>
@@ -94,7 +94,7 @@ export default function EwayBillCell({ invoiceId }: { invoiceId: string }) {
         value={vehicleNo}
         onChange={(e) => setVehicleNo(e.target.value)}
         required
-        className="w-24 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-1.5 py-0.5 text-xs text-slate-900 dark:text-slate-100"
+        className="w-24 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-1.5 py-0.5 text-xs text-neutral-900 dark:text-neutral-100"
       />
       <input
         type="number"
@@ -102,17 +102,17 @@ export default function EwayBillCell({ invoiceId }: { invoiceId: string }) {
         placeholder="Distance (km)"
         value={distanceKm}
         onChange={(e) => setDistanceKm(e.target.value)}
-        className="w-24 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-1.5 py-0.5 text-xs text-slate-900 dark:text-slate-100"
+        className="w-24 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-1.5 py-0.5 text-xs text-neutral-900 dark:text-neutral-100"
       />
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-indigo-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded bg-amber-600 px-2 py-0.5 text-xs font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
         >
           {submitting ? "…" : "Save"}
         </button>
-        <button type="button" onClick={() => setShowForm(false)} className="text-xs text-slate-400 hover:text-slate-600">
+        <button type="button" onClick={() => setShowForm(false)} className="text-xs text-neutral-400 hover:text-neutral-600">
           Cancel
         </button>
       </div>

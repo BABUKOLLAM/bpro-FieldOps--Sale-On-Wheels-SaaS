@@ -34,22 +34,22 @@ export default function BeatTemplateForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Trip plan template name</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Trip plan template name</label>
         <input
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Weekly North Route"
-          className="mt-1 w-64 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-64 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
       >
         {submitting ? "Adding…" : "Add Template"}
       </button>

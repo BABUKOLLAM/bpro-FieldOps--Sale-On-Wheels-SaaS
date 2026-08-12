@@ -40,36 +40,36 @@ export default function ItemForm({ categories, uoms }: { categories: Category[];
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4">
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4">
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">SKU</label>
-        <input required value={sku} onChange={(e) => setSku(e.target.value)} className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100" />
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">SKU</label>
+        <input required value={sku} onChange={(e) => setSku(e.target.value)} className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Name</label>
-        <input required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-56 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100" />
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Name</label>
+        <input required value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-56 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">GST %</label>
-        <input type="number" step="0.01" value={gstRate} onChange={(e) => setGstRate(e.target.value)} className="mt-1 w-24 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100" />
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">GST %</label>
+        <input type="number" step="0.01" value={gstRate} onChange={(e) => setGstRate(e.target.value)} className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Category</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-40 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100">
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Category</label>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-40 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100">
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">UOM</label>
-        <select required value={baseUom} onChange={(e) => setBaseUom(e.target.value)} className="mt-1 w-24 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100">
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">UOM</label>
+        <select required value={baseUom} onChange={(e) => setBaseUom(e.target.value)} className="mt-1 w-24 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100">
           {uoms.map((u) => (
             <option key={u.id} value={u.id}>{u.code}</option>
           ))}
         </select>
       </div>
-      <button type="submit" disabled={submitting} className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60">
+      <button type="submit" disabled={submitting} className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60">
         {submitting ? "Adding…" : "Add Item"}
       </button>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}

@@ -82,16 +82,16 @@ export default async function MasterDataPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Master Data</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Customers and items — the data field agents bill against.</p>
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Master Data</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">Customers and items — the data field agents bill against.</p>
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Customers ({customers.count})</h2>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Customers ({customers.count})</h2>
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Code</th>
                 <th className="px-4 py-2 font-medium">Name</th>
                 <th className="px-4 py-2 font-medium">Credit Limit</th>
@@ -101,12 +101,12 @@ export default async function MasterDataPage() {
             </thead>
             <tbody>
               {customers.results.map((c) => (
-                <tr key={c.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{c.code}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{c.name}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{Number(c.credit_limit).toLocaleString("en-IN")}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{Number(c.outstanding_balance).toLocaleString("en-IN")}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{c.is_blocked ? "Blocked" : c.credit_status}</td>
+                <tr key={c.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{c.code}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{c.name}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">₹{Number(c.credit_limit).toLocaleString("en-IN")}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">₹{Number(c.outstanding_balance).toLocaleString("en-IN")}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{c.is_blocked ? "Blocked" : c.credit_status}</td>
                 </tr>
               ))}
             </tbody>
@@ -116,11 +116,11 @@ export default async function MasterDataPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Items ({items.count})</h2>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Items ({items.count})</h2>
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">SKU</th>
                 <th className="px-4 py-2 font-medium">Name</th>
                 <th className="px-4 py-2 font-medium">GST Rate</th>
@@ -129,11 +129,11 @@ export default async function MasterDataPage() {
             </thead>
             <tbody>
               {items.results.map((item) => (
-                <tr key={item.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{item.sku}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{item.name}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{item.gst_rate}%</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{item.is_active ? "Yes" : "No"}</td>
+                <tr key={item.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{item.sku}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{item.name}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{item.gst_rate}%</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{item.is_active ? "Yes" : "No"}</td>
                 </tr>
               ))}
             </tbody>
@@ -143,19 +143,19 @@ export default async function MasterDataPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Routes / Beats ({beats.count})</h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Routes / Beats ({beats.count})</h2>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Assign each agent an ordered list of outlets to visit (FR-15 / AR-08). Feeds the Live Map's route-adherence view.
         </p>
         <div className="space-y-4">
           {beats.results.map((beat) => {
             const agent = agents.find((a) => a.id === beat.assigned_agent);
             return (
-              <div key={beat.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+              <div key={beat.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{beat.name}</h3>
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{beat.name}</h3>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
                       {agent ? agent.first_name || agent.username : "Unassigned"}
                     </span>
                     {beat.stops.length > 1 && <OptimizeRouteButton beatId={beat.id} />}
@@ -164,14 +164,14 @@ export default async function MasterDataPage() {
                 <ul className="mt-3 space-y-1.5">
                   {[...beat.stops].sort((a, b) => a.visit_sequence - b.visit_sequence).map((stop) => (
                     <li key={stop.id} className="flex items-center justify-between text-sm">
-                      <span className="text-slate-700 dark:text-slate-300">
-                        <span className="mr-2 text-xs text-slate-400">#{stop.visit_sequence}</span>
+                      <span className="text-neutral-700 dark:text-neutral-300">
+                        <span className="mr-2 text-xs text-neutral-400">#{stop.visit_sequence}</span>
                         {stop.customer_detail?.name}
                       </span>
                       <RemoveStopButton stopId={stop.id} />
                     </li>
                   ))}
-                  {beat.stops.length === 0 && <li className="text-xs text-slate-400">No stops yet.</li>}
+                  {beat.stops.length === 0 && <li className="text-xs text-neutral-400">No stops yet.</li>}
                 </ul>
                 <div className="mt-3">
                   <BeatStopForm beatId={beat.id} customers={customers.results} />
@@ -180,46 +180,46 @@ export default async function MasterDataPage() {
             );
           })}
           {beats.results.length === 0 && (
-            <p className="text-sm text-slate-400">No routes yet — add one below.</p>
+            <p className="text-sm text-neutral-400">No routes yet — add one below.</p>
           )}
         </div>
         <BeatForm agents={agents} />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Trip Plan Templates ({beatTemplates.count})
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           A reusable outlet list, not yet assigned to any agent or day — instantiate one into a brand-new route
           above without affecting the template itself.
         </p>
         <div className="space-y-4">
           {beatTemplates.results.map((template) => (
-            <div key={template.id} className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{template.name}</h3>
+            <div key={template.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{template.name}</h3>
               <ul className="mt-3 space-y-1.5">
                 {[...template.stops].sort((a, b) => a.visit_sequence - b.visit_sequence).map((stop) => (
                   <li key={stop.id} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-700 dark:text-slate-300">
-                      <span className="mr-2 text-xs text-slate-400">#{stop.visit_sequence}</span>
+                    <span className="text-neutral-700 dark:text-neutral-300">
+                      <span className="mr-2 text-xs text-neutral-400">#{stop.visit_sequence}</span>
                       {stop.customer_detail?.name}
                     </span>
                     <RemoveTemplateStopButton stopId={stop.id} />
                   </li>
                 ))}
-                {template.stops.length === 0 && <li className="text-xs text-slate-400">No stops yet.</li>}
+                {template.stops.length === 0 && <li className="text-xs text-neutral-400">No stops yet.</li>}
               </ul>
               <div className="mt-3">
                 <BeatTemplateStopForm templateId={template.id} customers={customers.results} />
               </div>
-              <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+              <div className="mt-3 border-t border-neutral-100 dark:border-neutral-800 pt-3">
                 <InstantiateTemplateForm templateId={template.id} agents={agents} />
               </div>
             </div>
           ))}
           {beatTemplates.results.length === 0 && (
-            <p className="text-sm text-slate-400">No trip plan templates yet — add one below.</p>
+            <p className="text-sm text-neutral-400">No trip plan templates yet — add one below.</p>
           )}
         </div>
         <BeatTemplateForm />

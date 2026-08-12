@@ -110,7 +110,7 @@ type Geofence = { id: string; name: string; zone_type: string; radius_meters: nu
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     ok: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    due_soon: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    due_soon: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
     overdue: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
   };
   return (
@@ -132,8 +132,8 @@ export default async function FleetPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Fleet</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Fleet</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Vehicle utilization, maintenance alerts, fuel cost, reverse-logistics reconciliation, document
           compliance, and geofencing (FM-12/FM-13/FM-14/FM-16).
         </p>
@@ -141,15 +141,15 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Vehicle Utilization — last 30 days ({data.vehicles.length})
           </h2>
           <ExportCsvButton data={data.vehicles} filename="fleet-vehicle-utilization.csv" />
         </div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Vehicle</th>
                 <th className="px-4 py-2 font-medium">Agent</th>
                 <th className="px-4 py-2 font-medium">Trips</th>
@@ -162,19 +162,19 @@ export default async function FleetPage() {
             <tbody>
               {data.vehicles.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-6 text-center text-neutral-400">
                     No active vehicles.
                   </td>
                 </tr>
               )}
               {data.vehicles.map((v) => (
-                <tr key={v.vehicle_id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{v.reg_no}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{v.assigned_agent_name || "—"}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{v.trip_count_30d}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{Number(v.distance_km_30d).toFixed(0)} km</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{Number(v.fuel_cost_30d).toLocaleString("en-IN")}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                <tr key={v.vehicle_id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{v.reg_no}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{v.assigned_agent_name || "—"}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{v.trip_count_30d}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{Number(v.distance_km_30d).toFixed(0)} km</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">₹{Number(v.fuel_cost_30d).toLocaleString("en-IN")}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {v.avg_efficiency_kmpl != null ? `${Number(v.avg_efficiency_kmpl).toFixed(1)} km/l` : "—"}
                   </td>
                   <td className="px-4 py-2"><StatusBadge status={v.maintenance_status} /></td>
@@ -187,15 +187,15 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Maintenance Alerts ({data.maintenance_alerts.length})
           </h2>
           <ExportCsvButton data={data.maintenance_alerts} filename="fleet-maintenance-alerts.csv" />
         </div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Vehicle</th>
                 <th className="px-4 py-2 font-medium">Item</th>
                 <th className="px-4 py-2 font-medium">Due Date</th>
@@ -206,17 +206,17 @@ export default async function FleetPage() {
             <tbody>
               {data.maintenance_alerts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-6 text-center text-neutral-400">
                     Nothing due — all schedules on track.
                   </td>
                 </tr>
               )}
               {data.maintenance_alerts.map((a) => (
-                <tr key={a.schedule_id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{a.vehicle_reg_no}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.description}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.next_due_date || "—"}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                <tr key={a.schedule_id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{a.vehicle_reg_no}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.description}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.next_due_date || "—"}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {a.next_due_odometer != null ? `${a.next_due_odometer} km` : "—"}
                   </td>
                   <td className="px-4 py-2"><StatusBadge status={a.status} /></td>
@@ -229,12 +229,12 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Fuel Cost Trend — last 6 months</h2>
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Fuel Cost Trend — last 6 months</h2>
           <ExportCsvButton data={data.fuel_cost_trend} filename="fleet-fuel-cost-trend.csv" />
         </div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
           {data.fuel_cost_trend.length === 0 ? (
-            <p className="text-sm text-slate-400">No fuel logs in this period.</p>
+            <p className="text-sm text-neutral-400">No fuel logs in this period.</p>
           ) : (
             <div className="flex items-end gap-3" style={{ height: 140 }}>
               {(() => {
@@ -242,11 +242,11 @@ export default async function FleetPage() {
                 return data.fuel_cost_trend.map((p) => (
                   <div key={p.month} className="flex flex-1 flex-col items-center gap-1.5">
                     <div
-                      className="w-full rounded-t bg-indigo-600"
+                      className="w-full rounded-t bg-amber-600"
                       style={{ height: `${Math.max(4, (Number(p.total_cost) / max) * 110)}px` }}
                       title={`₹${Number(p.total_cost).toLocaleString("en-IN")}`}
                     />
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{p.month}</span>
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{p.month}</span>
                   </div>
                 ));
               })()}
@@ -257,19 +257,19 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Reverse Logistics — damaged/expired returns, last 30 days ({data.reverse_logistics.length})
           </h2>
           <ExportCsvButton data={data.reverse_logistics} filename="fleet-reverse-logistics.csv" />
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           &quot;Reconciled&quot; means a van-unload stock transfer exists for that agent on that date — a proxy
           signal that the item has physically been returned to the warehouse, not a guarantee.
         </p>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Credit Note</th>
                 <th className="px-4 py-2 font-medium">Agent</th>
                 <th className="px-4 py-2 font-medium">Item</th>
@@ -282,21 +282,21 @@ export default async function FleetPage() {
             <tbody>
               {data.reverse_logistics.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-6 text-center text-neutral-400">
                     No damaged/expired returns in this period.
                   </td>
                 </tr>
               )}
               {data.reverse_logistics.map((r, i) => (
-                <tr key={`${r.credit_note_id}-${i}`} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                <tr key={`${r.credit_note_id}-${i}`} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">
                     {r.credit_note_no || r.credit_note_id.slice(0, 8)}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.agent_name}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.item_name}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.qty}</td>
-                  <td className="px-4 py-2 capitalize text-slate-700 dark:text-slate-300">{r.condition}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.date}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.agent_name}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.item_name}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.qty}</td>
+                  <td className="px-4 py-2 capitalize text-neutral-700 dark:text-neutral-300">{r.condition}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.date}</td>
                   <td className="px-4 py-2">
                     <StatusBadge status={r.reconciled ? "ok" : "due_soon"} />
                   </td>
@@ -309,15 +309,15 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Document Compliance — RC, insurance, permit, PUC, license ({data.compliance_alerts.length})
           </h2>
           <ExportCsvButton data={data.compliance_alerts} filename="fleet-compliance.csv" />
         </div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Vehicle / Driver</th>
                 <th className="px-4 py-2 font-medium">Document</th>
                 <th className="px-4 py-2 font-medium">Expiry</th>
@@ -328,20 +328,20 @@ export default async function FleetPage() {
             <tbody>
               {data.compliance_alerts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-6 text-center text-neutral-400">
                     Nothing due — all documents current.
                   </td>
                 </tr>
               )}
               {data.compliance_alerts.map((a) => (
-                <tr key={a.document_id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.holder}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                <tr key={a.document_id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.holder}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {a.document_type_display}
-                    {a.document_number && <span className="ml-1 text-xs text-slate-400">#{a.document_number}</span>}
+                    {a.document_number && <span className="ml-1 text-xs text-neutral-400">#{a.document_number}</span>}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.expiry_date}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.days_remaining}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.expiry_date}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.days_remaining}</td>
                   <td className="px-4 py-2"><StatusBadge status={a.status} /></td>
                 </tr>
               ))}
@@ -353,15 +353,15 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Geofence Alerts — active trips in a restricted zone ({data.geofence_alerts.length})
           </h2>
           <ExportCsvButton data={data.geofence_alerts} filename="fleet-geofence-alerts.csv" />
         </div>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Agent</th>
                 <th className="px-4 py-2 font-medium">Vehicle</th>
                 <th className="px-4 py-2 font-medium">Zone</th>
@@ -372,20 +372,20 @@ export default async function FleetPage() {
             <tbody>
               {data.geofence_alerts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-6 text-center text-neutral-400">
                     No agents currently inside a restricted zone.
                   </td>
                 </tr>
               )}
               {data.geofence_alerts.map((a, i) => (
-                <tr key={`${a.trip_id}-${i}`} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.agent_name}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                <tr key={`${a.trip_id}-${i}`} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.agent_name}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">
                     {a.vehicle_reg_no || "—"}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.zone_name}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{a.distance_meters} m</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.zone_name}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{a.distance_meters} m</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {new Date(a.recorded_at).toLocaleTimeString()}
                   </td>
                 </tr>
@@ -393,13 +393,13 @@ export default async function FleetPage() {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Zones defined below — mark a zone &quot;Restricted&quot; to have it appear here when an active trip enters it.
         </p>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Zone</th>
                 <th className="px-4 py-2 font-medium">Type</th>
                 <th className="px-4 py-2 font-medium">Radius</th>
@@ -409,17 +409,17 @@ export default async function FleetPage() {
             <tbody>
               {geofences.results.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={4} className="px-4 py-6 text-center text-neutral-400">
                     No zones defined yet.
                   </td>
                 </tr>
               )}
               {geofences.results.map((g) => (
-                <tr key={g.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{g.name}</td>
-                  <td className="px-4 py-2 capitalize text-slate-700 dark:text-slate-300">{g.zone_type}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{g.radius_meters} m</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{g.is_active ? "Yes" : "No"}</td>
+                <tr key={g.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{g.name}</td>
+                  <td className="px-4 py-2 capitalize text-neutral-700 dark:text-neutral-300">{g.zone_type}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{g.radius_meters} m</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{g.is_active ? "Yes" : "No"}</td>
                 </tr>
               ))}
             </tbody>
@@ -430,20 +430,20 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Route Analytics — idle time &amp; route deviation, last 30 days ({data.route_analytics.length})
           </h2>
           <ExportCsvButton data={data.route_analytics} filename="fleet-route-analytics.csv" />
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Best-effort from periodic (~3-minute) GPS breadcrumbs, not continuous telemetry — idle time is inferred
           from consecutive pings that stayed in place, and deviation is straight-line distance from the nearest
           planned stop. Only trips with 15+ idle minutes or at least one deviation point are shown.
         </p>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Agent</th>
                 <th className="px-4 py-2 font-medium">Vehicle</th>
                 <th className="px-4 py-2 font-medium">Beat</th>
@@ -455,23 +455,23 @@ export default async function FleetPage() {
             <tbody>
               {data.route_analytics.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-neutral-400">
                     No trips with notable idle time or route deviation in the last 30 days.
                   </td>
                 </tr>
               )}
               {data.route_analytics.map((r) => (
-                <tr key={r.trip_id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.agent_name}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                <tr key={r.trip_id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.agent_name}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">
                     {r.vehicle_reg_no || "—"}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.beat_name || "—"}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.beat_name || "—"}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {new Date(r.start_time).toLocaleString()}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.idle_minutes} min</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.deviation_count}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.idle_minutes} min</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{r.deviation_count}</td>
                 </tr>
               ))}
             </tbody>
@@ -481,20 +481,20 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Driver Safety Scores — speeding &amp; idling only, last 30 days ({data.driver_safety_scores.length})
           </h2>
           <ExportCsvButton data={data.driver_safety_scores} filename="driver-safety-scores.csv" />
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           100 = nothing flagged. Deducted for GPS-implied speeding segments and for the idle-time share of trip
           duration only — harsh braking/acceleration would need an accelerometer stream this app doesn&apos;t
           collect, so it isn&apos;t part of this score. A coaching starting point, not an automated penalty.
         </p>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Agent</th>
                 <th className="px-4 py-2 font-medium">Trips</th>
                 <th className="px-4 py-2 font-medium">Avg Score</th>
@@ -505,28 +505,28 @@ export default async function FleetPage() {
             <tbody>
               {data.driver_safety_scores.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-6 text-center text-neutral-400">
                     No completed trips with GPS breadcrumbs in the last 30 days.
                   </td>
                 </tr>
               )}
               {data.driver_safety_scores.map((s) => (
-                <tr key={s.agent_id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.agent_name}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.trip_count}</td>
+                <tr key={s.agent_id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{s.agent_name}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{s.trip_count}</td>
                   <td
                     className={`px-4 py-2 font-semibold ${
                       s.avg_score < 70
                         ? "text-red-600 dark:text-red-400"
                         : s.avg_score < 90
-                          ? "text-amber-600 dark:text-amber-400"
+                          ? "text-orange-600 dark:text-orange-400"
                           : "text-emerald-600 dark:text-emerald-400"
                     }`}
                   >
                     {s.avg_score}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.total_speeding_events}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{s.total_idle_minutes} min</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{s.total_speeding_events}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{s.total_idle_minutes} min</td>
                 </tr>
               ))}
             </tbody>
@@ -536,20 +536,20 @@ export default async function FleetPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Trip Cost &amp; Profitability — estimate, last 30 days ({data.trip_profitability.length})
           </h2>
           <ExportCsvButton data={data.trip_profitability} filename="trip-profitability.csv" />
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Cost covers fuel (a receipt tagged to the trip if one exists, else the vehicle&apos;s average cost/km) and
           maintenance performed in the trip&apos;s date window — driver/wage cost isn&apos;t tracked anywhere in this
           system and is excluded rather than guessed at. An estimate, not full cost accounting.
         </p>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Agent</th>
                 <th className="px-4 py-2 font-medium">Vehicle</th>
                 <th className="px-4 py-2 font-medium">Trip Start</th>
@@ -563,29 +563,29 @@ export default async function FleetPage() {
             <tbody>
               {data.trip_profitability.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={8} className="px-4 py-6 text-center text-neutral-400">
                     No completed trips with odometer readings in the last 30 days.
                   </td>
                 </tr>
               )}
               {data.trip_profitability.map((t) => (
-                <tr key={t.trip_id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{t.agent_name}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">
+                <tr key={t.trip_id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{t.agent_name}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">
                     {t.vehicle_reg_no}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {new Date(t.start_time).toLocaleString()}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{t.distance_km} km</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{t.distance_km} km</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {t.fuel_cost === null ? "—" : `₹${t.fuel_cost}`}
                     {t.fuel_cost !== null && t.fuel_cost_estimated && (
-                      <span className="ml-1 text-[10px] uppercase text-slate-400">est.</span>
+                      <span className="ml-1 text-[10px] uppercase text-neutral-400">est.</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{t.maintenance_cost}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{t.revenue}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">₹{t.maintenance_cost}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">₹{t.revenue}</td>
                   <td
                     className={`px-4 py-2 font-semibold ${
                       Number(t.profit) < 0

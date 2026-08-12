@@ -41,7 +41,7 @@ export default function WebhookActions({ webhookId }: { webhookId: string }) {
       <button
         onClick={rotateSecret}
         disabled={busy !== null}
-        className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 disabled:opacity-60"
+        className="text-xs font-medium text-orange-600 dark:text-orange-400 hover:text-orange-500 disabled:opacity-60"
       >
         {busy === "rotate" ? "Rotating…" : "Rotate secret"}
       </button>

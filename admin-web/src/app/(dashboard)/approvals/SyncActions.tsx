@@ -24,7 +24,7 @@ export default function SyncActions({ entryId, status }: { entryId: string; stat
       <button
         onClick={() => call("retry")}
         disabled={submitting}
-        className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
       >
         Retry
       </button>
@@ -32,7 +32,7 @@ export default function SyncActions({ entryId, status }: { entryId: string; stat
         <button
           onClick={() => call("resolve")}
           disabled={submitting}
-          className="rounded-md border border-slate-300 dark:border-slate-700 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
         >
           Mark resolved
         </button>

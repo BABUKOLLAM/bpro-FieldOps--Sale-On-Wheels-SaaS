@@ -9,8 +9,8 @@ export default async function ImportExportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Import / Export</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">Import / Export</h1>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           Bulk-load or download master data as a spreadsheet — products, price lists, staff, routes, customers,
           vehicles, and godowns. Download a template, fill it in, and upload it back; existing records are matched
           and updated automatically.
@@ -18,7 +18,7 @@ export default async function ImportExportPage() {
       </div>
 
       {entities.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           You don&apos;t have permission to manage any master data entities.
         </p>
       ) : (

@@ -38,12 +38,12 @@ export default function LogoUploadForm({ companyId, currentLogoUrl }: { companyI
         <img
           src={currentLogoUrl}
           alt="Company logo"
-          className="h-10 w-10 rounded border border-slate-200 dark:border-slate-700 object-contain bg-white"
+          className="h-10 w-10 rounded border border-neutral-200 dark:border-neutral-700 object-contain bg-white"
         />
       ) : (
-        <span className="text-xs text-slate-400">No logo uploaded</span>
+        <span className="text-xs text-neutral-400">No logo uploaded</span>
       )}
-      <label className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 cursor-pointer">
+      <label className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 cursor-pointer">
         {submitting ? "Uploading…" : "Upload logo"}
         <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} disabled={submitting} className="hidden" />
       </label>

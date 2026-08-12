@@ -36,12 +36,12 @@ export default function EmailReportRow({ reportKey }: { reportKey: string }) {
         placeholder="email@company.com"
         value={to}
         onChange={(e) => setTo(e.target.value)}
-        className="w-44 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1 text-xs text-slate-900 dark:text-slate-100"
+        className="w-44 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100"
       />
       <select
         value={format}
         onChange={(e) => setFormat(e.target.value as "xlsx" | "pdf")}
-        className="rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1 text-xs text-slate-900 dark:text-slate-100"
+        className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100"
       >
         <option value="xlsx">Excel</option>
         <option value="pdf">PDF</option>
@@ -49,7 +49,7 @@ export default function EmailReportRow({ reportKey }: { reportKey: string }) {
       <button
         type="submit"
         disabled={sending}
-        className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
       >
         {sending ? "Sending…" : "Email"}
       </button>

@@ -88,11 +88,11 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
     tone === "danger"
       ? "text-red-600 dark:text-red-400"
       : tone === "warn"
-        ? "text-amber-600 dark:text-amber-400"
-        : "text-slate-900 dark:text-slate-50";
+        ? "text-orange-600 dark:text-orange-400"
+        : "text-neutral-900 dark:text-neutral-50";
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+    <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
+      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
       <p className={`mt-2 text-2xl font-semibold ${toneClass}`}>{value}</p>
     </div>
   );
@@ -101,10 +101,10 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     ok: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    pending_review: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    pending_review: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
     overridden: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
     synced: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    pending: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+    pending: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
     failed: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
   };
   return (
@@ -118,21 +118,21 @@ function InsightCard({ insight }: { insight: AnomalyInsight }) {
   const toneClass =
     insight.severity === "high"
       ? "border-red-300 bg-red-50 dark:border-red-900/60 dark:bg-red-950/30"
-      : "border-amber-300 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/30";
+      : "border-orange-300 bg-orange-50 dark:border-orange-900/60 dark:bg-orange-950/30";
   const badgeClass =
     insight.severity === "high"
       ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-      : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
+      : "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300";
   return (
     <div className={`rounded-lg border p-4 ${toneClass}`}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{insight.label}</h3>
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{insight.label}</h3>
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeClass}`}>
           {insight.severity} {insight.direction}
         </span>
       </div>
-      <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">{insight.explanation}</p>
-      <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+      <p className="mt-1.5 text-sm text-neutral-600 dark:text-neutral-300">{insight.explanation}</p>
+      <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500">
         z-score {insight.z_score > 0 ? "+" : ""}
         {insight.z_score} · baseline {insight.unit}
         {insight.baseline_mean.toLocaleString("en-IN")} ± {insight.unit}
@@ -148,13 +148,13 @@ function FraudAlertGroup({
   title: string; count: number; description: string; empty: string; children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-red-200 dark:border-red-900/60 bg-white dark:bg-slate-900 p-4">
-      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+    <div className="rounded-lg border border-red-200 dark:border-red-900/60 bg-white dark:bg-neutral-900 p-4">
+      <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
         {title} {count > 0 && `(${count})`}
       </h3>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>
+      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{description}</p>
       {count === 0 ? (
-        <p className="mt-3 text-sm text-slate-400">{empty}</p>
+        <p className="mt-3 text-sm text-neutral-400">{empty}</p>
       ) : (
         <ul className="mt-3 space-y-2">{children}</ul>
       )}
@@ -176,8 +176,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Live Dashboard</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">{data.date}</p>
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Live Dashboard</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">{data.date}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -192,16 +192,16 @@ export default async function DashboardPage() {
 
       <div className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Anomaly Insights {insights.length > 0 && `(${insights.length})`}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
             Today&apos;s headline metrics compared against their own recent history — flagged only when the
             deviation is a real statistical outlier (§20.1).
           </p>
         </div>
         {insights.length === 0 ? (
-          <p className="text-sm text-slate-400">No anomalies detected today.</p>
+          <p className="text-sm text-neutral-400">No anomalies detected today.</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {insights.map((insight) => (
@@ -213,10 +213,10 @@ export default async function DashboardPage() {
 
       <div className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Fraud &amp; Exception Alerts {fraudAlertCount > 0 && `(${fraudAlertCount})`}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
             Patterns across many transactions per agent — a sustained deviation, not a single flagged invoice
             (§20.6).
           </p>
@@ -230,8 +230,8 @@ export default async function DashboardPage() {
           >
             {fraudData.discount_patterns.map((a) => (
               <li key={a.agent_id} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
-                <p className="font-medium text-slate-900 dark:text-slate-50">{a.agent_name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="font-medium text-neutral-900 dark:text-neutral-50">{a.agent_name}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   Avg {a.avg_discount_pct}% vs fleet {a.fleet_avg_discount_pct}% ({a.ratio_to_fleet_avg}x) across{" "}
                   {a.invoice_count} invoices
                 </p>
@@ -247,8 +247,8 @@ export default async function DashboardPage() {
           >
             {fraudData.return_frequency.map((a) => (
               <li key={a.agent_id} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
-                <p className="font-medium text-slate-900 dark:text-slate-50">{a.agent_name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="font-medium text-neutral-900 dark:text-neutral-50">{a.agent_name}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {a.sellable_return_count} sellable returns / {a.invoice_count} invoices (
                   {Math.round(a.sellable_return_ratio * 100)}%)
                 </p>
@@ -264,10 +264,10 @@ export default async function DashboardPage() {
           >
             {fraudData.spoofed_checkins.map((a) => (
               <li key={a.checkpoint_id} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
-                <p className="font-medium text-slate-900 dark:text-slate-50">
+                <p className="font-medium text-neutral-900 dark:text-neutral-50">
                   {a.agent_name} — {a.customer_name}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {a.distance_km} km from registered address at{" "}
                   {new Date(a.check_in_time).toLocaleString("en-IN")}
                 </p>
@@ -283,8 +283,8 @@ export default async function DashboardPage() {
           >
             {fraudData.impossible_travel.map((a, i) => (
               <li key={`${a.agent_id}-${i}`} className="rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm">
-                <p className="font-medium text-slate-900 dark:text-slate-50">{a.agent_name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="font-medium text-neutral-900 dark:text-neutral-50">{a.agent_name}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {a.distance_km} km in {a.elapsed_minutes} min — implied {a.implied_speed_kmh} km/h
                 </p>
               </li>
@@ -293,13 +293,13 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <div className="border-b border-slate-200 dark:border-slate-800 px-5 py-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Recent Invoices</h2>
+      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+        <div className="border-b border-neutral-200 dark:border-neutral-800 px-5 py-3">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Recent Invoices</h2>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
               <th className="px-5 py-2 font-medium">Invoice</th>
               <th className="px-5 py-2 font-medium">Customer</th>
               <th className="px-5 py-2 font-medium">Agent</th>
@@ -315,17 +315,17 @@ export default async function DashboardPage() {
           <tbody>
             {data.recent_invoices.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-5 py-6 text-center text-slate-400">
+                <td colSpan={10} className="px-5 py-6 text-center text-neutral-400">
                   No invoices yet today.
                 </td>
               </tr>
             )}
             {data.recent_invoices.map((inv) => (
-              <tr key={inv.id} className="border-t border-slate-100 dark:border-slate-800">
-                <td className="px-5 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{inv.invoice_no}</td>
-                <td className="px-5 py-2 text-slate-700 dark:text-slate-300">{inv.customer__name}</td>
-                <td className="px-5 py-2 text-slate-700 dark:text-slate-300">{inv.agent__username}</td>
-                <td className="px-5 py-2 text-slate-700 dark:text-slate-300">₹{Number(inv.grand_total).toLocaleString("en-IN")}</td>
+              <tr key={inv.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                <td className="px-5 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{inv.invoice_no}</td>
+                <td className="px-5 py-2 text-neutral-700 dark:text-neutral-300">{inv.customer__name}</td>
+                <td className="px-5 py-2 text-neutral-700 dark:text-neutral-300">{inv.agent__username}</td>
+                <td className="px-5 py-2 text-neutral-700 dark:text-neutral-300">₹{Number(inv.grand_total).toLocaleString("en-IN")}</td>
                 <td className="px-5 py-2"><StatusBadge status={inv.credit_check_status} /></td>
                 <td className="px-5 py-2"><StatusBadge status={inv.sync_status} /></td>
                 <td className="px-5 py-2">
@@ -335,11 +335,11 @@ export default async function DashboardPage() {
                       <img
                         src={`${API_BASE_URL}/media/${inv.signature_image}`}
                         alt="Customer signature"
-                        className="h-8 w-14 rounded border border-slate-200 dark:border-slate-700 object-contain bg-white"
+                        className="h-8 w-14 rounded border border-neutral-200 dark:border-neutral-700 object-contain bg-white"
                       />
                     </a>
                   ) : (
-                    <span className="text-xs text-slate-400">—</span>
+                    <span className="text-xs text-neutral-400">—</span>
                   )}
                 </td>
                 <td className="px-5 py-2">
@@ -347,7 +347,7 @@ export default async function DashboardPage() {
                     href={`/api/proxy/sales/invoices/${inv.id}/pdf`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500"
+                    className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500"
                   >
                     Download
                   </a>

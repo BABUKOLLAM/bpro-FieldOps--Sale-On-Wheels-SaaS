@@ -30,30 +30,30 @@ export default async function ReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Reports</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Reports</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Every report below exports to Excel or PDF, or can be emailed directly (AR-02, FM-13).
         </p>
       </div>
 
-      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800">
         {reports.map((r) => (
           <div key={r.key} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">{r.label}</h3>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{DESCRIPTIONS[r.key] || ""}</p>
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{r.label}</h3>
+              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{DESCRIPTIONS[r.key] || ""}</p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex gap-2">
                 <a
                   href={`/api/proxy/reporting/export/${r.key}?filetype=xlsx`}
-                  className="rounded-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   Excel
                 </a>
                 <a
                   href={`/api/proxy/reporting/export/${r.key}?filetype=pdf`}
-                  className="rounded-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   PDF
                 </a>

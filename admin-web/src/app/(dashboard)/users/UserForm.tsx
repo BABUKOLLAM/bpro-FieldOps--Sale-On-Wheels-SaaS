@@ -75,67 +75,67 @@ export default function UserForm({ roles }: { roles: Role[] }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Username / email</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Username / email</label>
         <input
           required
           type="email"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="mt-1 w-56 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-56 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">First name</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">First name</label>
         <input
           required
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
-          className="mt-1 w-36 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-36 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Last name</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Last name</label>
         <input
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
-          className="mt-1 w-36 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-36 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Phone</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Phone</label>
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Employee code</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Employee code</label>
         <input
           value={employeeCode}
           onChange={(e) => setEmployeeCode(e.target.value)}
-          className="mt-1 w-28 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-28 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Initial password</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Initial password</label>
         <input
           required
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-36 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-36 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Role</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Role</label>
         <select
           value={roleId}
           onChange={(e) => setRoleId(e.target.value)}
-          className="mt-1 w-56 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-56 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           <option value="">No role yet</option>
           {roles.map((r) => (
@@ -145,14 +145,14 @@ export default function UserForm({ roles }: { roles: Role[] }) {
           ))}
         </select>
       </div>
-      <label className="flex items-center gap-1.5 pb-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+      <label className="flex items-center gap-1.5 pb-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400">
         <input type="checkbox" checked={isFieldAgent} onChange={(e) => setIsFieldAgent(e.target.checked)} />
         Field agent
       </label>
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
       >
         {submitting ? "Adding…" : "Add User"}
       </button>

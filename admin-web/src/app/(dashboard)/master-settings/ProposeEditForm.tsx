@@ -87,14 +87,14 @@ export default function ProposeEditForm({
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4 space-y-3">
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+    <div className="mt-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4 space-y-3">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
         This proposes a change — it only takes effect once a Super Admin or Admin approves it.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map((field) => (
-          <label key={field.name} className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+          <label key={field.name} className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">
             {field.label}
             {field.type === "boolean" ? (
               <input
@@ -108,20 +108,20 @@ export default function ProposeEditForm({
                 type={field.type === "number" ? "number" : field.type === "url" ? "url" : "text"}
                 value={String(values[field.name] ?? "")}
                 onChange={(e) => update(field.name, e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-50"
+                className="mt-1 w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-50"
               />
             )}
           </label>
         ))}
       </div>
 
-      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+      <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">
         Reason for this change (optional)
         <input
           type="text"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-50"
+          className="mt-1 w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-50"
         />
       </label>
 
@@ -129,11 +129,11 @@ export default function ProposeEditForm({
         <button
           onClick={handleSave}
           disabled={submitting}
-          className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
         >
           {submitting ? "Submitting…" : "Propose Change"}
         </button>
-        <button onClick={onDone} className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+        <button onClick={onDone} className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">
           Cancel
         </button>
         {error && <p className="text-xs text-red-600">{error}</p>}

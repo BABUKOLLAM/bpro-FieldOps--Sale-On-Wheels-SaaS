@@ -54,31 +54,31 @@ export default function DocumentForm({ vehicles, agents }: { vehicles: Vehicle[]
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Holder</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Holder</label>
         <select
           value={holderType}
           onChange={(e) => {
             setHolderType(e.target.value as "vehicle" | "agent");
             setHolderId("");
           }}
-          className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           <option value="vehicle">Vehicle</option>
           <option value="agent">Driver</option>
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">
           {holderType === "vehicle" ? "Vehicle" : "Driver"}
         </label>
         <select
           required
           value={holderId}
           onChange={(e) => setHolderId(e.target.value)}
-          className="mt-1 w-40 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-40 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           <option value="">Select</option>
           {holderType === "vehicle"
@@ -95,11 +95,11 @@ export default function DocumentForm({ vehicles, agents }: { vehicles: Vehicle[]
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Document</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Document</label>
         <select
           value={documentType}
           onChange={(e) => setDocumentType(e.target.value)}
-          className="mt-1 w-48 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-48 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           {DOC_TYPES.map((d) => (
             <option key={d.value} value={d.value}>
@@ -109,27 +109,27 @@ export default function DocumentForm({ vehicles, agents }: { vehicles: Vehicle[]
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Document number</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Document number</label>
         <input
           value={documentNumber}
           onChange={(e) => setDocumentNumber(e.target.value)}
-          className="mt-1 w-36 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-36 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Expiry date</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Expiry date</label>
         <input
           required
           type="date"
           value={expiryDate}
           onChange={(e) => setExpiryDate(e.target.value)}
-          className="mt-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
       >
         {submitting ? "Adding…" : "Add Document"}
       </button>

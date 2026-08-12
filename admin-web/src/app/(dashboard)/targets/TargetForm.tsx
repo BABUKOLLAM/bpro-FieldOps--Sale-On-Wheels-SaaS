@@ -50,15 +50,15 @@ export default function TargetForm({ agents, beats }: { agents: Agent[]; beats: 
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4"
+      className="flex flex-wrap items-end gap-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4"
     >
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Agent</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Agent</label>
         <select
           required
           value={agentId}
           onChange={(e) => setAgentId(e.target.value)}
-          className="mt-1 w-48 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-48 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           <option value="">Select agent</option>
           {agents.map((a) => (
@@ -69,11 +69,11 @@ export default function TargetForm({ agents, beats }: { agents: Agent[]; beats: 
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Route (optional)</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Route (optional)</label>
         <select
           value={beatId}
           onChange={(e) => setBeatId(e.target.value)}
-          className="mt-1 w-40 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-40 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           <option value="">Any route</option>
           {beats.map((b) => (
@@ -84,51 +84,51 @@ export default function TargetForm({ agents, beats }: { agents: Agent[]; beats: 
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Metric</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Metric</label>
         <select
           value={metric}
           onChange={(e) => setMetric(e.target.value as "sales" | "collections")}
-          className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         >
           <option value="sales">Sales</option>
           <option value="collections">Collections</option>
         </select>
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Period start</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Period start</label>
         <input
           required
           type="date"
           value={periodStart}
           onChange={(e) => setPeriodStart(e.target.value)}
-          className="mt-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Period end</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Period end</label>
         <input
           required
           type="date"
           value={periodEnd}
           onChange={(e) => setPeriodEnd(e.target.value)}
-          className="mt-1 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Target amount (₹)</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Target amount (₹)</label>
         <input
           required
           type="number"
           min="0"
           value={targetAmount}
           onChange={(e) => setTargetAmount(e.target.value)}
-          className="mt-1 w-32 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-100"
+          className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
       >
         {submitting ? "Adding…" : "Set Target"}
       </button>

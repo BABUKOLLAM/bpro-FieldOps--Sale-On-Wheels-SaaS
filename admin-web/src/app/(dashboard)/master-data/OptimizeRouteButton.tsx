@@ -22,7 +22,7 @@ export default function OptimizeRouteButton({ beatId }: { beatId: string }) {
       onClick={handleOptimize}
       disabled={submitting}
       title="Nearest-neighbor re-order by straight-line distance between outlet addresses"
-      className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 disabled:opacity-60"
+      className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 disabled:opacity-60"
     >
       {submitting ? "Optimizing…" : "Optimize Route"}
     </button>

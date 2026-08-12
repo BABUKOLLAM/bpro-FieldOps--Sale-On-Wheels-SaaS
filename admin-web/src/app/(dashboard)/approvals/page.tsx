@@ -44,20 +44,20 @@ export default async function ApprovalsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Approvals &amp; Sync Monitor</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Approvals &amp; Sync Monitor</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Credit-blocked invoices and field expenses awaiting supervisor approval, and the Tally sync health of every transaction.
         </p>
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Credit-Block Approval Queue ({pendingInvoices.count})
         </h2>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Invoice</th>
                 <th className="px-4 py-2 font-medium">Amount</th>
                 <th className="px-4 py-2 font-medium">Status</th>
@@ -67,17 +67,17 @@ export default async function ApprovalsPage() {
             <tbody>
               {pendingInvoices.results.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={4} className="px-4 py-6 text-center text-neutral-400">
                     Nothing pending review.
                   </td>
                 </tr>
               )}
               {pendingInvoices.results.map((inv) => (
-                <tr key={inv.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{inv.invoice_no || inv.id.slice(0, 8)}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{Number(inv.grand_total).toLocaleString("en-IN")}</td>
+                <tr key={inv.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{inv.invoice_no || inv.id.slice(0, 8)}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">₹{Number(inv.grand_total).toLocaleString("en-IN")}</td>
                   <td className="px-4 py-2">
-                    <span className="inline-block rounded-full bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-300">
+                    <span className="inline-block rounded-full bg-orange-100 dark:bg-orange-900/40 px-2 py-0.5 text-xs font-medium text-orange-800 dark:text-orange-300">
                       pending review
                     </span>
                   </td>
@@ -90,13 +90,13 @@ export default async function ApprovalsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Expense Approvals ({pendingExpenses.count})
         </h2>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Category</th>
                 <th className="px-4 py-2 font-medium">Amount</th>
                 <th className="px-4 py-2 font-medium">Date</th>
@@ -107,17 +107,17 @@ export default async function ApprovalsPage() {
             <tbody>
               {pendingExpenses.results.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-6 text-center text-neutral-400">
                     Nothing pending review.
                   </td>
                 </tr>
               )}
               {pendingExpenses.results.map((exp) => (
-                <tr key={exp.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 capitalize text-slate-700 dark:text-slate-300">{exp.category}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">₹{Number(exp.amount).toLocaleString("en-IN")}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{exp.expense_date}</td>
-                  <td className="px-4 py-2 text-slate-500 dark:text-slate-400">{exp.description || "—"}</td>
+                <tr key={exp.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 capitalize text-neutral-700 dark:text-neutral-300">{exp.category}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">₹{Number(exp.amount).toLocaleString("en-IN")}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{exp.expense_date}</td>
+                  <td className="px-4 py-2 text-neutral-500 dark:text-neutral-400">{exp.description || "—"}</td>
                   <td className="px-4 py-2 space-x-2 whitespace-nowrap">
                     <ExpenseApproveButton expenseId={exp.id} />
                     <ExpenseRejectButton expenseId={exp.id} />
@@ -130,13 +130,13 @@ export default async function ApprovalsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Integration Sync Monitor ({syncLog.count})
         </h2>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Entity</th>
                 <th className="px-4 py-2 font-medium">Reference</th>
                 <th className="px-4 py-2 font-medium">Status</th>
@@ -147,11 +147,11 @@ export default async function ApprovalsPage() {
             </thead>
             <tbody>
               {syncLog.results.map((entry) => (
-                <tr key={entry.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{entry.entity_type}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{entry.erp_reference_id || "—"}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{entry.status}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{entry.retry_count}</td>
+                <tr key={entry.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{entry.entity_type}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{entry.erp_reference_id || "—"}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{entry.status}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{entry.retry_count}</td>
                   <td className="px-4 py-2 max-w-xs truncate text-xs text-red-600 dark:text-red-400">{entry.error_message}</td>
                   <td className="px-4 py-2"><SyncActions entryId={entry.id} status={entry.status} /></td>
                 </tr>

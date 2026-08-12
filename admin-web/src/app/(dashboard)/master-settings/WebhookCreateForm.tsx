@@ -45,42 +45,42 @@ export default function WebhookCreateForm() {
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-4 space-y-3">
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+    <div className="rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 p-4 space-y-3">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
         New subscriptions are added directly — only edits to an existing webhook go through approval.
       </p>
       <div className="grid gap-3 sm:grid-cols-3">
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">
           Name
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-50"
+            className="mt-1 w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-50"
           />
         </label>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">
           URL
           <input
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com/webhook"
-            className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-50"
+            className="mt-1 w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-50"
           />
         </label>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">
           Secret
           <input
             value={secret}
             onChange={(e) => setSecret(e.target.value)}
             placeholder="Used to sign deliveries"
-            className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm text-slate-900 dark:text-slate-50"
+            className="mt-1 w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-50"
           />
         </label>
       </div>
       <div className="flex flex-wrap gap-3">
         {EVENT_TYPES.map((event) => (
-          <label key={event} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+          <label key={event} className="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400">
             <input type="checkbox" checked={events.has(event)} onChange={() => toggleEvent(event)} />
             {event}
           </label>
@@ -90,7 +90,7 @@ export default function WebhookCreateForm() {
         <button
           onClick={handleCreate}
           disabled={submitting || !name || !url || !secret}
-          className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
         >
           {submitting ? "Adding…" : "Add Webhook"}
         </button>

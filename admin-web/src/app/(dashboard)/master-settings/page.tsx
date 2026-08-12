@@ -97,8 +97,8 @@ export default async function MasterSettingsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Master Settings</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Master Settings</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Company profile, GST registrations, ERP/payment connections, webhooks, and notification gateways — every
           edit here goes through the same Super Admin/Admin/IT Head approval as Roles.
         </p>
@@ -106,7 +106,7 @@ export default async function MasterSettingsPage() {
 
       {pending.results.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
             Pending changes ({pending.results.length})
           </h2>
           <div className="space-y-2">
@@ -119,9 +119,9 @@ export default async function MasterSettingsPage() {
 
       {company && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Company Profile</h2>
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Company Profile</h2>
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+            <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">
               Logo — shown on the GST invoice PDF header. Uploaded directly, not via approval.
             </p>
             <LogoUploadForm companyId={company.id} currentLogoUrl={logoUrl} />
@@ -146,7 +146,7 @@ export default async function MasterSettingsPage() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           GST Registrations ({company?.gst_registrations.length ?? 0})
         </h2>
         <div className="space-y-3">
@@ -169,13 +169,13 @@ export default async function MasterSettingsPage() {
             />
           ))}
           {(!company || company.gst_registrations.length === 0) && (
-            <p className="text-sm text-slate-400">No GST registrations yet.</p>
+            <p className="text-sm text-neutral-400">No GST registrations yet.</p>
           )}
         </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           ERP Connections ({erpConnections.count})
         </h2>
         <div className="space-y-3">
@@ -197,12 +197,12 @@ export default async function MasterSettingsPage() {
               ]}
             />
           ))}
-          {erpConnections.results.length === 0 && <p className="text-sm text-slate-400">No ERP connection configured.</p>}
+          {erpConnections.results.length === 0 && <p className="text-sm text-neutral-400">No ERP connection configured.</p>}
         </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Payment Gateway Connections ({paymentConnections.count})
         </h2>
         <div className="space-y-3">
@@ -220,13 +220,13 @@ export default async function MasterSettingsPage() {
             />
           ))}
           {paymentConnections.results.length === 0 && (
-            <p className="text-sm text-slate-400">No payment gateway configured.</p>
+            <p className="text-sm text-neutral-400">No payment gateway configured.</p>
           )}
         </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Webhooks ({webhooks.count})</h2>
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Webhooks ({webhooks.count})</h2>
         <div className="space-y-3">
           {webhooks.results.map((webhook) => (
             <SettingsCard
@@ -245,14 +245,14 @@ export default async function MasterSettingsPage() {
               extraActions={<WebhookActions webhookId={webhook.id} />}
             />
           ))}
-          {webhooks.results.length === 0 && <p className="text-sm text-slate-400">No webhooks yet — add one below.</p>}
+          {webhooks.results.length === 0 && <p className="text-sm text-neutral-400">No webhooks yet — add one below.</p>}
         </div>
         <WebhookCreateForm />
       </section>
 
       {gatewaySettings && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">Notification Gateways</h2>
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Notification Gateways</h2>
           <SettingsCard
             title="FCM / SMS Gateway"
             subtitle="API keys are Django-admin-only (never shown here) — only the SMS gateway URL is editable via approval."
@@ -286,7 +286,7 @@ export default async function MasterSettingsPage() {
 
       {ewayBill && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">E-way Bill</h2>
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">E-way Bill</h2>
           <SettingsCard
             title="Generation threshold"
             subtitle="Invoices at or above this value are flagged as needing an e-way bill on the dashboard. No live government/GSP filing is connected — generated bills are local drafts for manual filing or a GSP bulk-upload."
@@ -301,10 +301,10 @@ export default async function MasterSettingsPage() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Message Templates ({messageTemplates.count})
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Push/SMS wording sent to agents and customers. {"{placeholders}"} like {"{amount}"} or {"{code}"} are
           filled in when a message is actually sent — keep them intact when editing.
         </p>

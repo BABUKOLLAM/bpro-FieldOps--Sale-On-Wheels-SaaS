@@ -37,18 +37,18 @@ export default async function UsersPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Users</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Users</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Create field, supervisor, and back-office accounts and assign roles (AR-06).
         </p>
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-50">All Users ({users.count})</h2>
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+        <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">All Users ({users.count})</h2>
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                 <th className="px-4 py-2 font-medium">Name</th>
                 <th className="px-4 py-2 font-medium">Username</th>
                 <th className="px-4 py-2 font-medium">Phone</th>
@@ -60,33 +60,33 @@ export default async function UsersPage() {
             </thead>
             <tbody>
               {users.results.map((u) => (
-                <tr key={u.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
+                <tr key={u.id} className="border-t border-neutral-100 dark:border-neutral-800">
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">
                     {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
-                    {u.employee_code && <span className="ml-2 text-xs text-slate-400">#{u.employee_code}</span>}
+                    {u.employee_code && <span className="ml-2 text-xs text-neutral-400">#{u.employee_code}</span>}
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-slate-700 dark:text-slate-300">{u.username}</td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{u.phone || "—"}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{u.username}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{u.phone || "—"}</td>
                   <td className="px-4 py-2">
                     <div className="flex flex-wrap gap-1">
-                      {u.roles.length === 0 && <span className="text-xs text-slate-400">No role</span>}
+                      {u.roles.length === 0 && <span className="text-xs text-neutral-400">No role</span>}
                       {u.roles.map((r) => (
                         <span
                           key={r}
-                          className="rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 text-xs text-indigo-700 dark:text-indigo-300"
+                          className="rounded-full bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-300"
                         >
                           {ROLE_LABELS[r] || r}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{u.is_field_agent ? "Yes" : "—"}</td>
+                  <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{u.is_field_agent ? "Yes" : "—"}</td>
                   <td className="px-4 py-2">
                     <span
                       className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
                         u.is_active
                           ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
                       }`}
                     >
                       {u.is_active ? "Active" : "Deactivated"}
@@ -97,7 +97,7 @@ export default async function UsersPage() {
               ))}
               {users.results.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={7} className="px-4 py-6 text-center text-neutral-400">
                     No users yet.
                   </td>
                 </tr>

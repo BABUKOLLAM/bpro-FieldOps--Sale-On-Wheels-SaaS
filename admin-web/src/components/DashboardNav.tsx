@@ -215,8 +215,8 @@ function subLinkClass(active: boolean) {
   return [
     "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
     active
-      ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300"
-      : "text-slate-600 hover:bg-slate-100 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-400",
+      ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"
+      : "text-neutral-600 hover:bg-neutral-100 hover:text-amber-600 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-amber-400",
   ].join(" ");
 }
 
@@ -263,8 +263,8 @@ export default function DashboardNav() {
                 className={[
                   "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 transition-colors",
                   open || groupActive
-                    ? "bg-slate-100 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-indigo-400",
+                    ? "bg-neutral-100 text-amber-600 dark:bg-neutral-800 dark:text-amber-400"
+                    : "text-neutral-600 hover:bg-neutral-100 hover:text-amber-600 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-amber-400",
                 ].join(" ")}
                 aria-haspopup="menu"
                 aria-expanded={open}
@@ -286,7 +286,7 @@ export default function DashboardNav() {
               {open && (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full z-20 mt-1 w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                  className="absolute left-0 top-full z-20 mt-1 w-48 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
                 >
                   {group.items.map((item) => (
                     <Link
@@ -311,7 +311,7 @@ export default function DashboardNav() {
       <nav className="hidden text-sm nav-col:flex nav-col:w-full nav-col:flex-col nav-col:gap-4">
         {groups.map((group) => (
           <div key={group.key}>
-            <div className="flex items-center gap-2 px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div className="flex items-center gap-2 px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
               <NavIcon name={group.icon} className="h-3.5 w-3.5" />
               {group.label}
             </div>
