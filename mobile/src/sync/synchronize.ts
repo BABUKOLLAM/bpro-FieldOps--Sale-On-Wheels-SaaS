@@ -39,6 +39,13 @@ export async function pull(): Promise<void> {
     throw new Error(`Pull failed: ${response.status}`);
   }
   const data = await response.json();
+  console.log(
+    '[DEBUG pull] server beats:',
+    data.beats?.length,
+    'stops on beat 0:',
+    data.beats?.[0]?.stops?.length,
+    JSON.stringify(data.beats?.[0]?.stops?.map((s: any) => s.customer))
+  );
 
   await database.write(async () => {
     await upsertCollection('customers', data.customers, (c) => ({
@@ -107,6 +114,25 @@ export async function pull(): Promise<void> {
       await upsertBeatCustomers(beat.id, beat.stops || []);
     }
   });
+
+  const allBC = await database.get('beat_customers').query().fetch();
+  const allCust = await database.get('customers').query().fetch();
+  console.log(
+    '[DEBUG pull] local beat_customers rows:',
+    allBC.length,
+    JSON.stringify(
+      allBC.map((bc: any) => [
+        bc.beatServerId,
+        bc.customerServerId,
+        bc.visitSequence,
+      ])
+    )
+  );
+  console.log(
+    '[DEBUG pull] local customers rows:',
+    allCust.length,
+    JSON.stringify(allCust.map((c: any) => [c.serverId, c.name]))
+  );
 
   if (data.company) {
     await saveCompanyConfig({
