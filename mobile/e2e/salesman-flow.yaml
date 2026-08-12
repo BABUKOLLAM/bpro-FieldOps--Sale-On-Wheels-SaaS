@@ -159,26 +159,28 @@ appId: org.reactjs.native.example.VanSales
     id: "qty-input-SKU-001"
 - inputText: "3"
 - takeScreenshot: 10-cart-with-item
-# Two rounds of the same bug, now fully root-caused. Round 1: the
-# numeric keypad covered "Save Invoice" — fixed with KeyboardAvoidingView
-# + FlatList flex:1 in SpotBillingScreen.tsx (same class of fix as the
-# login Sign In button). Round 2, on 2026-08-12, showed that fix alone
-# wasn't enough: "Save Invoice"'s reported bounds (y=[602,658]) were
-# byte-for-byte identical before and after the app fix, and the
-# takeScreenshot right after tapping it showed the qty field reading
-# "35" instead of "3" — the tap was landing on the keyboard's "5" key,
-# not the button, exactly as before. The app-level layout was correct;
-# Maestro's tap coordinates weren't, because — per "Tap aimed via
-# trusted pre-wait hierarchy (null settle, no recent scroll)" in
-# maestro.log — it reused a hierarchy snapshot captured before the
-# keyboard-avoidance re-layout had actually settled. Same class of
-# race as the login password field's keyboard-slide-up timing, fixed
-# there with waitForAnimationToEnd; applying the same fix here forces
-# a fresh, post-settle snapshot before Maestro computes the tap target.
-# (`hideKeyboard` was tried as an alternative here first — it hard-
-# fails on iOS numeric-only keypads, which have no Done/dismiss key.)
-- waitForAnimationToEnd:
-    timeout: 5000
+# Three rounds on this one bug on 2026-08-12, worth the full account
+# since the fix is easy to accidentally revert to a plausible-looking
+# but wrong version:
+#   1. KeyboardAvoidingView + FlatList flex:1 in SpotBillingScreen.tsx —
+#      "Save Invoice"'s bounds never moved a single pixel, still fully
+#      inside the keyboard's own region (which starts at y=561, per the
+#      numeric keypad's own "1/2/3" row in the same hierarchy dump).
+#      Whatever was fighting the padding was never identified.
+#   2. Moved Save Invoice into the FlatList's ListFooterComponent so it
+#      shares the list's native scroll-view keyboard handling — bounds
+#      *did* move (proving fix 1 truly had zero effect), but downward,
+#      not above the keyboard: footer content only scrolls into view
+#      automatically for the *focused* responder, and a footer isn't
+#      one.
+#   3. (this one) Stop trying to keep the button visible above the
+#      keyboard at all — tap something else first to blur the qty
+#      field and let the keyboard dismiss the normal way, then tap
+#      Save Invoice on its natural, unobstructed layout. The customer
+#      name header is a stable, always-present, non-scrolling element
+#      outside the list entirely, so it's a safe blur target regardless
+#      of where the keyboard happens to sit.
+- tapOn: ".*Sharma General Store.*"
 - tapOn: "Save Invoice"
 - takeScreenshot: 11-invoice-saved-signature-step
 - tapOn: "Skip signature"
