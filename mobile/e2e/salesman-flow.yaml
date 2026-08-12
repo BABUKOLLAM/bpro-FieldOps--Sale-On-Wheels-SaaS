@@ -91,18 +91,27 @@ appId: org.reactjs.native.example.VanSales
 # 2026-08-12, which showed the real home screen fully loaded around that
 # exact message). Sync once before expecting any stop to be visible.
 - tapOn: "Sync Now"
-# 20s wasn't enough on 2026-08-12: the assertion timed out at 20.5s, but
-# the diagnostic screen-hierarchy captured for that same failure showed
-# all three stops already correctly populated ("Sharma General Store
-# CUST-001...", "City Mart CUST-002...", "Green Valley Supermarket
-# CUST-003...") — the pull + local write had genuinely finished by then,
-# just a beat after the deadline. Real completion time, not a hung
-# request, so headroom is the fix rather than a longer investigation.
+# The 40s headroom below (raised from an initial 20s that missed by
+# half a second) turned out to not be the whole story: a run at the
+# full 40s budget still failed, even though its own diagnostic
+# screen-hierarchy showed "Sharma General Store CUST-001 · Outstanding
+# ₹0" sitting on screen with normal, non-clipped bounds the entire
+# time. Each stop's name + code + outstanding balance render as
+# separate <Text> siblings inside one TouchableOpacity
+# (HomeScreen.tsx), and iOS's accessibility layer merges them into a
+# single combined label per card — there is no element whose full
+# label is the bare string "Sharma General Store" for a plain-string
+# match to land on exactly. Maestro's plain-string matching requires
+# matching the *entire* label, not a substring, so it was never going
+# to find one — no amount of extra timeout could have fixed this.
+# Wildcarding the pattern (`.*X.*`) matches the combined label as a
+# genuine substring search regardless of the extra code/balance text
+# appended after it.
 - extendedWaitUntil:
-    visible: "Sharma General Store"
+    visible: ".*Sharma General Store.*"
     timeout: 40000
-- assertVisible: "City Mart"
-- assertVisible: "Green Valley Supermarket"
+- assertVisible: ".*City Mart.*"
+- assertVisible: ".*Green Valley Supermarket.*"
 
 - tapOn: "Start Trip"
 - takeScreenshot: 05-start-trip-form
@@ -111,15 +120,18 @@ appId: org.reactjs.native.example.VanSales
 - tapOn: "Start Trip"
 - takeScreenshot: 06-trip-in-progress
 
-# Check in at the first stop.
-- tapOn: "Sharma General Store"
+# Check in at the first stop. Wildcarded for the same reason as the
+# route-list assertions above — the card's accessible label is the
+# combined "name · code · outstanding" string, not the bare name.
+- tapOn: ".*Sharma General Store.*"
 - takeScreenshot: 07-outlet-checked-in
 
 - back
 - takeScreenshot: 08-home-with-trip-active
 
-# Spot Billing at the checked-in outlet.
-- tapOn: "Sharma General Store"
+# Spot Billing at the checked-in outlet — same home-screen card as
+# above, same merged-label reason for the wildcard.
+- tapOn: ".*Sharma General Store.*"
 - takeScreenshot: 09-spot-billing-screen
 - tapOn:
     id: "qty-input-SKU-001"
