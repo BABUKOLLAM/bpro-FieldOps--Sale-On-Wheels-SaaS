@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Share,
   StyleSheet,
   Text,
@@ -476,7 +478,10 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <Text style={styles.customerName}>
         {customer ? customer.name : 'No customer selected'}
       </Text>
@@ -536,7 +541,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
           {saving ? 'Saving…' : 'Save Invoice'}
         </Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

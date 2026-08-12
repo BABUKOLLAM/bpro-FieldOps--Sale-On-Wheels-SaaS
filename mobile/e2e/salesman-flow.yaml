@@ -159,6 +159,12 @@ appId: org.reactjs.native.example.VanSales
     id: "qty-input-SKU-001"
 - inputText: "3"
 - takeScreenshot: 10-cart-with-item
+# Same category of bug as the login Sign In button, seen again here on
+# 2026-08-12: typing into the qty field brings up the numeric keypad,
+# which is never dismissed before tapping "Save Invoice" — the button
+# (and the "Skip signature" step after it) sits below the keypad, so
+# the tap lands on the keypad instead and the flow never advances.
+- hideKeyboard
 - tapOn: "Save Invoice"
 - takeScreenshot: 11-invoice-saved-signature-step
 - tapOn: "Skip signature"
