@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -10,6 +11,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { Q } from '@nozbe/watermelondb';
@@ -30,7 +32,10 @@ import { apiPostJson } from '../../api/client';
 import { buildReceiptText } from '../../printing/receiptText';
 import { printReceipt } from '../../printing/bluetoothPrinter';
 import { colors } from '../../theme/colors';
-import { getCompanyConfig, type CompanyConfig } from '../../config/companyConfig';
+import {
+  getCompanyConfig,
+  type CompanyConfig,
+} from '../../config/companyConfig';
 import { buildUpiUri } from '../../payments/upiQr';
 
 type CartLine = { item: Item; rate: number; qty: string };
@@ -66,7 +71,9 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
-  const [companyConfig, setCompanyConfig] = useState<CompanyConfig | null>(null);
+  const [companyConfig, setCompanyConfig] = useState<CompanyConfig | null>(
+    null
+  );
   const [showUpiQr, setShowUpiQr] = useState(false);
 
   useEffect(() => {
@@ -142,7 +149,11 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   const estimatedTotal = estimatedSubtotal + estimatedTax;
 
   const upiUri = savedInvoice
-    ? buildUpiUri(companyConfig, savedInvoice.grandTotal, savedInvoice.serverId.slice(0, 8))
+    ? buildUpiUri(
+        companyConfig,
+        savedInvoice.grandTotal,
+        savedInvoice.serverId.slice(0, 8)
+      )
     : null;
 
   function handleShowUpiQr() {
@@ -478,86 +489,97 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <Text style={styles.customerName}>
-        {customer ? customer.name : 'No customer selected'}
-      </Text>
-      {customer && (
-        <Text style={styles.customerMeta}>
-          Outstanding ₹{customer.outstandingBalance} · {customer.creditStatus}
-        </Text>
-      )}
-
-      <TouchableOpacity
-        style={styles.scanButton}
-        onPress={() => setScanning(true)}
+    // Tapping outside the focused qty field didn't dismiss the keyboard at
+    // all — a plain <Text> (the customer name header) doesn't claim the
+    // touch the way a real button does, so there was nothing to resign
+    // first responder. Confirmed directly in CI: a 10s wait for the
+    // keyboard's own "1" key to disappear after tapping the header still
+    // timed out. Wrapping the screen in TouchableWithoutFeedback with an
+    // explicit Keyboard.dismiss() is the standard fix — and a real user
+    // hits the same dead end tapping anywhere else on this screen today,
+    // not just in the test.
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.scanButtonText}>Scan Barcode</Text>
-      </TouchableOpacity>
-
-      <FlatList
-        style={styles.itemList}
-        data={items}
-        keyExtractor={(item) => item.serverId}
-        keyboardShouldPersistTaps="handled"
-        renderItem={({ item }) => (
-          <View style={styles.itemRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemMeta}>
-                {item.sku} · ₹{rates[item.serverId] ?? '—'} · GST {item.gstRate}
-                %
-              </Text>
-            </View>
-            <TextInput
-              testID={`qty-input-${item.sku}`}
-              style={styles.qtyInput}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={colors.textSecondary}
-              value={cart[item.serverId]?.qty ?? ''}
-              onChangeText={(text) => updateQty(item, text)}
-            />
-          </View>
+        <Text style={styles.customerName}>
+          {customer ? customer.name : 'No customer selected'}
+        </Text>
+        {customer && (
+          <Text style={styles.customerMeta}>
+            Outstanding ₹{customer.outstandingBalance} · {customer.creditStatus}
+          </Text>
         )}
-        // Summary + Save Invoice live inside the list as a footer, not as
-        // fixed siblings after it. A sibling after a plain FlatList sits
-        // outside the list's own UIScrollView and gets no keyboard-avoidance
-        // for free — it stayed exactly where the keyboard renders no matter
-        // how KeyboardAvoidingView was configured (verified: identical
-        // bounds, y=[602,658], across multiple runs and fix attempts on
-        // 2026-08-12, always fully inside the keyboard's own region starting
-        // at y=561). As the list's footer, this content scrolls into view
-        // above the keyboard using iOS's native scroll-view keyboard inset
-        // handling, which just works, instead of JS-computed padding that
-        // wasn't taking effect for reasons this session couldn't pin down.
-        ListFooterComponent={
-          <>
-            <View style={styles.summary}>
-              <Text style={styles.summaryText}>
-                Estimated total: ₹{estimatedTotal.toFixed(2)}
-              </Text>
-              <Text style={styles.summaryNote}>
-                Final GST/discount recomputed by the server at sync.
-              </Text>
-            </View>
 
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Saving…' : 'Save Invoice'}
-              </Text>
-            </TouchableOpacity>
-          </>
-        }
-      />
-    </KeyboardAvoidingView>
+        <TouchableOpacity
+          style={styles.scanButton}
+          onPress={() => setScanning(true)}
+        >
+          <Text style={styles.scanButtonText}>Scan Barcode</Text>
+        </TouchableOpacity>
+
+        <FlatList
+          style={styles.itemList}
+          data={items}
+          keyExtractor={(item) => item.serverId}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => (
+            <View style={styles.itemRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemMeta}>
+                  {item.sku} · ₹{rates[item.serverId] ?? '—'} · GST{' '}
+                  {item.gstRate}%
+                </Text>
+              </View>
+              <TextInput
+                testID={`qty-input-${item.sku}`}
+                style={styles.qtyInput}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor={colors.textSecondary}
+                value={cart[item.serverId]?.qty ?? ''}
+                onChangeText={(text) => updateQty(item, text)}
+              />
+            </View>
+          )}
+          // Summary + Save Invoice live inside the list as a footer, not as
+          // fixed siblings after it. A sibling after a plain FlatList sits
+          // outside the list's own UIScrollView and gets no keyboard-avoidance
+          // for free — it stayed exactly where the keyboard renders no matter
+          // how KeyboardAvoidingView was configured (verified: identical
+          // bounds, y=[602,658], across multiple runs and fix attempts on
+          // 2026-08-12, always fully inside the keyboard's own region starting
+          // at y=561). As the list's footer, this content scrolls into view
+          // above the keyboard using iOS's native scroll-view keyboard inset
+          // handling, which just works, instead of JS-computed padding that
+          // wasn't taking effect for reasons this session couldn't pin down.
+          ListFooterComponent={
+            <>
+              <View style={styles.summary}>
+                <Text style={styles.summaryText}>
+                  Estimated total: ₹{estimatedTotal.toFixed(2)}
+                </Text>
+                <Text style={styles.summaryNote}>
+                  Final GST/discount recomputed by the server at sync.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                <Text style={styles.saveButtonText}>
+                  {saving ? 'Saving…' : 'Save Invoice'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          }
+        />
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 

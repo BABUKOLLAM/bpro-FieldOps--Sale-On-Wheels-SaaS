@@ -194,11 +194,20 @@ appId: org.reactjs.native.example.VanSales
 #      <Text> may just not be claiming the touch the way a real
 #      TouchableOpacity/button does, so there was nothing for
 #      waitForAnimationToEnd to actually wait *for*.
-#   5. (this one) Stop inferring dismissal indirectly and wait for the
-#      thing that actually matters: the keyboard's own "1" key no
-#      longer being on screen. This is a direct, observable check
-#      instead of a timing guess, and works regardless of whether the
-#      blur tap itself was ever the right mechanism.
+#   5. Stopped inferring dismissal indirectly and waited for the thing
+#      that actually matters — the keyboard's own "1" key no longer on
+#      screen — instead of a timing guess. This is what finally exposed
+#      the real bug: the wait itself timed out at the full 10s, proving
+#      the keyboard never dismissed at all. Tapping the header never
+#      worked in the first place, on any of the runs above.
+#   6. Root cause, at the app level: SpotBillingScreen.tsx had no tap-
+#      outside-to-dismiss handling. The header is a plain <Text>, not a
+#      button — it doesn't claim the touch, so there was never anything
+#      to make the qty field resign first responder. Fixed by wrapping
+#      the screen in TouchableWithoutFeedback with Keyboard.dismiss() —
+#      a real user hit this exact dead end too, not just the test. The
+#      wait below now waits for a real, achievable condition instead of
+#      one that could never have been met.
 - tapOn: ".*Sharma General Store.*"
 - extendedWaitUntil:
     notVisible: "1"
