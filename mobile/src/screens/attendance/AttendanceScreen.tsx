@@ -130,7 +130,7 @@ export default function AttendanceScreen() {
             {checkingOut ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.primaryButtonText}>Check Out</Text>
+              <Text style={styles.checkOutButtonText}>Check Out</Text>
             )}
           </TouchableOpacity>
         </>
@@ -147,9 +147,9 @@ export default function AttendanceScreen() {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
-              <Text style={styles.primaryButtonText}>Check In</Text>
+              <Text style={styles.checkInButtonText}>Check In</Text>
             )}
           </TouchableOpacity>
         </>
@@ -179,5 +179,6 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: 'center',
   },
-  primaryButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  checkInButtonText: { color: colors.onPrimary, fontSize: 17, fontWeight: '700' },
+  checkOutButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
 });

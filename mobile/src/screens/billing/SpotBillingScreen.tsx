@@ -722,5 +722,5 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: 'center',
   },
-  saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  saveButtonText: { color: colors.onPrimary, fontSize: 17, fontWeight: '700' },
 });

@@ -69,7 +69,7 @@ export default function LoginScreen() {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.onPrimary} />
         ) : (
           <Text style={styles.buttonText}>Sign In</Text>
         )}
@@ -114,6 +114,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  buttonText: { color: colors.onPrimary, fontSize: 18, fontWeight: '600' },
   error: { color: colors.danger, marginBottom: 12, textAlign: 'center' },
 });

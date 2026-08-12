@@ -197,7 +197,7 @@ export default function TripScreen() {
           onChangeText={setOdometer}
         />
         <TouchableOpacity style={styles.primaryButton} onPress={startTrip}>
-          <Text style={styles.primaryButtonText}>Start Trip</Text>
+          <Text style={styles.startButtonText}>Start Trip</Text>
         </TouchableOpacity>
       </View>
     );
@@ -240,7 +240,7 @@ export default function TripScreen() {
         onChangeText={setOdometer}
       />
       <TouchableOpacity style={styles.endButton} onPress={endTrip}>
-        <Text style={styles.primaryButtonText}>End Trip</Text>
+        <Text style={styles.endButtonText}>End Trip</Text>
       </TouchableOpacity>
     </View>
   );
@@ -266,13 +266,14 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: 'center',
   },
-  primaryButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  startButtonText: { color: colors.onPrimary, fontSize: 17, fontWeight: '700' },
   endButton: {
     backgroundColor: colors.danger,
     borderRadius: 10,
     padding: 18,
     alignItems: 'center',
   },
+  endButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   stopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

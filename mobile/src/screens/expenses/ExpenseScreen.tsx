@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   categoryChipText: { color: colors.textPrimary, fontSize: 14 },
-  categoryChipTextActive: { color: '#fff', fontWeight: '600' },
+  categoryChipTextActive: { color: colors.onPrimary, fontWeight: '600' },
   receiptRow: { flexDirection: 'row', gap: 10 },
   receiptButton: {
     flex: 1,
@@ -225,5 +225,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 28,
   },
-  saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  saveButtonText: { color: colors.onPrimary, fontSize: 17, fontWeight: '700' },
 });
