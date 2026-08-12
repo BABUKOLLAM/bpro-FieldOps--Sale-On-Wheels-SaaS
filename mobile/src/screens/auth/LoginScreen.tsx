@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
 } from 'react-native';
 import { useAuth } from '../../auth/AuthContext';
 import { colors } from '../../theme/colors';
@@ -30,7 +31,10 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <Text style={styles.title}>bpro FieldOps</Text>
       <Text style={styles.subtitle}>Field agent sign in</Text>
 
@@ -70,7 +74,7 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Sign In</Text>
         )}
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
