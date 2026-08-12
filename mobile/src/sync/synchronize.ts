@@ -39,59 +39,52 @@ export async function pull(): Promise<void> {
     throw new Error(`Pull failed: ${response.status}`);
   }
   const data = await response.json();
-  console.log(
-    '[DEBUG pull] server beats:',
-    data.beats?.length,
-    'stops on beat 0:',
-    data.beats?.[0]?.stops?.length,
-    JSON.stringify(data.beats?.[0]?.stops?.map((s: any) => s.customer))
-  );
 
   await database.write(async () => {
     await upsertCollection('customers', data.customers, (c) => ({
-      server_id: c.id,
+      serverId: c.id,
       code: c.code,
       name: c.name,
       gstin: c.gstin,
       phone: c.phone,
-      credit_limit: Number(c.credit_limit),
-      credit_days: c.credit_days,
-      outstanding_balance: Number(c.outstanding_balance),
-      is_blocked: c.is_blocked,
-      credit_status: c.credit_status,
-      updated_at: Date.parse(c.updated_at),
+      creditLimit: Number(c.credit_limit),
+      creditDays: c.credit_days,
+      outstandingBalance: Number(c.outstanding_balance),
+      isBlocked: c.is_blocked,
+      creditStatus: c.credit_status,
+      updatedAt: Date.parse(c.updated_at),
     }));
 
     await upsertCollection('items', data.items, (i) => ({
-      server_id: i.id,
+      serverId: i.id,
       sku: i.sku,
       name: i.name,
       barcode: i.barcode,
-      base_uom: i.base_uom,
-      hsn_code: i.hsn_code,
-      gst_rate: Number(i.gst_rate),
-      is_active: i.is_active,
-      updated_at: Date.parse(i.updated_at),
+      baseUom: i.base_uom,
+      hsnCode: i.hsn_code,
+      gstRate: Number(i.gst_rate),
+      isActive: i.is_active,
+      updatedAt: Date.parse(i.updated_at),
     }));
 
     await upsertCollection(
       'gst_registrations',
       data.gst_registrations,
       (g) => ({
-        server_id: g.id,
+        serverId: g.id,
         state: g.state,
         gstin: g.gstin,
-        is_default: g.is_default,
+        isDefault: g.is_default,
       })
     );
 
     await upsertCollection('van_stock', data.van_stock, (v) => ({
-      server_id: v.id,
-      godown_server_id: v.godown,
-      item_server_id: v.item,
-      item_sku: v.item_sku,
-      item_name: v.item_name,
-      qty_on_hand: Number(v.qty_on_hand),
+      serverId: v.id,
+      godownServerId: v.godown,
+      itemServerId: v.item,
+      itemSku: v.item_sku,
+      itemName: v.item_name,
+      qtyOnHand: Number(v.qty_on_hand),
     }));
 
     for (const priceList of data.price_lists || []) {
@@ -99,40 +92,21 @@ export async function pull(): Promise<void> {
         'price_list_items',
         priceList.items || [],
         (p) => ({
-          server_id: p.id,
-          item_server_id: p.item,
+          serverId: p.id,
+          itemServerId: p.item,
           rate: Number(p.rate),
         })
       );
     }
 
     await upsertCollection('beats', data.beats, (b) => ({
-      server_id: b.id,
+      serverId: b.id,
       name: b.name,
     }));
     for (const beat of data.beats || []) {
       await upsertBeatCustomers(beat.id, beat.stops || []);
     }
   });
-
-  const allBC = await database.get('beat_customers').query().fetch();
-  const allCust = await database.get('customers').query().fetch();
-  console.log(
-    '[DEBUG pull] local beat_customers rows:',
-    allBC.length,
-    JSON.stringify(
-      allBC.map((bc: any) => [
-        bc.beatServerId,
-        bc.customerServerId,
-        bc.visitSequence,
-      ])
-    )
-  );
-  console.log(
-    '[DEBUG pull] local customers rows:',
-    allCust.length,
-    JSON.stringify(allCust.map((c: any) => [c.serverId, c.name]))
-  );
 
   if (data.company) {
     await saveCompanyConfig({
@@ -153,10 +127,19 @@ export async function pull(): Promise<void> {
 async function upsertBeatCustomers(beatServerId: string, stops: any[]) {
   const collection = database.get('beat_customers');
   for (const stop of stops) {
+    // Keys here must be the model's camelCase JS property names
+    // (beatServerId, customerServerId, visitSequence — see
+    // db/models/BeatCustomer.ts), not the raw snake_case DB columns.
+    // Object.assign(record, mapped) sets plain JS properties by exact
+    // name; WatermelonDB's @field/@text decorators only intercept
+    // assignment through the camelCase accessor they define, so a
+    // snake_case key silently creates an inert stray property instead
+    // of writing the column — every field goes in as its default/empty
+    // value with no error anywhere in the chain.
     const mapped = {
-      beat_server_id: beatServerId,
-      customer_server_id: stop.customer,
-      visit_sequence: stop.visit_sequence,
+      beatServerId,
+      customerServerId: stop.customer,
+      visitSequence: stop.visit_sequence,
     };
     const existing = await collection
       .query(
@@ -172,7 +155,10 @@ async function upsertBeatCustomers(beatServerId: string, stops: any[]) {
   }
 }
 
-async function upsertCollection<T extends { server_id: string }>(
+/** mapFn must return camelCase keys matching each model's decorated JS
+ * property names (serverId, creditLimit, ...), not the raw snake_case
+ * DB columns — see the note in upsertBeatCustomers() for why. */
+async function upsertCollection<T extends { serverId: string }>(
   tableName: string,
   records: any[],
   mapFn: (r: any) => T
@@ -181,7 +167,7 @@ async function upsertCollection<T extends { server_id: string }>(
   for (const raw of records) {
     const mapped = mapFn(raw);
     const existing = await collection
-      .query(Q.where('server_id', mapped.server_id))
+      .query(Q.where('server_id', mapped.serverId))
       .fetch();
     if (existing.length > 0) {
       await existing[0].update((record: any) => Object.assign(record, mapped));
