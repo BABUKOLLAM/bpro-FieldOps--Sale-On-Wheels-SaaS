@@ -43,7 +43,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#05113B",
+  themeColor: "#FF5A1F",
 };
 
 const CHROME_INIT_SCRIPT = `

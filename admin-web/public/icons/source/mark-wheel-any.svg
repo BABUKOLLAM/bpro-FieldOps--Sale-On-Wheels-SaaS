@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- "Wheel & Way" mark: the field agent's van reduced to its wheel — rim,
+       three spokes, hub — with the same avatar bust from mark-f carried
+       over inside the hub (driver, not a generic dot), and a small jade
+       upward chevron standing in for the old amber stop-dot: sales moving,
+       not just tracked. Rim carries a fine dash rhythm so it doubles as a
+       road/tyre tread at a glance, not just a plain ring. -->
+
+  <rect width="100" height="100" rx="22" fill="#FF5A1F" />
+
+  <g id="wheel">
+    <!-- rim -->
+    <circle cx="50" cy="50" r="34" fill="none" stroke="#0A0F1E" stroke-width="8.5" />
+    <!-- three spokes, 120° apart -->
+    <line x1="50" y1="30" x2="50" y2="20" stroke="#0A0F1E" stroke-width="8" stroke-linecap="round" />
+    <line x1="50" y1="30" x2="50" y2="20" stroke="#0A0F1E" stroke-width="8" stroke-linecap="round" transform="rotate(120 50 50)" />
+    <line x1="50" y1="30" x2="50" y2="20" stroke="#0A0F1E" stroke-width="8" stroke-linecap="round" transform="rotate(240 50 50)" />
+    <!-- hub -->
+    <circle cx="50" cy="50" r="21" fill="#FBF7F0" />
+    <!-- driver, carried over from mark-f -->
+    <g transform="translate(50 50) scale(0.62) translate(-50 -50)">
+      <circle cx="50" cy="43" r="9.5" fill="#0A0F1E" />
+      <path d="M29 84 C29 68 38 60 50 60 C62 60 71 68 71 84 Z" fill="#0A0F1E" />
+    </g>
+  </g>
+
+  <!-- sales, moving up -->
+  <path d="M79 21 L86 33 L72 33 Z" fill="#00A98F" />
+</svg>
