@@ -88,7 +88,11 @@ const styles = StyleSheet.create({
   title: {
     color: colors.textPrimary,
     fontSize: 32,
-    fontWeight: '700',
+    // Static weight file, not a variable font — pairing it with fontWeight
+    // makes iOS try to synthesize an extra bold pass on top of an already-
+    // bold glyph set. Matches web's Archivo scoping: brand heading only,
+    // not the rest of the screen (see admin-web/src/app/layout.tsx).
+    fontFamily: 'Archivo-Bold',
     textAlign: 'center',
   },
   subtitle: {
