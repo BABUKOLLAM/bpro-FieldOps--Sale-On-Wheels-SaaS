@@ -40,10 +40,12 @@ appId: org.reactjs.native.example.VanSales
 # The 4th confirm digit triggers an async Keychain write (setPin) before
 # RootNavigator switches away from the PIN gate to the login screen — not
 # instant, so wait for the actual next screen rather than assuming it's
-# already there.
+# already there. 15000ms missed by ~1s on a slower-than-usual runner on
+# 2026-08-12 (16.07s actual) — same "real completion time, just needed
+# headroom" pattern as the sync wait later in this file, not a hang.
 - extendedWaitUntil:
     visible: "Password"
-    timeout: 15000
+    timeout: 30000
 - takeScreenshot: 03-login-screen
 # Username is pre-filled with the demo agent (agent@demo.local) —
 # only the password needs entering. Tapping by placeholder *text* only
