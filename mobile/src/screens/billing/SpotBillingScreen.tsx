@@ -499,6 +499,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
       </TouchableOpacity>
 
       <FlatList
+        style={styles.itemList}
         data={items}
         keyExtractor={(item) => item.serverId}
         renderItem={({ item }) => (
@@ -547,6 +548,13 @@ export default function SpotBillingScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: 20 },
+  // Without flex: 1 here, the list sizes itself to its content instead
+  // of a bounded, internally-scrollable region — the summary and Save
+  // Invoice button then get pushed down by however tall the catalog
+  // is, past where the keyboard renders once a qty field is focused.
+  // KeyboardAvoidingView on its own can't compensate for that; both
+  // fixes are needed together.
+  itemList: { flex: 1 },
   customerName: { color: colors.textPrimary, fontSize: 20, fontWeight: '700' },
   customerMeta: { color: colors.textSecondary, fontSize: 13, marginBottom: 16 },
   scanButton: {
