@@ -182,17 +182,27 @@ appId: org.reactjs.native.example.VanSales
 #      of where the keyboard happens to sit. This much (3) was verified
 #      correct — the qty field read a clean, keyboard-free layout with
 #      "Save Invoice" fully visible in the very next hierarchy dump.
-#   4. One race still remained: qty came out "38", and "Save Invoice"'s
-#      tap center (≈685) lines up exactly with where the keyboard's "8"
-#      key sits mid-slide-down. The blur tap starts the dismiss
-#      animation but doesn't wait for it — Maestro tapped Save Invoice
-#      while the keyboard was still animating away and caught a key on
-#      its way down. waitForAnimationToEnd after the blur tap closes
-#      that gap, same fix as the login password field's keyboard
-#      slide-*up* race, mirrored here for the slide-*down*.
+#   4. waitForAnimationToEnd after the blur tap did NOT fix it: qty came
+#      out "38" again, twice, on both the run without this wait and the
+#      run with it — the wait genuinely ran its full 5000ms both times
+#      (per maestro.log) without the keyboard actually going away.
+#      "Save Invoice"'s tap center (≈685) still lines up exactly with
+#      the keyboard's "8" key position, meaning the keyboard was still
+#      up when Maestro tapped, wait or no wait. Tapping the header text
+#      apparently isn't enough to make the qty TextInput resign first
+#      responder in the first place — a plain, non-touchable-styled
+#      <Text> may just not be claiming the touch the way a real
+#      TouchableOpacity/button does, so there was nothing for
+#      waitForAnimationToEnd to actually wait *for*.
+#   5. (this one) Stop inferring dismissal indirectly and wait for the
+#      thing that actually matters: the keyboard's own "1" key no
+#      longer being on screen. This is a direct, observable check
+#      instead of a timing guess, and works regardless of whether the
+#      blur tap itself was ever the right mechanism.
 - tapOn: ".*Sharma General Store.*"
-- waitForAnimationToEnd:
-    timeout: 5000
+- extendedWaitUntil:
+    notVisible: "1"
+    timeout: 10000
 - tapOn: "Save Invoice"
 - takeScreenshot: 11-invoice-saved-signature-step
 - tapOn: "Skip signature"
