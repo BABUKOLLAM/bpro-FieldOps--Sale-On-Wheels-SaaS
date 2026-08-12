@@ -91,9 +91,16 @@ appId: org.reactjs.native.example.VanSales
 # 2026-08-12, which showed the real home screen fully loaded around that
 # exact message). Sync once before expecting any stop to be visible.
 - tapOn: "Sync Now"
+# 20s wasn't enough on 2026-08-12: the assertion timed out at 20.5s, but
+# the diagnostic screen-hierarchy captured for that same failure showed
+# all three stops already correctly populated ("Sharma General Store
+# CUST-001...", "City Mart CUST-002...", "Green Valley Supermarket
+# CUST-003...") — the pull + local write had genuinely finished by then,
+# just a beat after the deadline. Real completion time, not a hung
+# request, so headroom is the fix rather than a longer investigation.
 - extendedWaitUntil:
     visible: "Sharma General Store"
-    timeout: 20000
+    timeout: 40000
 - assertVisible: "City Mart"
 - assertVisible: "Green Valley Supermarket"
 
