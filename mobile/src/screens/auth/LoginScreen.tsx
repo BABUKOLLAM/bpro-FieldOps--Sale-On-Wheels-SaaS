@@ -40,6 +40,8 @@ export default function LoginScreen() {
         placeholder="Username"
         placeholderTextColor={colors.textSecondary}
         autoCapitalize="none"
+        textContentType="username"
+        autoComplete="username"
         value={username}
         onChangeText={setUsername}
       />
@@ -49,6 +51,8 @@ export default function LoginScreen() {
         placeholder="Password"
         placeholderTextColor={colors.textSecondary}
         secureTextEntry
+        textContentType="password"
+        autoComplete="password"
         value={password}
         onChangeText={setPassword}
       />
