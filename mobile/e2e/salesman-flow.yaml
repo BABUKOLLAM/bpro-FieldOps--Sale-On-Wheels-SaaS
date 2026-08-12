@@ -159,16 +159,26 @@ appId: org.reactjs.native.example.VanSales
     id: "qty-input-SKU-001"
 - inputText: "3"
 - takeScreenshot: 10-cart-with-item
-# Same category of bug as the login Sign In button, seen again here on
-# 2026-08-12: typing into the qty field brings up the numeric keypad,
-# which was covering "Save Invoice" before SpotBillingScreen.tsx got
-# the same KeyboardAvoidingView fix already applied to LoginScreen.
-# A `hideKeyboard` step here as extra insurance turned out to actively
-# break the run instead — iOS numeric-only keypads have no dismiss/
-# Done key for Maestro to press ("Couldn't hide the keyboard. This can
-# happen if the app uses a custom input or doesn't expose a standard
-# dismiss action."), so it hard-failed the flow every time. The app
-# fix alone is sufficient; nothing to dismiss.
+# Two rounds of the same bug, now fully root-caused. Round 1: the
+# numeric keypad covered "Save Invoice" — fixed with KeyboardAvoidingView
+# + FlatList flex:1 in SpotBillingScreen.tsx (same class of fix as the
+# login Sign In button). Round 2, on 2026-08-12, showed that fix alone
+# wasn't enough: "Save Invoice"'s reported bounds (y=[602,658]) were
+# byte-for-byte identical before and after the app fix, and the
+# takeScreenshot right after tapping it showed the qty field reading
+# "35" instead of "3" — the tap was landing on the keyboard's "5" key,
+# not the button, exactly as before. The app-level layout was correct;
+# Maestro's tap coordinates weren't, because — per "Tap aimed via
+# trusted pre-wait hierarchy (null settle, no recent scroll)" in
+# maestro.log — it reused a hierarchy snapshot captured before the
+# keyboard-avoidance re-layout had actually settled. Same class of
+# race as the login password field's keyboard-slide-up timing, fixed
+# there with waitForAnimationToEnd; applying the same fix here forces
+# a fresh, post-settle snapshot before Maestro computes the tap target.
+# (`hideKeyboard` was tried as an alternative here first — it hard-
+# fails on iOS numeric-only keypads, which have no Done/dismiss key.)
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn: "Save Invoice"
 - takeScreenshot: 11-invoice-saved-signature-step
 - tapOn: "Skip signature"
