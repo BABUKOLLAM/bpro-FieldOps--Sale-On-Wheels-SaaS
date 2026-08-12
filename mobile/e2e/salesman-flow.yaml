@@ -80,7 +80,20 @@ appId: org.reactjs.native.example.VanSales
     optional: true
 
 - takeScreenshot: 04-home-screen
-- assertVisible: "Sharma General Store"
+# HomeScreen (src/screens/HomeScreen.tsx) is offline-first: loadData()
+# reads the route/beat list purely from local WatermelonDB, and that DB
+# starts genuinely empty on this fresh (`clearState: true`) install —
+# nothing populates it until synchronize() runs, which only happens on
+# an explicit "Sync Now" tap, not on mount. Skipping this step doesn't
+# mean the login is broken, it means there's nothing local to show yet
+# ("No route assigned. Pull to sync." is the correct empty state, not a
+# bug — confirmed by reading the accessibility tree at a failure here on
+# 2026-08-12, which showed the real home screen fully loaded around that
+# exact message). Sync once before expecting any stop to be visible.
+- tapOn: "Sync Now"
+- extendedWaitUntil:
+    visible: "Sharma General Store"
+    timeout: 20000
 - assertVisible: "City Mart"
 - assertVisible: "Green Valley Supermarket"
 
