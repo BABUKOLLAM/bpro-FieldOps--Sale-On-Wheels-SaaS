@@ -502,6 +502,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
         style={styles.itemList}
         data={items}
         keyExtractor={(item) => item.serverId}
+        keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (
           <View style={styles.itemRow}>
             <View style={{ flex: 1 }}>
@@ -522,26 +523,40 @@ export default function SpotBillingScreen({ route, navigation }: any) {
             />
           </View>
         )}
+        // Summary + Save Invoice live inside the list as a footer, not as
+        // fixed siblings after it. A sibling after a plain FlatList sits
+        // outside the list's own UIScrollView and gets no keyboard-avoidance
+        // for free — it stayed exactly where the keyboard renders no matter
+        // how KeyboardAvoidingView was configured (verified: identical
+        // bounds, y=[602,658], across multiple runs and fix attempts on
+        // 2026-08-12, always fully inside the keyboard's own region starting
+        // at y=561). As the list's footer, this content scrolls into view
+        // above the keyboard using iOS's native scroll-view keyboard inset
+        // handling, which just works, instead of JS-computed padding that
+        // wasn't taking effect for reasons this session couldn't pin down.
+        ListFooterComponent={
+          <>
+            <View style={styles.summary}>
+              <Text style={styles.summaryText}>
+                Estimated total: ₹{estimatedTotal.toFixed(2)}
+              </Text>
+              <Text style={styles.summaryNote}>
+                Final GST/discount recomputed by the server at sync.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSave}
+              disabled={saving}
+            >
+              <Text style={styles.saveButtonText}>
+                {saving ? 'Saving…' : 'Save Invoice'}
+              </Text>
+            </TouchableOpacity>
+          </>
+        }
       />
-
-      <View style={styles.summary}>
-        <Text style={styles.summaryText}>
-          Estimated total: ₹{estimatedTotal.toFixed(2)}
-        </Text>
-        <Text style={styles.summaryNote}>
-          Final GST/discount recomputed by the server at sync.
-        </Text>
-      </View>
-
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={handleSave}
-        disabled={saving}
-      >
-        <Text style={styles.saveButtonText}>
-          {saving ? 'Saving…' : 'Save Invoice'}
-        </Text>
-      </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 }
