@@ -48,38 +48,36 @@ appId: org.reactjs.native.example.VanSales
 # Username is pre-filled with the demo agent (agent@demo.local) —
 # only the password needs entering. Tapping by placeholder *text* only
 # selects the element without reliably focusing the underlying
-# TextInput's native responder (Maestro reported the tap+type as
-# successful, but the typed text never landed — 8.9s for 13 characters
-# was the tell). testID targeting is unambiguous and actually focuses it.
-#
-# Even with testID targeting, a second race remains: this password field
-# is the first *system* keyboard shown all session (the PIN pad above is
-# a custom digit grid), and on a freshly cold-started simulator the tap
-# can be reported "completed" by the accessibility layer before iOS has
-# actually finished bringing the keyboard up and wiring the responder.
-# A run on 2026-08-11 showed the tell for that: no swipe-typing tutorial
-# ever appeared (it's keyboard-triggered, so its absence means the
-# keyboard interaction never properly started) and the password field
-# was later found completely empty — not just missing the swipe-tutorial
-# dismissal, the typed characters never landed at all. Waiting for the
-# keyboard's slide-up animation to finish before typing closes that race.
+# TextInput's native responder; testID targeting is unambiguous and
+# actually focuses it. A short waitForAnimationToEnd after the tap gives
+# the keyboard's slide-up animation time to finish before typing starts.
 - tapOn:
     id: "password-input"
 - waitForAnimationToEnd:
     timeout: 5000
 - inputText: "DemoPass123!"
-# This is the first real system keyboard shown all session (the PIN pad
-# above is a custom digit grid, not the OS keyboard) — on a fresh
-# simulator, iOS overlays a one-time "slide your finger to compose a
-# word" swipe-typing tutorial (UIContinuousPathIntroductionView) on top
-# of it, which eats the next tap. Screen-hierarchy from a failed run
-# confirmed the password DID land correctly (12 bullet chars) but this
-# tip was still on screen, swallowing the "Sign In" tap. Dismiss it if
-# present; it never appears again this session.
+#
+# This is the first real *system* keyboard shown all session (the PIN
+# pad above is a custom digit grid), and on a fresh simulator iOS
+# overlays a one-time "slide your finger across the letters to compose
+# a word" swipe-typing tutorial (UIContinuousPathIntroductionView) on
+# top of it. Its timing is racy: on some runs it's already up right
+# after typing finishes (caught by the first dismiss below); on others
+# it doesn't render until *after* the Sign In tap, and then sits on top
+# of the home screen blocking every assertion below it — every "Sharma
+# General Store" assertion failure investigated so far traces back to
+# this, not to the password itself. Screen-hierarchy captured at the
+# moment of one such failure confirmed the password field still held
+# all 12 bullet characters throughout; the tutorial view was the only
+# thing actually wrong on screen. Dismiss it at both points so whichever
+# timing shows up this run gets caught.
 - tapOn:
     text: "Continue"
     optional: true
 - tapOn: "Sign In"
+- tapOn:
+    text: "Continue"
+    optional: true
 
 - takeScreenshot: 04-home-screen
 - assertVisible: "Sharma General Store"
