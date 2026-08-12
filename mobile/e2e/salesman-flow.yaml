@@ -161,10 +161,14 @@ appId: org.reactjs.native.example.VanSales
 - takeScreenshot: 10-cart-with-item
 # Same category of bug as the login Sign In button, seen again here on
 # 2026-08-12: typing into the qty field brings up the numeric keypad,
-# which is never dismissed before tapping "Save Invoice" — the button
-# (and the "Skip signature" step after it) sits below the keypad, so
-# the tap lands on the keypad instead and the flow never advances.
-- hideKeyboard
+# which was covering "Save Invoice" before SpotBillingScreen.tsx got
+# the same KeyboardAvoidingView fix already applied to LoginScreen.
+# A `hideKeyboard` step here as extra insurance turned out to actively
+# break the run instead — iOS numeric-only keypads have no dismiss/
+# Done key for Maestro to press ("Couldn't hide the keyboard. This can
+# happen if the app uses a custom input or doesn't expose a standard
+# dismiss action."), so it hard-failed the flow every time. The app
+# fix alone is sufficient; nothing to dismiss.
 - tapOn: "Save Invoice"
 - takeScreenshot: 11-invoice-saved-signature-step
 - tapOn: "Skip signature"
