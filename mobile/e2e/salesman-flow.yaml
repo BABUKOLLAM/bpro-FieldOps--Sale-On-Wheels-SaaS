@@ -126,9 +126,29 @@ appId: org.reactjs.native.example.VanSales
 # route-list assertions above — the card's accessible label is the
 # combined "name · code · outstanding" string, not the bare name.
 - tapOn: ".*Sharma General Store.*"
+# toggleCheckpoint() (TripScreen.tsx) calls getCurrentLocation() before
+# its database.write() — a real GPS/location lookup, not instant on a
+# simulator — then reloads. A run on 2026-08-12 showed the row still
+# reading "Not visited" in the very next screenshot, taken immediately
+# after the tap "completed"; by the time of a later, unrelated failure
+# much further into the flow the same row correctly read "Checked in".
+# The tap itself was never the problem — wait for the actual result
+# before treating the outlet as checked in.
+- extendedWaitUntil:
+    visible: ".*Sharma General Store.*Checked in.*"
+    timeout: 15000
 - takeScreenshot: 07-outlet-checked-in
 
-- back
+# `back` (Maestro's generic back-press) does not pop this iOS
+# navigation stack — verified on 2026-08-12: the flow was still
+# reading TripScreen's own "Trip in progress" / per-stop rows tens of
+# seconds later, well after `back` ran and reported COMPLETED, with no
+# further command ever leaving that screen. React Navigation's default
+# iOS header shows the *previous* screen's title as the tappable back
+# button — Home's registered title is literally "bpro FieldOps"
+# (src/i18n/locales.ts nav.home) — so tap that instead of relying on
+# a back gesture Maestro isn't actually driving here.
+- tapOn: "bpro FieldOps"
 - takeScreenshot: 08-home-with-trip-active
 
 # Spot Billing at the checked-in outlet — same home-screen card as
