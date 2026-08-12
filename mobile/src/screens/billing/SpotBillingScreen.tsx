@@ -498,7 +498,16 @@ export default function SpotBillingScreen({ route, navigation }: any) {
     // explicit Keyboard.dismiss() is the standard fix — and a real user
     // hits the same dead end tapping anywhere else on this screen today,
     // not just in the test.
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    // `accessible={false}` here is load-bearing, not cosmetic: Touchable*
+    // components default `accessible` to true, which tells iOS to flatten
+    // the entire subtree into ONE accessibility element. Without this, the
+    // CI hierarchy dump at the exact moment of the next failure showed
+    // every catalog row and qty TextInput merged into a single giant
+    // accessibilityText on this wrapper — qty-input-SKU-001 had no element
+    // of its own anymore, so Maestro's `tapOn: id:` (and any real
+    // accessibility-based interaction) couldn't find it. False here keeps
+    // this wrapper purely a touch-catcher, not an accessibility boundary.
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
