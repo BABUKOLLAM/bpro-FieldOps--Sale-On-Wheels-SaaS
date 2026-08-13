@@ -3,6 +3,7 @@ import DashboardNav from "@/components/DashboardNav";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import LogoutButton from "@/components/LogoutButton";
 import NavLayoutToggle from "@/components/NavLayoutToggle";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <DashboardNav />
           </div>
           <div className="flex items-center gap-3 nav-col:mt-auto nav-col:w-full nav-col:flex-col nav-col:items-stretch">
+            <ThemeToggle />
             <LanguageSwitcher />
             <LogoutButton />
           </div>
