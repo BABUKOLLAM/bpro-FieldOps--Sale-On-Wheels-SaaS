@@ -7,7 +7,7 @@ from apps.customers.serializers import BeatSerializer, CustomerSerializer
 from apps.expenses.serializers import ExpenseSerializer
 from apps.fleet.serializers import LocationPingSerializer, TripCheckpointSerializer, TripSerializer
 from apps.inventory.serializers import VanStockSerializer
-from apps.sales.serializers import InvoiceSerializer
+from apps.sales.serializers import InvoiceSerializer, ReceiptSerializer
 
 
 class CompanyConfigSerializer(serializers.Serializer):
@@ -40,7 +40,7 @@ class PushItemSerializer(serializers.Serializer):
     pattern and are the natural next extension of this same list."""
 
     entity_type = serializers.ChoiceField(
-        choices=["invoice", "trip", "trip_checkpoint", "expense", "location_ping", "attendance"]
+        choices=["invoice", "trip", "trip_checkpoint", "expense", "location_ping", "attendance", "receipt"]
     )
     payload = serializers.JSONField()
 
@@ -56,4 +56,5 @@ PUSH_HANDLERS = {
     "expense": ExpenseSerializer,
     "location_ping": LocationPingSerializer,
     "attendance": AttendanceSerializer,
+    "receipt": ReceiptSerializer,
 }

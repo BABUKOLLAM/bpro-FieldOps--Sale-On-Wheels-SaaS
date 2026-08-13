@@ -359,3 +359,54 @@ def test_fleet_dashboard_returns_expected_shape(supervisor, agent):
 
     vehicle_entry = next(v for v in response.data["vehicles"] if v["vehicle_id"] == vehicle.id)
     assert vehicle_entry["maintenance_status"] == "overdue"
+
+
+@pytest.mark.django_db
+def test_receipt_push_is_idempotent(company, agent, customer):
+    """Collection push flow (FR-03): an unallocated payment-on-account
+    receipt from the mobile Collections screen. Same idempotency
+    guarantee as invoice/expense — replaying the push must not decrement
+    the customer's outstanding balance a second time."""
+    from apps.accounts.models import Device
+    from apps.sales.models import Receipt
+
+    customer.outstanding_balance = Decimal("500.00")
+    customer.save(update_fields=["outstanding_balance"])
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    Device.objects.create(user=agent, device_id="test-device-receipt", platform="android")
+
+    receipt_id = str(uuid.uuid4())
+    payload = {
+        "items": [
+            {
+                "entity_type": "receipt",
+                "payload": {
+                    "id": receipt_id,
+                    "customer": str(customer.id),
+                    "mode": "cash",
+                    "amount": "200.00",
+                    "reference_no": "",
+                    "received_at": datetime.now(dt_timezone.utc).isoformat(),
+                    "allocations": [],
+                },
+            }
+        ]
+    }
+
+    response1 = client.post("/api/sync/push/", payload, format="json")
+    assert response1.status_code == 200
+    assert response1.data["results"][0]["status"] == "applied", response1.data
+    receipt = Receipt.objects.get(id=receipt_id)
+    assert receipt.agent_id == agent.id  # forced server-side
+    assert receipt.receipt_no.startswith("RCPT")
+    customer.refresh_from_db()
+    assert customer.outstanding_balance == Decimal("300.00")
+
+    response2 = client.post("/api/sync/push/", payload, format="json")
+    assert response2.status_code == 200
+    assert response2.data["results"][0]["status"] == "applied"
+    assert Receipt.objects.filter(id=receipt_id).count() == 1  # no duplicate
+    customer.refresh_from_db()
+    assert customer.outstanding_balance == Decimal("300.00")  # not double-decremented
