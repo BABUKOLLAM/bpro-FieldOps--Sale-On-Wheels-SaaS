@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.constants import (
     PERM_ATTENDANCE_CREATE_OWN, PERM_EXPENSES_CREATE_OWN, PERM_FLEET_TRIP_MANAGE_OWN, PERM_SALES_INVOICE_CREATE,
-    PERM_SALES_RECEIPT_CREATE,
+    PERM_SALES_ORDER_CREATE, PERM_SALES_RECEIPT_CREATE, PERM_SALES_RETURN_CREATE,
 )
 from apps.catalog.models import Item, PriceList, Scheme
 from apps.company.models import Company, GSTRegistration
@@ -31,8 +31,12 @@ _PUSH_PERMISSION_REQUIRED = {
     "location_ping": PERM_FLEET_TRIP_MANAGE_OWN,
     "attendance": PERM_ATTENDANCE_CREATE_OWN,
     "receipt": PERM_SALES_RECEIPT_CREATE,
+    "credit_note": PERM_SALES_RETURN_CREATE,
+    "sales_order": PERM_SALES_ORDER_CREATE,
 }
-_FORCE_AGENT_FIELD = {"invoice", "trip", "expense", "location_ping", "attendance", "receipt"}
+_FORCE_AGENT_FIELD = {
+    "invoice", "trip", "expense", "location_ping", "attendance", "receipt", "credit_note", "sales_order",
+}
 
 
 class PullView(APIView):

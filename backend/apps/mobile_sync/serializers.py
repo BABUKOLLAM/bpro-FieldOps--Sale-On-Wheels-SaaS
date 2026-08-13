@@ -7,7 +7,9 @@ from apps.customers.serializers import BeatSerializer, CustomerSerializer
 from apps.expenses.serializers import ExpenseSerializer
 from apps.fleet.serializers import LocationPingSerializer, TripCheckpointSerializer, TripSerializer
 from apps.inventory.serializers import VanStockSerializer
-from apps.sales.serializers import InvoiceSerializer, ReceiptSerializer
+from apps.sales.serializers import (
+    CreditNoteSerializer, InvoiceSerializer, ReceiptSerializer, SalesOrderSerializer,
+)
 
 
 class CompanyConfigSerializer(serializers.Serializer):
@@ -34,13 +36,16 @@ class PullResponseSerializer(serializers.Serializer):
 
 class PushItemSerializer(serializers.Serializer):
     """One record in a push batch. `entity_type` selects which real
-    serializer (Invoice, Trip, TripCheckpoint, Expense, ...) validates/
-    creates `payload`. See mobile_sync.views.PUSH_HANDLERS for the
-    supported set — Receipt/CreditNote/SalesOrder follow the identical
-    pattern and are the natural next extension of this same list."""
+    serializer (Invoice, Trip, TripCheckpoint, Expense, Receipt,
+    CreditNote, SalesOrder, ...) validates/creates `payload`. See
+    PUSH_HANDLERS below for the full supported set — extending it is
+    just an import + three map entries (choices, handler, permission)."""
 
     entity_type = serializers.ChoiceField(
-        choices=["invoice", "trip", "trip_checkpoint", "expense", "location_ping", "attendance", "receipt"]
+        choices=[
+            "invoice", "trip", "trip_checkpoint", "expense", "location_ping", "attendance",
+            "receipt", "credit_note", "sales_order",
+        ]
     )
     payload = serializers.JSONField()
 
@@ -57,4 +62,6 @@ PUSH_HANDLERS = {
     "location_ping": LocationPingSerializer,
     "attendance": AttendanceSerializer,
     "receipt": ReceiptSerializer,
+    "credit_note": CreditNoteSerializer,
+    "sales_order": SalesOrderSerializer,
 }

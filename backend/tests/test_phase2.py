@@ -410,3 +410,100 @@ def test_receipt_push_is_idempotent(company, agent, customer):
     assert Receipt.objects.filter(id=receipt_id).count() == 1  # no duplicate
     customer.refresh_from_db()
     assert customer.outstanding_balance == Decimal("300.00")  # not double-decremented
+
+
+@pytest.mark.django_db
+def test_sales_order_push_is_idempotent(company, agent, van_godown, item, customer):
+    """Pre-order push flow (mobile Order screen): same idempotency
+    guarantee as invoice — replaying must not duplicate the order."""
+    from apps.accounts.models import Device
+    from apps.sales.models import SalesOrder
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    Device.objects.create(user=agent, device_id="test-device-order", platform="android")
+
+    order_id = str(uuid.uuid4())
+    payload = {
+        "items": [
+            {
+                "entity_type": "sales_order",
+                "payload": {
+                    "id": order_id,
+                    "customer": str(customer.id),
+                    "order_date": str(date.today()),
+                    "notes": "Deliver Friday",
+                    "lines": [{"item": str(item.id), "qty": "6", "rate": "20.00"}],
+                },
+            }
+        ]
+    }
+
+    response1 = client.post("/api/sync/push/", payload, format="json")
+    assert response1.status_code == 200
+    assert response1.data["results"][0]["status"] == "applied", response1.data
+    order = SalesOrder.objects.get(id=order_id)
+    assert order.agent_id == agent.id  # forced server-side
+    assert order.lines.count() == 1
+
+    response2 = client.post("/api/sync/push/", payload, format="json")
+    assert response2.status_code == 200
+    assert response2.data["results"][0]["status"] == "applied"
+    assert SalesOrder.objects.filter(id=order_id).count() == 1  # no duplicate
+    assert SalesOrder.objects.get(id=order_id).lines.count() == 1  # no duplicate lines
+
+
+@pytest.mark.django_db
+def test_credit_note_push_is_idempotent(company, agent, van_godown, item, customer):
+    """Return push flow (mobile Return screen): replaying must not
+    double-post the reverse-logistics stock movement (FM-11)."""
+    from apps.accounts.models import Device
+
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("5"), rate=Decimal("20.00"))
+    finalize_invoice(invoice)
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+    Device.objects.create(user=agent, device_id="test-device-return", platform="android")
+
+    note_id = str(uuid.uuid4())
+    payload = {
+        "items": [
+            {
+                "entity_type": "credit_note",
+                "payload": {
+                    "id": note_id,
+                    "original_invoice": str(invoice.id),
+                    "customer": str(customer.id),
+                    "reason_code": "damaged_in_transit",
+                    "note_date": str(date.today()),
+                    "lines": [
+                        {
+                            "item": str(item.id), "qty": "2", "rate": "20.00",
+                            "condition": CreditNote.CONDITION_DAMAGED,
+                        }
+                    ],
+                },
+            }
+        ]
+    }
+
+    response1 = client.post("/api/sync/push/", payload, format="json")
+    assert response1.status_code == 200
+    assert response1.data["results"][0]["status"] == "applied", response1.data
+    note = CreditNote.objects.get(id=note_id)
+    assert note.agent_id == agent.id  # forced server-side
+    assert note.grand_total == Decimal("40.00")
+
+    response2 = client.post("/api/sync/push/", payload, format="json")
+    assert response2.status_code == 200
+    assert response2.data["results"][0]["status"] == "applied"
+    assert CreditNote.objects.filter(id=note_id).count() == 1  # no duplicate
+    # The reverse-logistics ledger entry posted exactly once.
+    entries = StockLedgerEntry.objects.filter(reference_type="credit_note", reference_id=note_id)
+    assert entries.count() == 1
