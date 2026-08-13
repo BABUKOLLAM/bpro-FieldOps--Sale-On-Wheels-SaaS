@@ -15,7 +15,7 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
  * change-tracking — see src/sync/synchronize.ts.
  */
 export const schema = appSchema({
-  version: 4,
+  version: 5,
   tables: [
     tableSchema({
       name: 'customers',
@@ -201,6 +201,25 @@ export const schema = appSchema({
         { name: 'check_out_at', type: 'number' },
         { name: 'check_out_latitude', type: 'number' },
         { name: 'check_out_longitude', type: 'number' },
+        { name: 'device_created_at', type: 'number' },
+        { name: 'sync_status', type: 'string', isIndexed: true },
+        { name: 'sync_error', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'receipts',
+      columns: [
+        // Collections (FR-03): payment-on-account against a customer,
+        // pushed as entity_type 'receipt' with an empty allocations list
+        // — per-invoice allocation needs outstanding invoices in the pull
+        // payload first (see backend PushItemSerializer note).
+        { name: 'server_id', type: 'string', isIndexed: true },
+        { name: 'customer_server_id', type: 'string', isIndexed: true },
+        { name: 'trip_server_id', type: 'string' },
+        { name: 'mode', type: 'string' },
+        { name: 'amount', type: 'number' },
+        { name: 'reference_no', type: 'string' },
+        { name: 'received_at', type: 'number' },
         { name: 'device_created_at', type: 'number' },
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },

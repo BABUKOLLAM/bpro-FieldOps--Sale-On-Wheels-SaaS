@@ -13,6 +13,7 @@ import TripCheckpoint from '../db/models/TripCheckpoint';
 import Expense from '../db/models/Expense';
 import LocationPing from '../db/models/LocationPing';
 import Attendance from '../db/models/Attendance';
+import Receipt from '../db/models/Receipt';
 import { saveCompanyConfig } from '../config/companyConfig';
 
 /**
@@ -317,6 +318,34 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
     const ok = await pushItem('expense', payload);
     await database.write(async () => {
       await expense.update((rec) => {
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+      });
+    });
+    ok ? pushed++ : failed++;
+  }
+
+  const pendingReceipts = await database
+    .get<Receipt>('receipts')
+    .query(Q.where('sync_status', Q.oneOf([SYNC_PENDING, SYNC_FAILED])))
+    .fetch();
+
+  for (const receipt of pendingReceipts) {
+    const payload = {
+      id: receipt.serverId,
+      customer: receipt.customerServerId,
+      trip: receipt.tripServerId || null,
+      mode: receipt.mode,
+      amount: receipt.amount,
+      reference_no: receipt.referenceNo,
+      received_at: new Date(receipt.receivedAt).toISOString(),
+      // Payment-on-account: the backend decrements the customer's whole
+      // outstanding balance; per-invoice allocation is a later extension
+      // (needs outstanding invoices in the pull payload first).
+      allocations: [],
+    };
+    const ok = await pushItem('receipt', payload);
+    await database.write(async () => {
+      await receipt.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
       });
     });

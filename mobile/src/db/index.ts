@@ -16,6 +16,7 @@ import TripCheckpoint from './models/TripCheckpoint';
 import Expense from './models/Expense';
 import LocationPing from './models/LocationPing';
 import Attendance from './models/Attendance';
+import Receipt from './models/Receipt';
 
 const adapter = new SQLiteAdapter({
   schema,
@@ -46,5 +47,6 @@ export const database = new Database({
     Expense,
     LocationPing,
     Attendance,
+    Receipt,
   ],
 });

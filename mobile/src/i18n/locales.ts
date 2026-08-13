@@ -12,6 +12,7 @@ export type Dictionary = {
     trip: string;
     expense: string;
     attendance: string;
+    collection: string;
   };
   home: {
     signOut: string;
@@ -20,6 +21,7 @@ export type Dictionary = {
     startTrip: string;
     tripInProgress: string;
     logExpense: string;
+    logCollection: string;
     syncNow: string;
     todaysRoute: string;
     noRoute: string;
@@ -50,6 +52,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       trip: 'Trip',
       expense: 'Expense',
       attendance: 'Attendance',
+      collection: 'Collection',
     },
     home: {
       signOut: 'Sign out',
@@ -58,6 +61,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       startTrip: 'Start Trip',
       tripInProgress: 'Trip in progress — Manage Trip',
       logExpense: 'Log Expense',
+      logCollection: 'Collect Payment',
       syncNow: 'Sync Now',
       todaysRoute: "Today's Route",
       noRoute: 'No route assigned. Pull to sync.',
@@ -82,6 +86,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       trip: 'ट्रिप',
       expense: 'खर्च',
       attendance: 'हाज़िरी',
+      collection: 'वसूली',
     },
     home: {
       signOut: 'साइन आउट',
@@ -90,6 +95,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       startTrip: 'ट्रिप शुरू करें',
       tripInProgress: 'ट्रिप चालू है — प्रबंधित करें',
       logExpense: 'खर्च दर्ज करें',
+      logCollection: 'भुगतान वसूलें',
       syncNow: 'अभी सिंक करें',
       todaysRoute: 'आज का रूट',
       noRoute: 'कोई रूट असाइन नहीं है। सिंक के लिए खींचें।',

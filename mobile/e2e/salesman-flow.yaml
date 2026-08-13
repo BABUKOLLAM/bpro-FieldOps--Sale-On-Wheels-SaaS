@@ -217,5 +217,27 @@ appId: org.reactjs.native.example.VanSales
 - tapOn: "Skip signature"
 - takeScreenshot: 12-back-on-home
 
+# Collection (FR-03): record a cash payment against the outlet's account.
+# The customer rows merge name + outstanding into one accessibility label
+# (same reason as the home-screen cards), hence the wildcard.
+- tapOn: "Collect Payment"
+- takeScreenshot: 13-collection-screen
+- tapOn: ".*Sharma General Store.*"
+- tapOn:
+    id: "receipt-amount-input"
+- inputText: "500"
+# The numeric keypad covers "Save Collection" and iOS numeric keypads
+# have no Done key (the hideKeyboard lesson from the Spot Billing saga).
+# The screen sets keyboardDismissMode="on-drag", so a scroll is the
+# deterministic dismiss; then wait for the keypad's own "1" key to be
+# gone rather than guessing at animation timing.
+- scroll
+- extendedWaitUntil:
+    notVisible: "1"
+    timeout: 10000
+- tapOn: "Save Collection"
+- tapOn: "OK"
+- takeScreenshot: 14-collection-saved
+
 - tapOn: "Sync Now"
-- takeScreenshot: 13-synced
+- takeScreenshot: 15-synced

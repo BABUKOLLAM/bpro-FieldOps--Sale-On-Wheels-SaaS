@@ -13,6 +13,8 @@ import {
  *
  * v3 -> v4 (BRD completion — FR-16): the new attendance table.
  *
+ * v4 -> v5 (FR-03 collections): the new receipts table.
+ *
  * Real migrations (not a dev-only schema bump) so an already-installed
  * app upgrades in place without losing local data — see
  * docs/architecture.md for why that matters here specifically: an
@@ -99,6 +101,26 @@ export default schemaMigrations({
             { name: 'check_out_at', type: 'number' },
             { name: 'check_out_latitude', type: 'number' },
             { name: 'check_out_longitude', type: 'number' },
+            { name: 'device_created_at', type: 'number' },
+            { name: 'sync_status', type: 'string', isIndexed: true },
+            { name: 'sync_error', type: 'string' },
+          ],
+        }),
+      ],
+    },
+    {
+      toVersion: 5,
+      steps: [
+        createTable({
+          name: 'receipts',
+          columns: [
+            { name: 'server_id', type: 'string', isIndexed: true },
+            { name: 'customer_server_id', type: 'string', isIndexed: true },
+            { name: 'trip_server_id', type: 'string' },
+            { name: 'mode', type: 'string' },
+            { name: 'amount', type: 'number' },
+            { name: 'reference_no', type: 'string' },
+            { name: 'received_at', type: 'number' },
             { name: 'device_created_at', type: 'number' },
             { name: 'sync_status', type: 'string', isIndexed: true },
             { name: 'sync_error', type: 'string' },
