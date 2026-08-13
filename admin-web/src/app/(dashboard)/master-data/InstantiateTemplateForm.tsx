@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 type Agent = { id: string; username: string; first_name: string };
 
@@ -59,13 +60,11 @@ export default function InstantiateTemplateForm({ templateId, agents }: { templa
           </option>
         ))}
       </select>
-      <button
+      <Button
         type="submit"
-        disabled={submitting}
-        className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
-      >
+        disabled={submitting} variant="success" size="sm">
         {submitting ? "Creating…" : "Instantiate as new route"}
-      </button>
+      </Button>
       {createdBeatName && <span className="text-xs text-emerald-600">Created "{createdBeatName}" — see Routes above.</span>}
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>

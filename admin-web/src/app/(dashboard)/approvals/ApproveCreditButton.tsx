@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 export default function ApproveCreditButton({ invoiceId }: { invoiceId: string }) {
   const router = useRouter();
@@ -21,12 +22,10 @@ export default function ApproveCreditButton({ invoiceId }: { invoiceId: string }
   }
 
   return (
-    <button
+    <Button
       onClick={handleApprove}
-      disabled={submitting}
-      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
-    >
+      disabled={submitting} variant="success" size="sm">
       {submitting ? "Approving…" : "Approve"}
-    </button>
+    </Button>
   );
 }

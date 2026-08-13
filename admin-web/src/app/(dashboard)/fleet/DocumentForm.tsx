@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 type Vehicle = { id: string; reg_no: string };
 type User = { id: string; username: string; first_name: string; is_field_agent: boolean };
@@ -126,13 +127,11 @@ export default function DocumentForm({ vehicles, agents }: { vehicles: Vehicle[]
           className="mt-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
         />
       </div>
-      <button
+      <Button
         type="submit"
-        disabled={submitting}
-        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-      >
+        disabled={submitting}>
         {submitting ? "Adding…" : "Add Document"}
-      </button>
+      </Button>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>
   );

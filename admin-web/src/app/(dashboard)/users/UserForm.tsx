@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 type Role = { id: string; name: string };
 
@@ -149,13 +150,11 @@ export default function UserForm({ roles }: { roles: Role[] }) {
         <input type="checkbox" checked={isFieldAgent} onChange={(e) => setIsFieldAgent(e.target.checked)} />
         Field agent
       </label>
-      <button
+      <Button
         type="submit"
-        disabled={submitting}
-        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-      >
+        disabled={submitting}>
         {submitting ? "Adding…" : "Add User"}
-      </button>
+      </Button>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>
   );

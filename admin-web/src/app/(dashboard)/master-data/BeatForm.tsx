@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 type Agent = { id: string; username: string; first_name: string };
 
@@ -64,13 +65,11 @@ export default function BeatForm({ agents }: { agents: Agent[] }) {
           ))}
         </select>
       </div>
-      <button
+      <Button
         type="submit"
-        disabled={submitting}
-        className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-      >
+        disabled={submitting}>
         {submitting ? "Adding…" : "Add Route"}
-      </button>
+      </Button>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>
   );

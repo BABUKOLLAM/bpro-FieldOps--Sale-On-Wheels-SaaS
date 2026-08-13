@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 export default function SyncActions({ entryId, status }: { entryId: string; status: string }) {
   const router = useRouter();
@@ -21,21 +22,18 @@ export default function SyncActions({ entryId, status }: { entryId: string; stat
 
   return (
     <div className="flex gap-2">
-      <button
-        onClick={() => call("retry")}
-        disabled={submitting}
-        className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-      >
+      <Button onClick={() => call("retry")} disabled={submitting} size="sm">
         Retry
-      </button>
+      </Button>
       {status === "failed_permanent" && (
-        <button
+        <Button
           onClick={() => call("resolve")}
           disabled={submitting}
-          className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+          variant="secondary"
+          size="sm"
         >
           Mark resolved
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 export default function CustomerForm() {
   const router = useRouter();
@@ -49,9 +50,9 @@ export default function CustomerForm() {
         <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Credit Limit</label>
         <input type="number" min="0" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} className="mt-1 w-32 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100" />
       </div>
-      <button type="submit" disabled={submitting} className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60">
+      <Button type="submit" disabled={submitting}>
         {submitting ? "Adding…" : "Add Customer"}
-      </button>
+      </Button>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>
   );

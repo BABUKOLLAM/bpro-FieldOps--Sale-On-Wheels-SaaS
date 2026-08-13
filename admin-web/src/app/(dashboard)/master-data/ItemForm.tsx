@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 type Category = { id: string; name: string };
 type UOM = { id: string; code: string; name: string };
@@ -69,9 +70,9 @@ export default function ItemForm({ categories, uoms }: { categories: Category[];
           ))}
         </select>
       </div>
-      <button type="submit" disabled={submitting} className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60">
+      <Button type="submit" disabled={submitting}>
         {submitting ? "Adding…" : "Add Item"}
-      </button>
+      </Button>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Button from "@/components/ui/Button";
 
 export default function EmailReportRow({ reportKey }: { reportKey: string }) {
   const [to, setTo] = useState("");
@@ -46,13 +47,11 @@ export default function EmailReportRow({ reportKey }: { reportKey: string }) {
         <option value="xlsx">Excel</option>
         <option value="pdf">PDF</option>
       </select>
-      <button
+      <Button
         type="submit"
-        disabled={sending}
-        className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-      >
+        disabled={sending} size="sm">
         {sending ? "Sending…" : "Email"}
-      </button>
+      </Button>
       {message && (
         <span className={`text-xs ${message.kind === "ok" ? "text-emerald-600" : "text-red-600"}`}>
           {message.text}

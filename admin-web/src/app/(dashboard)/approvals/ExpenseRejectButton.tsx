@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 export default function ExpenseRejectButton({ expenseId }: { expenseId: string }) {
   const router = useRouter();
@@ -22,12 +23,10 @@ export default function ExpenseRejectButton({ expenseId }: { expenseId: string }
   }
 
   return (
-    <button
+    <Button
       onClick={handleReject}
-      disabled={submitting}
-      className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-60"
-    >
+      disabled={submitting} variant="danger" size="sm">
       {submitting ? "Rejecting…" : "Reject"}
-    </button>
+    </Button>
   );
 }

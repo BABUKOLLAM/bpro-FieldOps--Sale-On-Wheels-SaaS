@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 const EVENT_TYPES = ["invoice.finalized", "receipt.finalized", "credit_note.finalized"];
 
@@ -87,13 +88,11 @@ export default function WebhookCreateForm() {
         ))}
       </div>
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={handleCreate}
-          disabled={submitting || !name || !url || !secret}
-          className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-        >
+          disabled={submitting || !name || !url || !secret}>
           {submitting ? "Adding…" : "Add Webhook"}
-        </button>
+        </Button>
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
     </div>

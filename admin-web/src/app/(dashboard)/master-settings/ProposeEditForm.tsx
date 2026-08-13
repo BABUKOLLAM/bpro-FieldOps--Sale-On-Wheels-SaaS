@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 export type FieldSpec = {
   name: string;
@@ -126,13 +127,11 @@ export default function ProposeEditForm({
       </label>
 
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={handleSave}
-          disabled={submitting}
-          className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-        >
+          disabled={submitting}>
           {submitting ? "Submitting…" : "Propose Change"}
-        </button>
+        </Button>
         <button onClick={onDone} className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">
           Cancel
         </button>
