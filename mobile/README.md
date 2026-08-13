@@ -63,24 +63,23 @@ Bluetooth hardware or native project to test against.
 
 ## Native project setup
 
-This repo ships the **JavaScript/TypeScript source only** — `ios/` and
-`android/` native projects are not included, since generating them
-requires Xcode/CocoaPods or Android Studio/Gradle, which weren't available
-in the environment this was built in. To get a runnable app:
+`ios/` and `android/` native projects are checked into this repo and are
+what `mobile-ios-ci` (GitHub Actions) builds and runs against the iOS
+Simulator on every push — see `.github/workflows/mobile-ios-ci.yml` and
+`mobile/e2e/salesman-flow.yaml` for the automated end-to-end coverage.
+To run locally:
 
 ```bash
 npm install
-npx react-native init TempScaffold --version 0.74.5   # on a machine with Xcode/Android Studio
-# copy the generated ios/ and android/ folders from TempScaffold into this directory
-```
-
-Or use `@react-native-community/cli`'s `config` output as a reference and
-hand-wire the native projects. Once `ios/`/`android/` exist:
-
-```bash
 npx pod-install ios       # iOS only
 npm run ios                # or: npm run android
 ```
+
+CI's build is Simulator-only (ad-hoc signed, no provisioning profile) —
+it cannot install on a real device. See
+[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) for what physical
+device testing still needs and why it's a separate, currently-unverified
+step from what CI already proves.
 
 ## Multi-language UI (FR-17)
 
@@ -114,14 +113,22 @@ per-client build, wire this through `react-native-config` instead of a
 hardcoded constant, so the same source tree can be built once per client
 with a different `.env` — see `docs/PROVISIONING.md`.
 
-## Verification performed in this environment
+## Verification performed
 
-No native toolchain (Xcode/Android Studio) is available in this
-environment, so **full on-device behavior — WatermelonDB persistence,
-Keychain, navigation, UI rendering, the camera/signature native modules —
-still needs verification on a simulator/device** once `ios/`/`android/`
-are generated. That said, `npm install` *did* succeed as of the Phase 2
-build, which made two real checks possible for the first time:
+`mobile-ios-ci` (GitHub Actions) now builds the app for the iOS
+Simulator and runs the full salesman workflow end-to-end via Maestro on
+every push (`mobile/e2e/salesman-flow.yaml`) — login, sync, trip
+start, outlet check-in, a Spot Billing sale, and sync back. That
+covers WatermelonDB persistence, Keychain, navigation, and UI rendering
+under real (Simulator) conditions, not just typecheck. What it does
+*not* cover — GPS accuracy, a real camera sensor, real Bluetooth
+hardware, and real biometric sensors, none of which the Simulator can
+genuinely exercise — is tracked separately in
+[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md).
+
+The checks below predate CI and were the only verification possible
+before native projects existed in this repo. Kept for the record —
+several caught genuine pre-existing bugs, not just style issues:
 
 - **`npm run typecheck` and `npm run lint` both pass clean.** Getting
   there caught genuine pre-existing bugs, not just style issues:
@@ -172,5 +179,5 @@ build, which made two real checks possible for the first time:
 work (Phase 2 slice 2) with no new issues.
 
 All of the above pass as of this build. What's still unverified is
-anything that only exists once the app is actually running on a device —
-treat that as the next real step, not this source as fully proven.
+anything that needs real hardware rather than a Simulator — see
+[`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) for the checklist.
