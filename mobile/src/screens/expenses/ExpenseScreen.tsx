@@ -19,6 +19,7 @@ import Expense, {
 } from '../../db/models/Expense';
 import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 /**
@@ -29,14 +30,14 @@ import { colors } from '../../theme/colors';
  * (see sync/synchronize.ts::uploadPendingReceiptPhotos), the same
  * two-step pattern used for invoice signatures.
  */
-const CATEGORIES: { value: string; label: string }[] = [
-  { value: CATEGORY_FUEL, label: 'Fuel' },
-  { value: CATEGORY_TOLL, label: 'Toll' },
-  { value: CATEGORY_FOOD, label: 'Food' },
-  { value: CATEGORY_MISC, label: 'Misc' },
-];
-
 export default function ExpenseScreen({ navigation }: any) {
+  const { t } = useTranslation();
+  const CATEGORIES: { value: string; label: string }[] = [
+    { value: CATEGORY_FUEL, label: t.expense.categoryFuel },
+    { value: CATEGORY_TOLL, label: t.expense.categoryToll },
+    { value: CATEGORY_FOOD, label: t.expense.categoryFood },
+    { value: CATEGORY_MISC, label: t.expense.categoryMisc },
+  ];
   const [category, setCategory] = useState(CATEGORY_FUEL);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -56,7 +57,7 @@ export default function ExpenseScreen({ navigation }: any) {
   async function handleSave() {
     const numericAmount = Number(amount);
     if (!numericAmount || numericAmount <= 0) {
-      Alert.alert('Enter a valid amount.');
+      Alert.alert(t.expense.invalidAmount);
       return;
     }
 
@@ -78,11 +79,9 @@ export default function ExpenseScreen({ navigation }: any) {
         });
       });
 
-      Alert.alert(
-        'Expense saved',
-        'Saved offline. It will sync automatically once you’re online.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert(t.expense.saved, t.common.savedOfflineBody, [
+        { text: t.common.ok, onPress: () => navigation.goBack() },
+      ]);
       synchronize().catch(() => {});
     } finally {
       setSaving(false);
@@ -94,9 +93,9 @@ export default function ExpenseScreen({ navigation }: any) {
       style={styles.container}
       contentContainerStyle={{ padding: 20 }}
     >
-      <Text style={styles.title}>New Expense</Text>
+      <Text style={styles.title}>{t.expense.title}</Text>
 
-      <Text style={styles.label}>Category</Text>
+      <Text style={styles.label}>{t.expense.category}</Text>
       <View style={styles.categoryRow}>
         {CATEGORIES.map((c) => (
           <TouchableOpacity
@@ -119,7 +118,7 @@ export default function ExpenseScreen({ navigation }: any) {
         ))}
       </View>
 
-      <Text style={styles.label}>Amount (₹)</Text>
+      <Text style={styles.label}>{t.expense.amount}</Text>
       <TextInput
         style={styles.input}
         keyboardType="numeric"
@@ -129,32 +128,34 @@ export default function ExpenseScreen({ navigation }: any) {
         onChangeText={setAmount}
       />
 
-      <Text style={styles.label}>Notes (optional)</Text>
+      <Text style={styles.label}>{t.expense.notesOptional}</Text>
       <TextInput
         style={styles.input}
-        placeholder="e.g. Diesel refill at Andheri depot"
+        placeholder={t.expense.notesPlaceholder}
         placeholderTextColor={colors.textSecondary}
         value={description}
         onChangeText={setDescription}
       />
 
-      <Text style={styles.label}>Receipt photo (optional)</Text>
+      <Text style={styles.label}>{t.expense.receiptPhotoOptional}</Text>
       <View style={styles.receiptRow}>
         <TouchableOpacity
           style={styles.receiptButton}
           onPress={() => pickReceipt(true)}
         >
-          <Text style={styles.receiptButtonText}>Take Photo</Text>
+          <Text style={styles.receiptButtonText}>{t.expense.takePhoto}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.receiptButton}
           onPress={() => pickReceipt(false)}
         >
-          <Text style={styles.receiptButtonText}>Choose from Gallery</Text>
+          <Text style={styles.receiptButtonText}>
+            {t.expense.chooseFromGallery}
+          </Text>
         </TouchableOpacity>
       </View>
       {receiptUri && (
-        <Text style={styles.receiptAttached}>Receipt attached ✓</Text>
+        <Text style={styles.receiptAttached}>{t.expense.receiptAttached}</Text>
       )}
 
       <TouchableOpacity
@@ -163,7 +164,7 @@ export default function ExpenseScreen({ navigation }: any) {
         disabled={saving}
       >
         <Text style={styles.saveButtonText}>
-          {saving ? 'Saving…' : 'Save Expense'}
+          {saving ? t.common.saving : t.expense.save}
         </Text>
       </TouchableOpacity>
     </ScrollView>

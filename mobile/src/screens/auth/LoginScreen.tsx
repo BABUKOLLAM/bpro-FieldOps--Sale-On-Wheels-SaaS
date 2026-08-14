@@ -9,10 +9,12 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useAuth } from '../../auth/AuthContext';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [username, setUsername] = useState('agent@demo.local');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export default function LoginScreen() {
     try {
       await login(username, password);
     } catch (e) {
-      setError('Invalid username or password.');
+      setError(t.login.invalidCredentials);
     } finally {
       setLoading(false);
     }
@@ -36,12 +38,12 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Text style={styles.title}>bpro FieldOps</Text>
-      <Text style={styles.subtitle}>Field agent sign in</Text>
+      <Text style={styles.subtitle}>{t.login.subtitle}</Text>
 
       <TextInput
         testID="username-input"
         style={styles.input}
-        placeholder="Username"
+        placeholder={t.login.usernamePlaceholder}
         placeholderTextColor={colors.textSecondary}
         autoCapitalize="none"
         textContentType="username"
@@ -52,7 +54,7 @@ export default function LoginScreen() {
       <TextInput
         testID="password-input"
         style={styles.input}
-        placeholder="Password"
+        placeholder={t.login.passwordPlaceholder}
         placeholderTextColor={colors.textSecondary}
         secureTextEntry
         textContentType="password"
@@ -71,7 +73,7 @@ export default function LoginScreen() {
         {loading ? (
           <ActivityIndicator color={colors.onPrimary} />
         ) : (
-          <Text style={styles.buttonText}>Sign In</Text>
+          <Text style={styles.buttonText}>{t.login.signIn}</Text>
         )}
       </TouchableOpacity>
     </KeyboardAvoidingView>

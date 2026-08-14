@@ -21,6 +21,7 @@ import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
 import { startTracking, stopTracking } from '../../sync/locationTracking';
 import { getCurrentLocation } from '../../location/geo';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 type Stop = {
@@ -35,6 +36,7 @@ type Stop = {
  * first with sync_status=pending, then pushed opportunistically.
  */
 export default function TripScreen() {
+  const { t } = useTranslation();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [stops, setStops] = useState<Stop[]>([]);
   const [odometer, setOdometer] = useState('');
@@ -144,7 +146,7 @@ export default function TripScreen() {
       });
     });
     setOdometer('');
-    Alert.alert('Trip ended', 'Saved offline and will sync automatically.');
+    Alert.alert(t.trip.tripEndedTitle, t.trip.tripEndedBody);
     await load();
     synchronize().catch(() => {});
   }
@@ -187,17 +189,17 @@ export default function TripScreen() {
   if (!trip) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Start your trip</Text>
+        <Text style={styles.title}>{t.trip.startTitle}</Text>
         <TextInput
           style={styles.input}
           keyboardType="numeric"
-          placeholder="Starting odometer reading"
+          placeholder={t.trip.odometerStartPlaceholder}
           placeholderTextColor={colors.textSecondary}
           value={odometer}
           onChangeText={setOdometer}
         />
         <TouchableOpacity style={styles.primaryButton} onPress={startTrip}>
-          <Text style={styles.startButtonText}>Start Trip</Text>
+          <Text style={styles.startButtonText}>{t.trip.startTrip}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -205,9 +207,10 @@ export default function TripScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Trip in progress</Text>
+      <Text style={styles.title}>{t.trip.inProgressTitle}</Text>
       <Text style={styles.subtitle}>
-        Started at odometer {trip.startOdometer}
+        {t.trip.startedAtOdometerPrefix}
+        {trip.startOdometer}
       </Text>
 
       <FlatList
@@ -215,10 +218,10 @@ export default function TripScreen() {
         keyExtractor={(s) => s.beatCustomer.id}
         renderItem={({ item }) => {
           const status = !item.checkpoint
-            ? 'Not visited'
+            ? t.trip.notVisited
             : !item.checkpoint.checkOutTime
-            ? 'Checked in'
-            : 'Checked out';
+            ? t.trip.checkedIn
+            : t.trip.checkedOut;
           return (
             <TouchableOpacity
               style={styles.stopRow}
@@ -234,13 +237,13 @@ export default function TripScreen() {
       <TextInput
         style={styles.input}
         keyboardType="numeric"
-        placeholder="Ending odometer reading"
+        placeholder={t.trip.odometerEndPlaceholder}
         placeholderTextColor={colors.textSecondary}
         value={odometer}
         onChangeText={setOdometer}
       />
       <TouchableOpacity style={styles.endButton} onPress={endTrip}>
-        <Text style={styles.endButtonText}>End Trip</Text>
+        <Text style={styles.endButtonText}>{t.trip.endTrip}</Text>
       </TouchableOpacity>
     </View>
   );

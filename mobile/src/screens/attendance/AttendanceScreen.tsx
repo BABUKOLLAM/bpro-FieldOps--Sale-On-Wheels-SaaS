@@ -16,6 +16,7 @@ import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
 import { apiPostJson, ApiError } from '../../api/client';
 import { getCurrentLocation } from '../../location/geo';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 /**
@@ -31,6 +32,7 @@ import { colors } from '../../theme/colors';
  * database.
  */
 export default function AttendanceScreen() {
+  const { t } = useTranslation();
   const [record, setRecord] = useState<Attendance | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -95,14 +97,12 @@ export default function AttendanceScreen() {
         });
       });
       await load();
-      Alert.alert('Checked out', 'Have a good day!');
+      Alert.alert(t.attendance.checkedOutTitle, t.attendance.checkedOutBody);
     } catch (err) {
       const isOffline = !(err instanceof ApiError);
       Alert.alert(
-        'Could not check out',
-        isOffline
-          ? 'You appear to be offline. Check-out needs a connection — try again once you’re back online.'
-          : 'Something went wrong. Please try again.'
+        t.attendance.checkOutFailTitle,
+        isOffline ? t.attendance.offlineBody : t.attendance.genericFailBody
       );
     } finally {
       setCheckingOut(false);
@@ -113,14 +113,16 @@ export default function AttendanceScreen() {
     <View style={styles.container}>
       {record ? (
         <>
-          <Text style={styles.title}>Checked in</Text>
+          <Text style={styles.title}>{t.attendance.checkedInTitle}</Text>
           <Text style={styles.subtitle}>
-            Since{' '}
+            {t.attendance.sinceLabelPrefix}
             {new Date(record.checkInAt).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
             })}
-            {record.localSyncStatus === SYNC_PENDING ? ' · syncing…' : ''}
+            {record.localSyncStatus === SYNC_PENDING
+              ? t.attendance.syncingSuffix
+              : ''}
           </Text>
           <TouchableOpacity
             style={styles.checkOutButton}
@@ -130,16 +132,17 @@ export default function AttendanceScreen() {
             {checkingOut ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.checkOutButtonText}>Check Out</Text>
+              <Text style={styles.checkOutButtonText}>
+                {t.attendance.checkOut}
+              </Text>
             )}
           </TouchableOpacity>
         </>
       ) : (
         <>
-          <Text style={styles.title}>Not checked in</Text>
+          <Text style={styles.title}>{t.attendance.notCheckedInTitle}</Text>
           <Text style={styles.subtitle}>
-            Start your day by checking in — your location is captured for
-            attendance verification.
+            {t.attendance.notCheckedInSubtitle}
           </Text>
           <TouchableOpacity
             style={styles.checkInButton}
@@ -149,7 +152,9 @@ export default function AttendanceScreen() {
             {loading ? (
               <ActivityIndicator color={colors.onPrimary} />
             ) : (
-              <Text style={styles.checkInButtonText}>Check In</Text>
+              <Text style={styles.checkInButtonText}>
+                {t.attendance.checkIn}
+              </Text>
             )}
           </TouchableOpacity>
         </>
@@ -179,6 +184,10 @@ const styles = StyleSheet.create({
     padding: 18,
     alignItems: 'center',
   },
-  checkInButtonText: { color: colors.onPrimary, fontSize: 17, fontWeight: '700' },
+  checkInButtonText: {
+    color: colors.onPrimary,
+    fontSize: 17,
+    fontWeight: '700',
+  },
   checkOutButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
 });

@@ -23,6 +23,7 @@ import CreditNote, {
 } from '../../db/models/CreditNote';
 import CreditNoteLine from '../../db/models/CreditNoteLine';
 import { synchronize } from '../../sync/synchronize';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 /**
@@ -33,19 +34,6 @@ import { colors } from '../../theme/colors';
  * offered: the backend's finalize_credit_note posts against the parent
  * invoice, so it must exist server-side before the return can apply.
  */
-const CONDITIONS: { value: string; label: string }[] = [
-  { value: CONDITION_SELLABLE, label: 'Sellable' },
-  { value: CONDITION_DAMAGED, label: 'Damaged' },
-  { value: CONDITION_EXPIRED, label: 'Expired' },
-];
-
-const REASONS: { value: string; label: string }[] = [
-  { value: 'damaged_in_transit', label: 'Damaged in transit' },
-  { value: 'expired_stock', label: 'Expired' },
-  { value: 'wrong_item', label: 'Wrong item' },
-  { value: 'customer_rejection', label: 'Customer rejected' },
-];
-
 type ReturnLine = {
   invoiceLine: InvoiceLine;
   itemName: string;
@@ -54,6 +42,18 @@ type ReturnLine = {
 };
 
 export default function ReturnScreen({ navigation }: any) {
+  const { t } = useTranslation();
+  const CONDITIONS: { value: string; label: string }[] = [
+    { value: CONDITION_SELLABLE, label: t.return.sellable },
+    { value: CONDITION_DAMAGED, label: t.return.damaged },
+    { value: CONDITION_EXPIRED, label: t.return.expired },
+  ];
+  const REASONS: { value: string; label: string }[] = [
+    { value: 'damaged_in_transit', label: t.return.reasonDamagedInTransit },
+    { value: 'expired_stock', label: t.return.reasonExpired },
+    { value: 'wrong_item', label: t.return.reasonWrongItem },
+    { value: 'customer_rejection', label: t.return.reasonCustomerRejection },
+  ];
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [customerNames, setCustomerNames] = useState<Record<string, string>>(
     {}
@@ -106,18 +106,18 @@ export default function ReturnScreen({ navigation }: any) {
 
   async function handleSave() {
     if (!selected) {
-      Alert.alert('Select an invoice first.');
+      Alert.alert(t.return.selectInvoice);
       return;
     }
     const returning = lines.filter((l) => Number(l.qty) > 0);
     if (returning.length === 0) {
-      Alert.alert('Enter a returned quantity for at least one line.');
+      Alert.alert(t.return.enterQty);
       return;
     }
     const overReturn = returning.find((l) => Number(l.qty) > l.invoiceLine.qty);
     if (overReturn) {
       Alert.alert(
-        `Can't return more than the ${overReturn.invoiceLine.qty} originally sold of ${overReturn.itemName}.`
+        `${t.return.overReturnPrefix} ${overReturn.invoiceLine.qty} ${t.return.overReturnMiddle} ${overReturn.itemName}.`
       );
       return;
     }
@@ -157,11 +157,9 @@ export default function ReturnScreen({ navigation }: any) {
         }
       });
 
-      Alert.alert(
-        'Return saved',
-        'Saved offline. It will sync automatically once you’re online.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert(t.return.saved, t.common.savedOfflineBody, [
+        { text: t.common.ok, onPress: () => navigation.goBack() },
+      ]);
       synchronize().catch(() => {});
     } finally {
       setSaving(false);
@@ -175,14 +173,11 @@ export default function ReturnScreen({ navigation }: any) {
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
     >
-      <Text style={styles.title}>New Return</Text>
+      <Text style={styles.title}>{t.return.title}</Text>
 
-      <Text style={styles.label}>Invoice</Text>
+      <Text style={styles.label}>{t.return.invoice}</Text>
       {invoices.length === 0 && (
-        <Text style={styles.emptyText}>
-          No synced invoices to return against yet — a return needs its original
-          sale to have synced first.
-        </Text>
+        <Text style={styles.emptyText}>{t.return.noInvoices}</Text>
       )}
       {invoices.map((inv) => (
         <TouchableOpacity
@@ -191,7 +186,7 @@ export default function ReturnScreen({ navigation }: any) {
           onPress={() => pickInvoice(inv)}
         >
           <Text style={styles.pickName}>
-            {customerNames[inv.customerServerId] || 'Unknown customer'}
+            {customerNames[inv.customerServerId] || t.return.unknownCustomer}
           </Text>
           <Text style={styles.pickMeta}>
             {inv.invoiceDate} · ₹{inv.grandTotal}
@@ -201,14 +196,15 @@ export default function ReturnScreen({ navigation }: any) {
 
       {selected && (
         <>
-          <Text style={styles.label}>Returned items</Text>
+          <Text style={styles.label}>{t.return.returnedItems}</Text>
           {lines.map((line, index) => (
             <View key={line.invoiceLine.id} style={styles.lineCard}>
               <View style={styles.lineHeader}>
                 <View style={styles.lineInfo}>
                   <Text style={styles.itemName}>{line.itemName}</Text>
                   <Text style={styles.itemMeta}>
-                    Sold {line.invoiceLine.qty} · ₹{line.invoiceLine.rate}
+                    {t.return.soldPrefix}
+                    {line.invoiceLine.qty} · ₹{line.invoiceLine.rate}
                   </Text>
                 </View>
                 <TextInput
@@ -247,7 +243,7 @@ export default function ReturnScreen({ navigation }: any) {
             </View>
           ))}
 
-          <Text style={styles.label}>Reason</Text>
+          <Text style={styles.label}>{t.return.reason}</Text>
           <View style={styles.chipRow}>
             {REASONS.map((r) => (
               <TouchableOpacity
@@ -273,7 +269,7 @@ export default function ReturnScreen({ navigation }: any) {
             disabled={saving}
           >
             <Text style={styles.saveButtonText}>
-              {saving ? 'Saving…' : 'Save Return'}
+              {saving ? t.common.saving : t.return.save}
             </Text>
           </TouchableOpacity>
         </>

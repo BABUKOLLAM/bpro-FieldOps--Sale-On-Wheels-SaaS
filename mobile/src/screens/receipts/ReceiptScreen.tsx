@@ -21,6 +21,7 @@ import Receipt, {
 } from '../../db/models/Receipt';
 import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 /**
@@ -31,14 +32,14 @@ import { colors } from '../../theme/colors';
  * allocating against specific invoices needs outstanding invoices in
  * the pull payload first (see the receipts table note in db/schema.ts).
  */
-const MODES: { value: string; label: string }[] = [
-  { value: MODE_CASH, label: 'Cash' },
-  { value: MODE_CHEQUE, label: 'Cheque' },
-  { value: MODE_UPI, label: 'UPI' },
-  { value: MODE_CARD, label: 'Card' },
-];
-
 export default function ReceiptScreen({ navigation }: any) {
+  const { t } = useTranslation();
+  const MODES: { value: string; label: string }[] = [
+    { value: MODE_CASH, label: t.receipt.modeCash },
+    { value: MODE_CHEQUE, label: t.receipt.modeCheque },
+    { value: MODE_UPI, label: t.receipt.modeUpi },
+    { value: MODE_CARD, label: t.receipt.modeCard },
+  ];
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [mode, setMode] = useState(MODE_CASH);
@@ -60,16 +61,16 @@ export default function ReceiptScreen({ navigation }: any) {
 
   async function handleSave() {
     if (!selected) {
-      Alert.alert('Select a customer first.');
+      Alert.alert(t.receipt.selectCustomer);
       return;
     }
     const numericAmount = Number(amount);
     if (!numericAmount || numericAmount <= 0) {
-      Alert.alert('Enter a valid amount.');
+      Alert.alert(t.receipt.invalidAmount);
       return;
     }
     if (mode !== MODE_CASH && !referenceNo.trim()) {
-      Alert.alert('Enter the cheque no / transaction reference.');
+      Alert.alert(t.receipt.enterReference);
       return;
     }
 
@@ -98,11 +99,9 @@ export default function ReceiptScreen({ navigation }: any) {
         });
       });
 
-      Alert.alert(
-        'Collection saved',
-        'Saved offline. It will sync automatically once you’re online.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert(t.receipt.saved, t.common.savedOfflineBody, [
+        { text: t.common.ok, onPress: () => navigation.goBack() },
+      ]);
       synchronize().catch(() => {});
     } finally {
       setSaving(false);
@@ -121,13 +120,11 @@ export default function ReceiptScreen({ navigation }: any) {
       // clear the keyboard (a scroll) before tapping Save.
       keyboardDismissMode="on-drag"
     >
-      <Text style={styles.title}>New Collection</Text>
+      <Text style={styles.title}>{t.receipt.title}</Text>
 
-      <Text style={styles.label}>Customer</Text>
+      <Text style={styles.label}>{t.receipt.customer}</Text>
       {customers.length === 0 && (
-        <Text style={styles.emptyText}>
-          No customers synced yet — pull to sync from the home screen first.
-        </Text>
+        <Text style={styles.emptyText}>{t.receipt.noCustomers}</Text>
       )}
       {customers.map((c) => (
         <TouchableOpacity
@@ -140,12 +137,13 @@ export default function ReceiptScreen({ navigation }: any) {
         >
           <Text style={styles.customerName}>{c.name}</Text>
           <Text style={styles.customerMeta}>
-            Outstanding ₹{c.outstandingBalance}
+            {t.common.outstandingPrefix}
+            {c.outstandingBalance}
           </Text>
         </TouchableOpacity>
       ))}
 
-      <Text style={styles.label}>Payment mode</Text>
+      <Text style={styles.label}>{t.receipt.paymentMode}</Text>
       <View style={styles.modeRow}>
         {MODES.map((m) => (
           <TouchableOpacity
@@ -165,7 +163,7 @@ export default function ReceiptScreen({ navigation }: any) {
         ))}
       </View>
 
-      <Text style={styles.label}>Amount (₹)</Text>
+      <Text style={styles.label}>{t.receipt.amount}</Text>
       <TextInput
         testID="receipt-amount-input"
         style={styles.input}
@@ -179,11 +177,17 @@ export default function ReceiptScreen({ navigation }: any) {
       {mode !== MODE_CASH && (
         <>
           <Text style={styles.label}>
-            {mode === MODE_CHEQUE ? 'Cheque number' : 'Transaction reference'}
+            {mode === MODE_CHEQUE
+              ? t.receipt.chequeNumber
+              : t.receipt.transactionReference}
           </Text>
           <TextInput
             style={styles.input}
-            placeholder={mode === MODE_CHEQUE ? 'e.g. 000123' : 'e.g. UPI ref'}
+            placeholder={
+              mode === MODE_CHEQUE
+                ? t.receipt.chequePlaceholder
+                : t.receipt.upiRefPlaceholder
+            }
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="characters"
             value={referenceNo}
@@ -198,7 +202,7 @@ export default function ReceiptScreen({ navigation }: any) {
         disabled={saving}
       >
         <Text style={styles.saveButtonText}>
-          {saving ? 'Saving…' : 'Save Collection'}
+          {saving ? t.common.saving : t.receipt.save}
         </Text>
       </TouchableOpacity>
     </ScrollView>

@@ -31,6 +31,7 @@ import { synchronize } from '../../sync/synchronize';
 import { apiPostJson } from '../../api/client';
 import { buildReceiptText } from '../../printing/receiptText';
 import { printReceipt } from '../../printing/bluetoothPrinter';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 import {
   getCompanyConfig,
@@ -50,6 +51,7 @@ type CartLine = { item: Item; rate: number; qty: string };
  * (see apps.sales.services.recompute_invoice on the backend).
  */
 export default function SpotBillingScreen({ route, navigation }: any) {
+  const { t } = useTranslation();
   const { customerServerId } = route.params || {};
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -130,7 +132,10 @@ export default function SpotBillingScreen({ route, navigation }: any) {
       .fetch();
     const item = matches[0];
     if (!item) {
-      Alert.alert('Item not found', `No item matches barcode ${code}.`);
+      Alert.alert(
+        t.spotBilling.itemNotFoundTitle,
+        `${t.spotBilling.itemNotFoundBodyPrefix} ${code}.`
+      );
       return;
     }
     const currentQty = Number(cart[item.serverId]?.qty || '0');
@@ -159,8 +164,8 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   function handleShowUpiQr() {
     if (!upiUri) {
       Alert.alert(
-        'UPI not configured',
-        'No UPI ID has been set up for this deployment yet — ask your admin to add one in Master Settings.'
+        t.spotBilling.upiNotConfiguredTitle,
+        t.spotBilling.upiNotConfiguredBody
       );
       return;
     }
@@ -169,11 +174,11 @@ export default function SpotBillingScreen({ route, navigation }: any) {
 
   async function handleSave() {
     if (!customer) {
-      Alert.alert('Select a customer first.');
+      Alert.alert(t.spotBilling.selectCustomer);
       return;
     }
     if (cartLines.length === 0) {
-      Alert.alert('Add at least one item.');
+      Alert.alert(t.spotBilling.addAtLeastOneItem);
       return;
     }
 
@@ -193,8 +198,8 @@ export default function SpotBillingScreen({ route, navigation }: any) {
 
       if (!godownServerId || !defaultGst) {
         Alert.alert(
-          'Missing setup data',
-          'Sync at least once before billing so van stock and GST setup are available offline.'
+          t.spotBilling.missingSetupTitle,
+          t.spotBilling.missingSetupBody
         );
         setSaving(false);
         return;
@@ -276,9 +281,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
       );
       setOtpStep('entering');
     } catch {
-      setOtpError(
-        'Could not send OTP — needs an internet connection. Use signature instead, or try again.'
-      );
+      setOtpError(t.spotBilling.couldNotSendOtp);
       setOtpStep('closed');
     }
   }
@@ -296,7 +299,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
       );
       navigation.goBack();
     } catch (err: any) {
-      setOtpError(err?.body?.detail || 'Incorrect or expired OTP.');
+      setOtpError(err?.body?.detail || t.spotBilling.incorrectOtp);
       setOtpStep('entering');
     }
   }
@@ -333,9 +336,8 @@ export default function SpotBillingScreen({ route, navigation }: any) {
       await printReceipt(currentReceiptText());
     } catch (err: any) {
       Alert.alert(
-        'Print failed',
-        err?.message ||
-          'Could not print — check the printer is paired and powered on.'
+        t.spotBilling.printFailedTitle,
+        err?.message || t.spotBilling.printFailedFallbackBody
       );
     } finally {
       setPrinting(false);
@@ -356,7 +358,9 @@ export default function SpotBillingScreen({ route, navigation }: any) {
           style={styles.cancelScanButton}
           onPress={() => setScanning(false)}
         >
-          <Text style={styles.cancelScanButtonText}>Cancel</Text>
+          <Text style={styles.cancelScanButtonText}>
+            {t.spotBilling.cancel}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -365,12 +369,11 @@ export default function SpotBillingScreen({ route, navigation }: any) {
   if (savedInvoice && otpStep !== 'closed') {
     return (
       <View style={styles.container}>
-        <Text style={styles.customerName}>Confirm via OTP</Text>
+        <Text style={styles.customerName}>{t.spotBilling.confirmOtpTitle}</Text>
         <Text style={styles.customerMeta}>
-          {otpStep === 'sending' &&
-            'Sending OTP to the customer’s registered phone…'}
+          {otpStep === 'sending' && t.spotBilling.sendingOtp}
           {(otpStep === 'entering' || otpStep === 'verifying') &&
-            'Enter the 6-digit code sent to the customer.'}
+            t.spotBilling.enterOtp}
         </Text>
         {otpError && <Text style={styles.otpError}>{otpError}</Text>}
         {(otpStep === 'entering' || otpStep === 'verifying') && (
@@ -390,7 +393,9 @@ export default function SpotBillingScreen({ route, navigation }: any) {
               disabled={otpStep === 'verifying' || otpCode.length !== 6}
             >
               <Text style={styles.tripButtonLikeText}>
-                {otpStep === 'verifying' ? 'Verifying…' : 'Verify OTP'}
+                {otpStep === 'verifying'
+                  ? t.spotBilling.verifying
+                  : t.spotBilling.verifyOtp}
               </Text>
             </TouchableOpacity>
           </>
@@ -399,7 +404,9 @@ export default function SpotBillingScreen({ route, navigation }: any) {
           style={styles.skipButton}
           onPress={() => setOtpStep('closed')}
         >
-          <Text style={styles.skipButtonText}>Back to signature</Text>
+          <Text style={styles.skipButtonText}>
+            {t.spotBilling.backToSignature}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -409,30 +416,37 @@ export default function SpotBillingScreen({ route, navigation }: any) {
     return (
       <View style={styles.container}>
         <Text style={styles.customerName}>
-          Invoice saved — capture signature
+          {t.spotBilling.invoiceSavedTitle}
         </Text>
         <Text style={styles.customerMeta}>
-          Optional proof of delivery (FR-12). Skip if not needed.
+          {t.spotBilling.proofOfDeliveryNote}
         </Text>
         <View style={{ flex: 1 }}>
           <SignatureScreen
             onOK={handleSignatureCaptured}
             onEmpty={() =>
-              Alert.alert('Nothing to save', 'Draw a signature first, or skip.')
+              Alert.alert(
+                t.spotBilling.nothingToSaveTitle,
+                t.spotBilling.nothingToSaveBody
+              )
             }
-            descriptionText="Sign to confirm delivery"
+            descriptionText={t.spotBilling.signDescription}
           />
         </View>
         {otpError && <Text style={styles.otpError}>{otpError}</Text>}
         <TouchableOpacity style={styles.tripButtonLike} onPress={handleSendOtp}>
-          <Text style={styles.tripButtonLikeText}>Confirm via OTP instead</Text>
+          <Text style={styles.tripButtonLikeText}>
+            {t.spotBilling.confirmViaOtpInstead}
+          </Text>
         </TouchableOpacity>
         <View style={styles.receiptActionsRow}>
           <TouchableOpacity
             style={styles.receiptActionButton}
             onPress={handleShareReceipt}
           >
-            <Text style={styles.receiptActionButtonText}>Share Receipt</Text>
+            <Text style={styles.receiptActionButtonText}>
+              {t.spotBilling.shareReceipt}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.receiptActionButton}
@@ -440,21 +454,27 @@ export default function SpotBillingScreen({ route, navigation }: any) {
             disabled={printing}
           >
             <Text style={styles.receiptActionButtonText}>
-              {printing ? 'Printing…' : 'Print via Bluetooth'}
+              {printing
+                ? t.spotBilling.printing
+                : t.spotBilling.printViaBluetooth}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.receiptActionButton}
             onPress={handleShowUpiQr}
           >
-            <Text style={styles.receiptActionButtonText}>Collect via UPI</Text>
+            <Text style={styles.receiptActionButtonText}>
+              {t.spotBilling.collectViaUpi}
+            </Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity
           style={styles.skipButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.skipButtonText}>Skip signature</Text>
+          <Text style={styles.skipButtonText}>
+            {t.spotBilling.skipSignature}
+          </Text>
         </TouchableOpacity>
 
         <Modal
@@ -465,21 +485,26 @@ export default function SpotBillingScreen({ route, navigation }: any) {
         >
           <View style={styles.qrModalBackdrop}>
             <View style={styles.qrModalCard}>
-              <Text style={styles.customerName}>Scan to pay via UPI</Text>
+              <Text style={styles.customerName}>
+                {t.spotBilling.scanToPayUpi}
+              </Text>
               {upiUri && (
                 <View style={styles.qrCodeWrapper}>
                   <QRCode value={upiUri} size={220} />
                 </View>
               )}
               <Text style={styles.customerMeta}>
-                ₹{savedInvoice.grandTotal.toFixed(2)} to{' '}
+                ₹{savedInvoice.grandTotal.toFixed(2)}{' '}
+                {t.spotBilling.payToPrefix}{' '}
                 {companyConfig?.displayName || companyConfig?.legalName}
               </Text>
               <TouchableOpacity
                 style={styles.tripButtonLike}
                 onPress={() => setShowUpiQr(false)}
               >
-                <Text style={styles.tripButtonLikeText}>Done</Text>
+                <Text style={styles.tripButtonLikeText}>
+                  {t.spotBilling.done}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -513,11 +538,12 @@ export default function SpotBillingScreen({ route, navigation }: any) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Text style={styles.customerName}>
-          {customer ? customer.name : 'No customer selected'}
+          {customer ? customer.name : t.spotBilling.noCustomerSelected}
         </Text>
         {customer && (
           <Text style={styles.customerMeta}>
-            Outstanding ₹{customer.outstandingBalance} · {customer.creditStatus}
+            {t.spotBilling.outstandingPrefix}
+            {customer.outstandingBalance} · {customer.creditStatus}
           </Text>
         )}
 
@@ -525,7 +551,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
           style={styles.scanButton}
           onPress={() => setScanning(true)}
         >
-          <Text style={styles.scanButtonText}>Scan Barcode</Text>
+          <Text style={styles.scanButtonText}>{t.spotBilling.scanBarcode}</Text>
         </TouchableOpacity>
 
         <FlatList
@@ -568,10 +594,11 @@ export default function SpotBillingScreen({ route, navigation }: any) {
             <>
               <View style={styles.summary}>
                 <Text style={styles.summaryText}>
-                  Estimated total: ₹{estimatedTotal.toFixed(2)}
+                  {t.spotBilling.estimatedTotalPrefix}
+                  {estimatedTotal.toFixed(2)}
                 </Text>
                 <Text style={styles.summaryNote}>
-                  Final GST/discount recomputed by the server at sync.
+                  {t.spotBilling.finalGstNote}
                 </Text>
               </View>
 
@@ -581,7 +608,7 @@ export default function SpotBillingScreen({ route, navigation }: any) {
                 disabled={saving}
               >
                 <Text style={styles.saveButtonText}>
-                  {saving ? 'Saving…' : 'Save Invoice'}
+                  {saving ? t.common.saving : t.spotBilling.save}
                 </Text>
               </TouchableOpacity>
             </>

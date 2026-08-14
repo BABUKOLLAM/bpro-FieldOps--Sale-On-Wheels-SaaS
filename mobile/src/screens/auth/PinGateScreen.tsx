@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { usePinLock } from '../../auth/PinLock';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 const PIN_LENGTH = 4;
@@ -11,6 +12,7 @@ const PIN_LENGTH = 4;
  * Biometric unlock (offered below the pad once a PIN exists) is a
  * convenience layered on the same underlying secret — see auth/PinLock. */
 export default function PinGateScreen() {
+  const { t } = useTranslation();
   const {
     hasPinSet,
     initError,
@@ -48,18 +50,18 @@ export default function PinGateScreen() {
         } else if (next === firstEntry) {
           await setPin(next);
         } else {
-          setError('PINs did not match. Try again.');
+          setError(t.pinGate.pinMismatch);
           resetPinSetup();
         }
       } else {
         const ok = await unlockWithPin(next);
         if (!ok) {
-          setError('Incorrect PIN.');
+          setError(t.pinGate.incorrectPin);
           setEntry('');
         }
       }
     } catch {
-      setError('Something went wrong. Try again.');
+      setError(t.pinGate.genericError);
       resetPinSetup();
     }
   }
@@ -71,13 +73,10 @@ export default function PinGateScreen() {
   if (initError) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Unable to verify PIN status</Text>
-        <Text style={styles.error}>
-          The device's secure storage couldn't be read. This can happen right
-          after a restart, before the device is unlocked once.
-        </Text>
+        <Text style={styles.title}>{t.pinGate.errorTitle}</Text>
+        <Text style={styles.error}>{t.pinGate.errorBody}</Text>
         <TouchableOpacity style={styles.biometricButton} onPress={retryInit}>
-          <Text style={styles.biometricText}>Retry</Text>
+          <Text style={styles.biometricText}>{t.pinGate.retry}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -85,9 +84,9 @@ export default function PinGateScreen() {
 
   const title = !hasPinSet
     ? confirmStage
-      ? 'Confirm your PIN'
-      : 'Set a device PIN'
-    : 'Enter your PIN';
+      ? t.pinGate.confirmTitle
+      : t.pinGate.setupTitle
+    : t.pinGate.unlockTitle;
 
   return (
     <View style={styles.container}>
@@ -127,7 +126,9 @@ export default function PinGateScreen() {
           style={styles.biometricButton}
           onPress={unlockWithBiometrics}
         >
-          <Text style={styles.biometricText}>Use {biometryType}</Text>
+          <Text style={styles.biometricText}>
+            {t.pinGate.useBiometricPrefix} {biometryType}
+          </Text>
         </TouchableOpacity>
       )}
     </View>

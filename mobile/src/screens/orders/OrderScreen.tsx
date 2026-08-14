@@ -19,6 +19,7 @@ import SalesOrder from '../../db/models/SalesOrder';
 import SalesOrderLine from '../../db/models/SalesOrderLine';
 import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
 
 /**
@@ -28,6 +29,7 @@ import { colors } from '../../theme/colors';
  * nothing moves until the back office fulfils the order.
  */
 export default function OrderScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -74,11 +76,11 @@ export default function OrderScreen({ navigation }: any) {
 
   async function handleSave() {
     if (!selected) {
-      Alert.alert('Select a customer first.');
+      Alert.alert(t.order.selectCustomer);
       return;
     }
     if (orderLines.length === 0) {
-      Alert.alert('Enter a quantity for at least one item.');
+      Alert.alert(t.order.enterQty);
       return;
     }
 
@@ -115,11 +117,9 @@ export default function OrderScreen({ navigation }: any) {
         }
       });
 
-      Alert.alert(
-        'Order saved',
-        'Saved offline. It will sync automatically once you’re online.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert(t.order.saved, t.common.savedOfflineBody, [
+        { text: t.common.ok, onPress: () => navigation.goBack() },
+      ]);
       synchronize().catch(() => {});
     } finally {
       setSaving(false);
@@ -135,9 +135,9 @@ export default function OrderScreen({ navigation }: any) {
       // keyboard so Save is reachable (and E2E-deterministic).
       keyboardDismissMode="on-drag"
     >
-      <Text style={styles.title}>New Order</Text>
+      <Text style={styles.title}>{t.order.title}</Text>
 
-      <Text style={styles.label}>Customer</Text>
+      <Text style={styles.label}>{t.order.customer}</Text>
       {customers.map((c) => (
         <TouchableOpacity
           key={c.serverId}
@@ -151,7 +151,7 @@ export default function OrderScreen({ navigation }: any) {
         </TouchableOpacity>
       ))}
 
-      <Text style={styles.label}>Items</Text>
+      <Text style={styles.label}>{t.order.items}</Text>
       {items.map((item) => (
         <View key={item.serverId} style={styles.itemRow}>
           <View style={styles.itemInfo}>
@@ -174,10 +174,10 @@ export default function OrderScreen({ navigation }: any) {
         </View>
       ))}
 
-      <Text style={styles.label}>Notes (optional)</Text>
+      <Text style={styles.label}>{t.order.notesOptional}</Text>
       <TextInput
         style={styles.input}
-        placeholder="e.g. Deliver Friday morning"
+        placeholder={t.order.notesPlaceholder}
         placeholderTextColor={colors.textSecondary}
         value={notes}
         onChangeText={setNotes}
@@ -185,11 +185,10 @@ export default function OrderScreen({ navigation }: any) {
 
       <View style={styles.summary}>
         <Text style={styles.summaryText}>
-          Estimated total: ₹{estimatedTotal.toFixed(2)}
+          {t.order.estimatedTotalPrefix}
+          {estimatedTotal.toFixed(2)}
         </Text>
-        <Text style={styles.summaryNote}>
-          Final pricing/GST applied at fulfilment by the back office.
-        </Text>
+        <Text style={styles.summaryNote}>{t.order.finalPricingNote}</Text>
       </View>
 
       <TouchableOpacity
@@ -198,7 +197,7 @@ export default function OrderScreen({ navigation }: any) {
         disabled={saving}
       >
         <Text style={styles.saveButtonText}>
-          {saving ? 'Saving…' : 'Save Order'}
+          {saving ? t.common.saving : t.order.save}
         </Text>
       </TouchableOpacity>
     </ScrollView>
