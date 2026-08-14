@@ -35,6 +35,8 @@ export type Dictionary = {
     pushed: string;
     failed: string;
     syncFailedMessage: string;
+    notSynced: string;
+    retrySync: string;
     language: string;
   };
   common: {
@@ -79,6 +81,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       pushed: 'pushed',
       failed: 'failed',
       syncFailedMessage: 'Sync failed — will retry automatically.',
+      notSynced: 'not synced yet',
+      retrySync: 'Retry sync',
       language: 'Language',
     },
     common: {
@@ -117,6 +121,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
       pushed: 'भेजे गए',
       failed: 'विफल',
       syncFailedMessage: 'सिंक विफल — यह अपने आप फिर से कोशिश करेगा।',
+      notSynced: 'सिंक नहीं हुए',
+      retrySync: 'फिर से सिंक करें',
       language: 'भाषा',
     },
     common: {

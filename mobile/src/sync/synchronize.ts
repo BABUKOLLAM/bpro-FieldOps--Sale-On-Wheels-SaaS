@@ -209,10 +209,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
         rate: l.rate,
       })),
     };
-    const ok = await pushItem('invoice', payload);
+    const { ok, error } = await pushItem('invoice', payload);
     await database.write(async () => {
       await invoice.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -246,10 +247,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       end_latitude: trip.endLatitude ?? null,
       end_longitude: trip.endLongitude ?? null,
     };
-    const ok = await pushItem('trip', payload);
+    const { ok, error } = await pushItem('trip', payload);
     await database.write(async () => {
       await trip.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -279,7 +281,7 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       continue;
     }
 
-    const cpOk = await pushItem('trip_checkpoint', {
+    const { ok: cpOk, error: cpError } = await pushItem('trip_checkpoint', {
       id: checkpoint.serverId,
       trip: parentTrip.serverId,
       customer: checkpoint.customerServerId,
@@ -297,6 +299,7 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
     await database.write(async () => {
       await checkpoint.update((rec) => {
         rec.localSyncStatus = cpOk ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = cpOk ? '' : cpError || rec.syncError;
       });
     });
     cpOk ? pushed++ : failed++;
@@ -319,10 +322,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
         ? new Date(expense.deviceCreatedAt).toISOString()
         : null,
     };
-    const ok = await pushItem('expense', payload);
+    const { ok, error } = await pushItem('expense', payload);
     await database.write(async () => {
       await expense.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -347,10 +351,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       // (needs outstanding invoices in the pull payload first).
       allocations: [],
     };
-    const ok = await pushItem('receipt', payload);
+    const { ok, error } = await pushItem('receipt', payload);
     await database.write(async () => {
       await receipt.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -375,10 +380,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
         rate: l.rate,
       })),
     };
-    const ok = await pushItem('sales_order', payload);
+    const { ok, error } = await pushItem('sales_order', payload);
     await database.write(async () => {
       await order.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -405,10 +411,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
         condition: l.condition,
       })),
     };
-    const ok = await pushItem('credit_note', payload);
+    const { ok, error } = await pushItem('credit_note', payload);
     await database.write(async () => {
       await note.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -427,10 +434,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
       longitude: ping.longitude,
       recorded_at: new Date(ping.recordedAt).toISOString(),
     };
-    const ok = await pushItem('location_ping', payload);
+    const { ok, error } = await pushItem('location_ping', payload);
     await database.write(async () => {
       await ping.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -457,10 +465,11 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
         ? new Date(record.deviceCreatedAt).toISOString()
         : null,
     };
-    const ok = await pushItem('attendance', payload);
+    const { ok, error } = await pushItem('attendance', payload);
     await database.write(async () => {
       await record.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+        rec.syncError = ok ? '' : error || rec.syncError;
       });
     });
     ok ? pushed++ : failed++;
@@ -541,22 +550,32 @@ async function uploadPendingAttachments(): Promise<void> {
   }
 }
 
+/** Returns the backend's rejection reason on failure so callers can
+ * store it in the record's sync_error — that's what the home screen's
+ * sync-failure banner shows the salesman. An empty error with ok=false
+ * means a network-level failure (offline/timeout), which is transient
+ * by nature and shouldn't overwrite a real validation message. */
 async function pushItem(
   entityType: string,
   payload: unknown
-): Promise<boolean> {
+): Promise<{ ok: boolean; error: string }> {
   try {
     const response = await apiFetch('/api/sync/push/', {
       method: 'POST',
       body: JSON.stringify({ items: [{ entity_type: entityType, payload }] }),
     });
     if (!response.ok) {
-      return false;
+      return { ok: false, error: `Server error (HTTP ${response.status})` };
     }
     const data = await response.json();
-    return data.results?.[0]?.status === 'applied';
+    const result = data.results?.[0];
+    if (result?.status === 'applied') {
+      return { ok: true, error: '' };
+    }
+    return { ok: false, error: result?.error || 'Rejected by server' };
   } catch {
-    return false; // stays pending; picked up by the next sync attempt
+    // Network-level failure — stays pending; picked up by the next sync.
+    return { ok: false, error: '' };
   }
 }
 

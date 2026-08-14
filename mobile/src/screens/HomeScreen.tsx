@@ -31,6 +31,10 @@ export default function HomeScreen({ navigation }: any) {
   const [checkedIn, setCheckedIn] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [syncFailures, setSyncFailures] = useState<{
+    count: number;
+    firstError: string;
+  }>({ count: 0, firstError: '' });
 
   const loadData = useCallback(async () => {
     const beats = await database.get<Beat>('beats').query().fetch();
@@ -64,6 +68,40 @@ export default function HomeScreen({ navigation }: any) {
       .query(Q.where('check_out_at', null))
       .fetch();
     setCheckedIn(openAttendance.length > 0);
+
+    // Sync-failure surface: without this, a rejected push (credit block,
+    // stale price, validation error) was only visible to the back office
+    // in the admin sync-log — the salesman just saw their work silently
+    // never arrive. Count every device-originated record stuck in
+    // sync_status=failed and show the first stored backend reason.
+    let failedCount = 0;
+    let firstError = '';
+    const deviceTables = [
+      'invoices',
+      'trips',
+      'trip_checkpoints',
+      'expenses',
+      'receipts',
+      'sales_orders',
+      'credit_notes',
+      'attendance',
+    ];
+    for (const table of deviceTables) {
+      const failedRecords = await database
+        .get(table)
+        .query(Q.where('sync_status', 'failed'))
+        .fetch();
+      failedCount += failedRecords.length;
+      if (!firstError) {
+        const withError = failedRecords.find(
+          (r: any) => r.syncError && r.syncError.length > 0
+        );
+        if (withError) {
+          firstError = (withError as any).syncError;
+        }
+      }
+    }
+    setSyncFailures({ count: failedCount, firstError });
   }, []);
 
   useFocusEffect(
@@ -114,6 +152,30 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {syncFailures.count > 0 && (
+        <View style={styles.failureBanner}>
+          <View style={styles.failureBannerText}>
+            <Text style={styles.failureBannerTitle}>
+              {syncFailures.count} {t.home.notSynced}
+            </Text>
+            {syncFailures.firstError ? (
+              <Text style={styles.failureBannerReason} numberOfLines={2}>
+                {syncFailures.firstError}
+              </Text>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={styles.failureBannerRetry}
+            onPress={handleSync}
+            disabled={syncing}
+          >
+            <Text style={styles.failureBannerRetryText}>
+              {t.home.retrySync}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <TouchableOpacity
         style={[
@@ -276,6 +338,34 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  failureBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: colors.danger,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+  failureBannerText: { flex: 1, marginRight: 10 },
+  failureBannerTitle: {
+    color: colors.danger,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  failureBannerReason: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  failureBannerRetry: {
+    backgroundColor: colors.danger,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  failureBannerRetryText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   syncButton: {
     borderColor: colors.primary,
     borderWidth: 1,
