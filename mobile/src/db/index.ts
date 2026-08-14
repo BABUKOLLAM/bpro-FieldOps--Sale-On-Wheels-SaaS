@@ -17,6 +17,10 @@ import Expense from './models/Expense';
 import LocationPing from './models/LocationPing';
 import Attendance from './models/Attendance';
 import Receipt from './models/Receipt';
+import SalesOrder from './models/SalesOrder';
+import SalesOrderLine from './models/SalesOrderLine';
+import CreditNote from './models/CreditNote';
+import CreditNoteLine from './models/CreditNoteLine';
 
 const adapter = new SQLiteAdapter({
   schema,
@@ -48,5 +52,9 @@ export const database = new Database({
     LocationPing,
     Attendance,
     Receipt,
+    SalesOrder,
+    SalesOrderLine,
+    CreditNote,
+    CreditNoteLine,
   ],
 });

@@ -239,5 +239,57 @@ appId: org.reactjs.native.example.VanSales
 - tapOn: "OK"
 - takeScreenshot: 14-collection-saved
 
+# Pre-order (order today, deliver later). Same numeric-keypad handling
+# as the collection above. The Order screen's customer rows show only
+# the bare name, but wildcard anyway for consistency with every other
+# merged-label lesson in this file.
+- tapOn: "Take Order"
+- takeScreenshot: 15-order-screen
+- tapOn: ".*Sharma General Store.*"
+- tapOn:
+    id: "order-qty-input-SKU-001"
+- inputText: "5"
+- scroll
+- extendedWaitUntil:
+    notVisible: "1"
+    timeout: 10000
+- tapOn: "Save Order"
+- tapOn: "OK"
+- takeScreenshot: 16-order-saved
+
+# Sync before the return: the Return screen only lists *synced* invoices
+# (the backend's finalize_credit_note posts against the parent invoice,
+# so it must exist server-side). The Spot Billing save already fired a
+# background sync, but making it explicit here removes the race. Sync
+# Now pops a result alert — dismiss it before navigating.
 - tapOn: "Sync Now"
-- takeScreenshot: 15-synced
+- tapOn:
+    text: "OK"
+    optional: true
+- takeScreenshot: 17-synced-before-return
+
+# Return (FR-04) against the invoice sold earlier in this flow. The
+# invoice row's label merges customer + date + total. Return qty is 2 of
+# the 3 sold — deliberately not 1, because the keypad-gone check below
+# waits for "1" to disappear, and a field showing exactly "1" would make
+# that condition unsatisfiable (the field itself would match).
+- tapOn: "Record Return"
+- takeScreenshot: 18-return-screen
+- extendedWaitUntil:
+    visible: ".*Sharma General Store.*"
+    timeout: 15000
+- tapOn: ".*Sharma General Store.*"
+- tapOn:
+    id: "return-qty-input-0"
+- inputText: "2"
+- scroll
+- extendedWaitUntil:
+    notVisible: "1"
+    timeout: 10000
+- takeScreenshot: 19-return-lines
+- tapOn: "Save Return"
+- tapOn: "OK"
+- takeScreenshot: 20-return-saved
+
+- tapOn: "Sync Now"
+- takeScreenshot: 21-synced

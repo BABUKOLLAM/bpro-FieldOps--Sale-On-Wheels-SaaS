@@ -12,6 +12,8 @@ import SpotBillingScreen from '../screens/billing/SpotBillingScreen';
 import TripScreen from '../screens/trips/TripScreen';
 import ExpenseScreen from '../screens/expenses/ExpenseScreen';
 import ReceiptScreen from '../screens/receipts/ReceiptScreen';
+import OrderScreen from '../screens/orders/OrderScreen';
+import ReturnScreen from '../screens/returns/ReturnScreen';
 import AttendanceScreen from '../screens/attendance/AttendanceScreen';
 import { colors } from '../theme/colors';
 
@@ -89,6 +91,16 @@ export default function RootNavigator() {
               name="Receipt"
               component={ReceiptScreen}
               options={{ title: t.nav.collection }}
+            />
+            <Stack.Screen
+              name="Order"
+              component={OrderScreen}
+              options={{ title: t.nav.order }}
+            />
+            <Stack.Screen
+              name="Return"
+              component={ReturnScreen}
+              options={{ title: t.nav.return }}
             />
             <Stack.Screen
               name="Attendance"

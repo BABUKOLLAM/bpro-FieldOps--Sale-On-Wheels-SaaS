@@ -15,6 +15,9 @@ import {
  *
  * v4 -> v5 (FR-03 collections): the new receipts table.
  *
+ * v5 -> v6 (FR-04 returns + pre-orders): sales_orders/-_lines and
+ * credit_notes/-_lines tables.
+ *
  * Real migrations (not a dev-only schema bump) so an already-installed
  * app upgrades in place without losing local data — see
  * docs/architecture.md for why that matters here specifically: an
@@ -124,6 +127,57 @@ export default schemaMigrations({
             { name: 'device_created_at', type: 'number' },
             { name: 'sync_status', type: 'string', isIndexed: true },
             { name: 'sync_error', type: 'string' },
+          ],
+        }),
+      ],
+    },
+    {
+      toVersion: 6,
+      steps: [
+        createTable({
+          name: 'sales_orders',
+          columns: [
+            { name: 'server_id', type: 'string', isIndexed: true },
+            { name: 'customer_server_id', type: 'string', isIndexed: true },
+            { name: 'trip_server_id', type: 'string' },
+            { name: 'order_date', type: 'string' },
+            { name: 'notes', type: 'string' },
+            { name: 'device_created_at', type: 'number' },
+            { name: 'sync_status', type: 'string', isIndexed: true },
+            { name: 'sync_error', type: 'string' },
+          ],
+        }),
+        createTable({
+          name: 'sales_order_lines',
+          columns: [
+            { name: 'order_local_id', type: 'string', isIndexed: true },
+            { name: 'item_server_id', type: 'string' },
+            { name: 'qty', type: 'number' },
+            { name: 'rate', type: 'number' },
+          ],
+        }),
+        createTable({
+          name: 'credit_notes',
+          columns: [
+            { name: 'server_id', type: 'string', isIndexed: true },
+            { name: 'original_invoice_server_id', type: 'string', isIndexed: true },
+            { name: 'customer_server_id', type: 'string' },
+            { name: 'trip_server_id', type: 'string' },
+            { name: 'reason_code', type: 'string' },
+            { name: 'note_date', type: 'string' },
+            { name: 'device_created_at', type: 'number' },
+            { name: 'sync_status', type: 'string', isIndexed: true },
+            { name: 'sync_error', type: 'string' },
+          ],
+        }),
+        createTable({
+          name: 'credit_note_lines',
+          columns: [
+            { name: 'credit_note_local_id', type: 'string', isIndexed: true },
+            { name: 'item_server_id', type: 'string' },
+            { name: 'qty', type: 'number' },
+            { name: 'rate', type: 'number' },
+            { name: 'condition', type: 'string' },
           ],
         }),
       ],

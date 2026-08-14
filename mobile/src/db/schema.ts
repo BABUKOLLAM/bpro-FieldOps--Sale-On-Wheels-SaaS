@@ -15,7 +15,7 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
  * change-tracking — see src/sync/synchronize.ts.
  */
 export const schema = appSchema({
-  version: 5,
+  version: 6,
   tables: [
     tableSchema({
       name: 'customers',
@@ -223,6 +223,59 @@ export const schema = appSchema({
         { name: 'device_created_at', type: 'number' },
         { name: 'sync_status', type: 'string', isIndexed: true },
         { name: 'sync_error', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'sales_orders',
+      columns: [
+        // Pre-orders (order today, deliver later) — same offline
+        // create-then-sync shape as invoices, minus GST/godown since no
+        // stock moves until fulfilment.
+        { name: 'server_id', type: 'string', isIndexed: true },
+        { name: 'customer_server_id', type: 'string', isIndexed: true },
+        { name: 'trip_server_id', type: 'string' },
+        { name: 'order_date', type: 'string' },
+        { name: 'notes', type: 'string' },
+        { name: 'device_created_at', type: 'number' },
+        { name: 'sync_status', type: 'string', isIndexed: true },
+        { name: 'sync_error', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'sales_order_lines',
+      columns: [
+        { name: 'order_local_id', type: 'string', isIndexed: true },
+        { name: 'item_server_id', type: 'string' },
+        { name: 'qty', type: 'number' },
+        { name: 'rate', type: 'number' },
+      ],
+    }),
+    tableSchema({
+      name: 'credit_notes',
+      columns: [
+        // Returns (FR-04): each references the original invoice by its
+        // server id — the Return screen only offers invoices that have
+        // already synced, since the backend's finalize_credit_note needs
+        // the parent invoice to exist.
+        { name: 'server_id', type: 'string', isIndexed: true },
+        { name: 'original_invoice_server_id', type: 'string', isIndexed: true },
+        { name: 'customer_server_id', type: 'string' },
+        { name: 'trip_server_id', type: 'string' },
+        { name: 'reason_code', type: 'string' },
+        { name: 'note_date', type: 'string' },
+        { name: 'device_created_at', type: 'number' },
+        { name: 'sync_status', type: 'string', isIndexed: true },
+        { name: 'sync_error', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'credit_note_lines',
+      columns: [
+        { name: 'credit_note_local_id', type: 'string', isIndexed: true },
+        { name: 'item_server_id', type: 'string' },
+        { name: 'qty', type: 'number' },
+        { name: 'rate', type: 'number' },
+        { name: 'condition', type: 'string' },
       ],
     }),
   ],

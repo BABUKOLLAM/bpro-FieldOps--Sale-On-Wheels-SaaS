@@ -14,6 +14,10 @@ import Expense from '../db/models/Expense';
 import LocationPing from '../db/models/LocationPing';
 import Attendance from '../db/models/Attendance';
 import Receipt from '../db/models/Receipt';
+import SalesOrder from '../db/models/SalesOrder';
+import SalesOrderLine from '../db/models/SalesOrderLine';
+import CreditNote from '../db/models/CreditNote';
+import CreditNoteLine from '../db/models/CreditNoteLine';
 import { saveCompanyConfig } from '../config/companyConfig';
 
 /**
@@ -346,6 +350,64 @@ export async function push(): Promise<{ pushed: number; failed: number }> {
     const ok = await pushItem('receipt', payload);
     await database.write(async () => {
       await receipt.update((rec) => {
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+      });
+    });
+    ok ? pushed++ : failed++;
+  }
+
+  const pendingOrders = await database
+    .get<SalesOrder>('sales_orders')
+    .query(Q.where('sync_status', Q.oneOf([SYNC_PENDING, SYNC_FAILED])))
+    .fetch();
+
+  for (const order of pendingOrders) {
+    const orderLines = await order.lines.fetch();
+    const payload = {
+      id: order.serverId,
+      customer: order.customerServerId,
+      trip: order.tripServerId || null,
+      order_date: order.orderDate,
+      notes: order.notes,
+      lines: orderLines.map((l: SalesOrderLine) => ({
+        item: l.itemServerId,
+        qty: l.qty,
+        rate: l.rate,
+      })),
+    };
+    const ok = await pushItem('sales_order', payload);
+    await database.write(async () => {
+      await order.update((rec) => {
+        rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
+      });
+    });
+    ok ? pushed++ : failed++;
+  }
+
+  const pendingCreditNotes = await database
+    .get<CreditNote>('credit_notes')
+    .query(Q.where('sync_status', Q.oneOf([SYNC_PENDING, SYNC_FAILED])))
+    .fetch();
+
+  for (const note of pendingCreditNotes) {
+    const noteLines = await note.lines.fetch();
+    const payload = {
+      id: note.serverId,
+      original_invoice: note.originalInvoiceServerId,
+      customer: note.customerServerId,
+      trip: note.tripServerId || null,
+      reason_code: note.reasonCode,
+      note_date: note.noteDate,
+      lines: noteLines.map((l: CreditNoteLine) => ({
+        item: l.itemServerId,
+        qty: l.qty,
+        rate: l.rate,
+        condition: l.condition,
+      })),
+    };
+    const ok = await pushItem('credit_note', payload);
+    await database.write(async () => {
+      await note.update((rec) => {
         rec.localSyncStatus = ok ? SYNC_SYNCED : SYNC_FAILED;
       });
     });

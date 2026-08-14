@@ -158,6 +158,20 @@ export default function HomeScreen({ navigation }: any) {
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={styles.expenseButton}
+        onPress={() => navigation.navigate('Order')}
+      >
+        <Text style={styles.expenseButtonText}>{t.home.logOrder}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.expenseButton}
+        onPress={() => navigation.navigate('Return')}
+      >
+        <Text style={styles.expenseButtonText}>{t.home.logReturn}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.syncButton}
         onPress={handleSync}
         disabled={syncing}
