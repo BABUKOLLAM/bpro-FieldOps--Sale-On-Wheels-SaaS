@@ -3,6 +3,7 @@
 import { useState } from "react";
 import RoleForm from "./RoleForm";
 import { PERMISSION_LABELS } from "@/lib/permissions";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 type Role = { id: string; name: string; permissions: string[]; is_active: boolean };
 
@@ -21,7 +22,7 @@ export default function RoleRow({ role }: { role: Role }) {
   const [editing, setEditing] = useState(false);
 
   return (
-    <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+    <div className={`${CARD_CLASS} p-4`}>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">

@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import EmailReportRow from "./EmailReportRow";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 type ReportEntry = { key: string; label: string };
 
@@ -36,7 +37,7 @@ export default async function ReportsPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800">
+      <div className={`${CARD_CLASS} divide-y divide-neutral-100 dark:divide-neutral-800`}>
         {reports.map((r) => (
           <div key={r.key} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import TargetForm from "./TargetForm";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -44,7 +45,7 @@ export default async function TargetsPage() {
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Active Targets ({targets.count})
         </h2>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">

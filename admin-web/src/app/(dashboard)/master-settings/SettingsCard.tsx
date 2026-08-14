@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import ProposeEditForm, { type FieldSpec } from "./ProposeEditForm";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 export default function SettingsCard({
   title,
@@ -23,7 +24,7 @@ export default function SettingsCard({
   const [editing, setEditing] = useState(false);
 
   return (
-    <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+    <div className={`${CARD_CLASS} p-4`}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{title}</h3>

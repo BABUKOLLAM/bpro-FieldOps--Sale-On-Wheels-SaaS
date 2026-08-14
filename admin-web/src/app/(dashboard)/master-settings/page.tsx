@@ -4,6 +4,7 @@ import SettingsCard from "./SettingsCard";
 import WebhookCreateForm from "./WebhookCreateForm";
 import WebhookActions from "./WebhookActions";
 import LogoUploadForm from "./LogoUploadForm";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -120,7 +121,7 @@ export default async function MasterSettingsPage() {
       {company && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Company Profile</h2>
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div className={`${CARD_CLASS} p-4`}>
             <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">
               Logo — shown on the GST invoice PDF header. Uploaded directly, not via approval.
             </p>

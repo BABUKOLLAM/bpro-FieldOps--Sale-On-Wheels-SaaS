@@ -9,6 +9,7 @@ import BeatTemplateForm from "./BeatTemplateForm";
 import BeatTemplateStopForm from "./BeatTemplateStopForm";
 import RemoveTemplateStopButton from "./RemoveTemplateStopButton";
 import InstantiateTemplateForm from "./InstantiateTemplateForm";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -88,7 +89,7 @@ export default async function MasterDataPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Customers ({customers.count})</h2>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -117,7 +118,7 @@ export default async function MasterDataPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Items ({items.count})</h2>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -151,7 +152,7 @@ export default async function MasterDataPage() {
           {beats.results.map((beat) => {
             const agent = agents.find((a) => a.id === beat.assigned_agent);
             return (
-              <div key={beat.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+              <div key={beat.id} className={`${CARD_CLASS} p-4`}>
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{beat.name}</h3>
                   <div className="flex items-center gap-3">
@@ -196,7 +197,7 @@ export default async function MasterDataPage() {
         </p>
         <div className="space-y-4">
           {beatTemplates.results.map((template) => (
-            <div key={template.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+            <div key={template.id} className={`${CARD_CLASS} p-4`}>
               <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{template.name}</h3>
               <ul className="mt-3 space-y-1.5">
                 {[...template.stops].sort((a, b) => a.visit_sequence - b.visit_sequence).map((stop) => (

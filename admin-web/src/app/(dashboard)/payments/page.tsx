@@ -1,4 +1,6 @@
 import { apiGet } from "@/lib/api";
+import { CARD_CLASS } from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
 
 type PaymentOrder = {
   id: string;
@@ -28,7 +30,7 @@ export default async function PaymentsPage() {
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className={`overflow-x-auto ${CARD_CLASS}`}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 dark:border-neutral-800 text-left text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -46,31 +48,25 @@ export default async function PaymentsPage() {
                   {o.gateway_order_id || o.id}
                 </td>
                 <td className="px-4 py-2.5">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      o.gateway_type === "mock"
-                        ? "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                    }`}
-                  >
+                  <Badge tone={o.gateway_type === "mock" ? "neutral" : "success"}>
                     {o.gateway_type}
-                  </span>
+                  </Badge>
                 </td>
                 <td className="px-4 py-2.5 text-neutral-700 dark:text-neutral-300">
                   ₹{o.amount} {o.currency}
                 </td>
                 <td className="px-4 py-2.5">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  <Badge
+                    tone={
                       o.status === "paid"
-                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                        ? "success"
                         : o.status === "failed"
-                          ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-                          : "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300"
-                    }`}
+                          ? "danger"
+                          : "warning"
+                    }
                   >
                     {o.status}
-                  </span>
+                  </Badge>
                 </td>
                 <td className="px-4 py-2.5 text-neutral-500 dark:text-neutral-400">
                   {new Date(o.created_at).toLocaleString()}

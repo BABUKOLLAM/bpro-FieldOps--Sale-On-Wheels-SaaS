@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import ExportCsvButton from "@/components/ExportCsvButton";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 type StockVarianceAlert = {
   entry_id: string;
@@ -108,7 +109,7 @@ export default async function AlertsPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className={CARD_CLASS}>
         <SectionHeader
           title="Stock Variance" count={data.stock_variance.length}
           subtitle="Manual stock adjustments in the last 7 days — each one means a physical/expected count didn't match."
@@ -143,7 +144,7 @@ export default async function AlertsPage() {
         </table>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className={CARD_CLASS}>
         <SectionHeader
           title="Unusual Discounts" count={data.unusual_discounts.length}
           subtitle="Invoices in the last 7 days with a discount of 15% or more of subtotal."
@@ -178,7 +179,7 @@ export default async function AlertsPage() {
         </table>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className={CARD_CLASS}>
         <SectionHeader
           title="Missed Visits" count={data.missed_visits.length}
           subtitle="Today's beat stops with a trip in progress or completed, but no check-in recorded."
@@ -209,7 +210,7 @@ export default async function AlertsPage() {
         </table>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className={CARD_CLASS}>
         <SectionHeader
           title="Inactive Agents" count={data.inactive_agents.length}
           subtitle="Field agents with no invoice, trip, or GPS ping in the last 3 days."

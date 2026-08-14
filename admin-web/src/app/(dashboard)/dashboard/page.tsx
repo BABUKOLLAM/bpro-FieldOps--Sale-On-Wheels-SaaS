@@ -1,6 +1,8 @@
 import { apiGet } from "@/lib/api";
 import EwayBillCell from "./EwayBillCell";
 import WhatsAppNotifyButton from "./WhatsAppNotifyButton";
+import { CARD_CLASS } from "@/components/ui/Card";
+import Badge, { type BadgeTone } from "@/components/ui/Badge";
 
 type AnomalyInsight = {
   metric: string;
@@ -91,7 +93,7 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
         ? "text-orange-600 dark:text-orange-400"
         : "text-neutral-900 dark:text-neutral-50";
   return (
-    <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
+    <div className={`${CARD_CLASS} p-5`}>
       <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
       <p className={`mt-2 text-2xl font-semibold ${toneClass}`}>{value}</p>
     </div>
@@ -99,19 +101,15 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    ok: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    pending_review: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-    overridden: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
-    synced: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    pending: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
-    failed: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  const tones: Record<string, BadgeTone> = {
+    ok: "success",
+    pending_review: "warning",
+    overridden: "info",
+    synced: "success",
+    pending: "neutral",
+    failed: "danger",
   };
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] || styles.pending}`}>
-      {status.replace("_", " ")}
-    </span>
-  );
+  return <Badge tone={tones[status] || "neutral"}>{status.replace("_", " ")}</Badge>;
 }
 
 function InsightCard({ insight }: { insight: AnomalyInsight }) {
@@ -293,7 +291,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className={CARD_CLASS}>
         <div className="border-b border-neutral-200 dark:border-neutral-800 px-5 py-3">
           <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Recent Invoices</h2>
         </div>

@@ -1,6 +1,8 @@
 import { apiGet } from "@/lib/api";
 import UserForm from "./UserForm";
 import DeactivateUserButton from "./DeactivateUserButton";
+import { CARD_CLASS } from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -45,7 +47,7 @@ export default async function UsersPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">All Users ({users.count})</h2>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -82,15 +84,9 @@ export default async function UsersPage() {
                   </td>
                   <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{u.is_field_agent ? "Yes" : "—"}</td>
                   <td className="px-4 py-2">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                        u.is_active
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                          : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-                      }`}
-                    >
+                    <Badge tone={u.is_active ? "success" : "neutral"}>
                       {u.is_active ? "Active" : "Deactivated"}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 py-2">{u.is_active && <DeactivateUserButton userId={u.id} />}</td>
                 </tr>

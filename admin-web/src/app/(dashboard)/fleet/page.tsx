@@ -2,6 +2,8 @@ import { apiGet } from "@/lib/api";
 import ExportCsvButton from "@/components/ExportCsvButton";
 import DocumentForm from "./DocumentForm";
 import GeofenceForm from "./GeofenceForm";
+import { CARD_CLASS } from "@/components/ui/Card";
+import Badge, { type BadgeTone } from "@/components/ui/Badge";
 
 type VehicleEntry = {
   vehicle_id: string;
@@ -108,16 +110,12 @@ type Paginated<T> = { count: number; results: T[] };
 type Geofence = { id: string; name: string; zone_type: string; radius_meters: number; is_active: boolean };
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    ok: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    due_soon: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-    overdue: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  const tones: Record<string, BadgeTone> = {
+    ok: "success",
+    due_soon: "warning",
+    overdue: "danger",
   };
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] || styles.ok}`}>
-      {status.replace("_", " ")}
-    </span>
-  );
+  return <Badge tone={tones[status] || "success"}>{status.replace("_", " ")}</Badge>;
 }
 
 export default async function FleetPage() {
@@ -146,7 +144,7 @@ export default async function FleetPage() {
           </h2>
           <ExportCsvButton data={data.vehicles} filename="fleet-vehicle-utilization.csv" />
         </div>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -192,7 +190,7 @@ export default async function FleetPage() {
           </h2>
           <ExportCsvButton data={data.maintenance_alerts} filename="fleet-maintenance-alerts.csv" />
         </div>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -232,7 +230,7 @@ export default async function FleetPage() {
           <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Fuel Cost Trend — last 6 months</h2>
           <ExportCsvButton data={data.fuel_cost_trend} filename="fleet-fuel-cost-trend.csv" />
         </div>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+        <div className={`${CARD_CLASS} p-4`}>
           {data.fuel_cost_trend.length === 0 ? (
             <p className="text-sm text-neutral-400">No fuel logs in this period.</p>
           ) : (
@@ -266,7 +264,7 @@ export default async function FleetPage() {
           &quot;Reconciled&quot; means a van-unload stock transfer exists for that agent on that date — a proxy
           signal that the item has physically been returned to the warehouse, not a guarantee.
         </p>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -314,7 +312,7 @@ export default async function FleetPage() {
           </h2>
           <ExportCsvButton data={data.compliance_alerts} filename="fleet-compliance.csv" />
         </div>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -358,7 +356,7 @@ export default async function FleetPage() {
           </h2>
           <ExportCsvButton data={data.geofence_alerts} filename="fleet-geofence-alerts.csv" />
         </div>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -396,7 +394,7 @@ export default async function FleetPage() {
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Zones defined below — mark a zone &quot;Restricted&quot; to have it appear here when an active trip enters it.
         </p>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -440,7 +438,7 @@ export default async function FleetPage() {
           from consecutive pings that stayed in place, and deviation is straight-line distance from the nearest
           planned stop. Only trips with 15+ idle minutes or at least one deviation point are shown.
         </p>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -491,7 +489,7 @@ export default async function FleetPage() {
           duration only — harsh braking/acceleration would need an accelerometer stream this app doesn&apos;t
           collect, so it isn&apos;t part of this score. A coaching starting point, not an automated penalty.
         </p>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
@@ -546,7 +544,7 @@ export default async function FleetPage() {
           maintenance performed in the trip&apos;s date window — driver/wage cost isn&apos;t tracked anywhere in this
           system and is excluded rather than guessed at. An estimate, not full cost accounting.
         </p>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
+        <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-neutral-500 dark:text-neutral-400">

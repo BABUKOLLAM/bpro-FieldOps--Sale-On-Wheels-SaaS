@@ -1,4 +1,5 @@
 import { apiGet } from "@/lib/api";
+import { CARD_CLASS } from "@/components/ui/Card";
 
 type NotificationLog = {
   id: string;
@@ -26,7 +27,7 @@ export default async function NotificationsPage() {
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+      <div className={`overflow-x-auto ${CARD_CLASS}`}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 dark:border-neutral-800 text-left text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
