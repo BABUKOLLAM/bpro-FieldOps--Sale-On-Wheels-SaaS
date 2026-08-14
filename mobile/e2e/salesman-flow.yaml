@@ -81,6 +81,19 @@ appId: org.reactjs.native.example.VanSales
     text: "Continue"
     optional: true
 
+# The login POST's round trip is the one step here whose duration CI
+# doesn't control — on a cold runner the first-ever request to the dev
+# Django server (connection setup, PBKDF2 hash check, lazy app init)
+# resolved *after* the next command's ~7s search had already given up,
+# even though django.log shows it returned 200. There was never an
+# explicit wait between Sign In and the home screen; every earlier
+# green run just had a faster first request. Same "real completion
+# time, needed headroom" class as the PIN→login and sync waits above —
+# wait for the home screen's own Sync Now button, generously.
+- extendedWaitUntil:
+    visible: "Sync Now"
+    timeout: 45000
+
 - takeScreenshot: 04-home-screen
 # HomeScreen (src/screens/HomeScreen.tsx) is offline-first: loadData()
 # reads the route/beat list purely from local WatermelonDB, and that DB
