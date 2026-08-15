@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Archivo, Geist, Geist_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { LanguageProvider } from "@/i18n/LanguageContext";
@@ -68,7 +69,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <script dangerouslySetInnerHTML={{ __html: CHROME_INIT_SCRIPT }} />
+        <Script
+          id="chrome-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: CHROME_INIT_SCRIPT }}
+        />
         <LanguageProvider>
           {children}
           <ServiceWorkerRegister />
