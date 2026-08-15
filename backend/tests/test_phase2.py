@@ -507,3 +507,45 @@ def test_credit_note_push_is_idempotent(company, agent, van_godown, item, custom
     # The reverse-logistics ledger entry posted exactly once.
     entries = StockLedgerEntry.objects.filter(reference_type="credit_note", reference_id=note_id)
     assert entries.count() == 1
+
+
+@pytest.mark.django_db
+def test_sales_list_endpoints_include_readable_names(company, agent, van_godown, item, customer):
+    """The admin-web Collections/Orders/Returns pages need a human-
+    readable customer/agent, not just the raw UUIDs the mobile push
+    payload carries — regression test for the NamedPartiesMixin fields
+    actually showing up on GET, across all three endpoints at once."""
+    from apps.sales.models import CreditNote, Receipt, SalesOrder
+
+    agent.first_name = "Ravi"
+    agent.last_name = "Kumar"
+    agent.save(update_fields=["first_name", "last_name"])
+
+    _, gst_registration = company
+    invoice = Invoice.objects.create(
+        customer=customer, agent=agent, godown=van_godown, gst_registration=gst_registration,
+        place_of_supply_state=gst_registration.state, invoice_date=date.today(),
+    )
+    InvoiceLine.objects.create(invoice=invoice, item=item, qty=Decimal("5"), rate=Decimal("20.00"))
+    finalize_invoice(invoice)
+
+    order = SalesOrder.objects.create(customer=customer, agent=agent, order_date=date.today())
+    receipt = Receipt.objects.create(
+        customer=customer, agent=agent, mode="cash", amount=Decimal("100"), received_at=datetime.now(dt_timezone.utc),
+    )
+    note = CreditNote.objects.create(
+        original_invoice=invoice, customer=customer, agent=agent,
+        reason_code="damaged_in_transit", note_date=date.today(),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=agent)
+
+    order_resp = client.get(f"/api/sales/orders/{order.id}/")
+    receipt_resp = client.get(f"/api/sales/receipts/{receipt.id}/")
+    note_resp = client.get(f"/api/sales/credit-notes/{note.id}/")
+
+    for resp in (order_resp, receipt_resp, note_resp):
+        assert resp.status_code == 200, resp.data
+        assert resp.data["customer_name"] == customer.name
+        assert resp.data["agent_name"] == "Ravi Kumar"

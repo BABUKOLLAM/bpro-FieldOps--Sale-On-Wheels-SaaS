@@ -9,6 +9,22 @@ from .models import (
 )
 
 
+class NamedPartiesMixin(serializers.Serializer):
+    """Read-only customer_name/agent_name, matching the naming already
+    used by apps.reporting.views' hand-built dashboard payloads. Plain
+    ModelSerializer output only carries customer/agent as raw UUIDs,
+    which is fine for the mobile push protocol (it never displays them)
+    but leaves an admin-web list screen showing nothing a person can
+    read — add the names once here rather than resolving them client-
+    side per page."""
+
+    customer_name = serializers.CharField(source="customer.name", read_only=True)
+    agent_name = serializers.SerializerMethodField()
+
+    def get_agent_name(self, obj):
+        return obj.agent.get_full_name() or obj.agent.username
+
+
 class SalesOrderLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalesOrderLine
@@ -16,12 +32,15 @@ class SalesOrderLineSerializer(serializers.ModelSerializer):
         extra_kwargs = {"order": {"required": False}}
 
 
-class SalesOrderSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
+class SalesOrderSerializer(ClientGeneratedIdMixin, NamedPartiesMixin, serializers.ModelSerializer):
     lines = SalesOrderLineSerializer(many=True)
 
     class Meta:
         model = SalesOrder
-        fields = ["id", "order_no", "customer", "agent", "trip", "order_date", "status", "notes", "lines"]
+        fields = [
+            "id", "order_no", "customer", "customer_name", "agent", "agent_name", "trip",
+            "order_date", "status", "notes", "lines",
+        ]
         read_only_fields = ["order_no", "status"]
 
     def create(self, validated_data):
@@ -98,14 +117,14 @@ class PaymentAllocationSerializer(serializers.ModelSerializer):
         extra_kwargs = {"receipt": {"required": False}}
 
 
-class ReceiptSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
+class ReceiptSerializer(ClientGeneratedIdMixin, NamedPartiesMixin, serializers.ModelSerializer):
     allocations = PaymentAllocationSerializer(many=True)
 
     class Meta:
         model = Receipt
         fields = [
-            "id", "receipt_no", "customer", "agent", "trip", "mode", "amount",
-            "reference_no", "received_at", "sync_status", "allocations",
+            "id", "receipt_no", "customer", "customer_name", "agent", "agent_name", "trip",
+            "mode", "amount", "reference_no", "received_at", "sync_status", "allocations",
         ]
         read_only_fields = ["receipt_no", "sync_status"]
 
@@ -129,14 +148,14 @@ class CreditNoteLineSerializer(serializers.ModelSerializer):
         extra_kwargs = {"credit_note": {"required": False}}
 
 
-class CreditNoteSerializer(ClientGeneratedIdMixin, serializers.ModelSerializer):
+class CreditNoteSerializer(ClientGeneratedIdMixin, NamedPartiesMixin, serializers.ModelSerializer):
     lines = CreditNoteLineSerializer(many=True)
 
     class Meta:
         model = CreditNote
         fields = [
-            "id", "credit_note_no", "original_invoice", "customer", "agent", "trip",
-            "reason_code", "note_date", "grand_total", "sync_status", "lines",
+            "id", "credit_note_no", "original_invoice", "customer", "customer_name", "agent",
+            "agent_name", "trip", "reason_code", "note_date", "grand_total", "sync_status", "lines",
         ]
         read_only_fields = ["credit_note_no", "grand_total", "sync_status"]
 
