@@ -18,7 +18,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "en" || stored === "hi" || stored === "ml" || stored === "ta") {
+    if (stored === "en" || stored === "ml" || stored === "ta") {
       setLocaleState(stored);
     }
   }, []);

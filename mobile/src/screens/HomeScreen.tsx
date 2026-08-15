@@ -22,7 +22,7 @@ import { useTranslation } from '../i18n/LanguageContext';
 import { LOCALE_LABELS, type Locale } from '../i18n/locales';
 import { colors } from '../theme/colors';
 
-const LOCALE_ORDER: Locale[] = ['en', 'hi', 'ml', 'ta'];
+const LOCALE_ORDER: Locale[] = ['en', 'ml', 'ta'];
 
 type Stop = { beatCustomer: BeatCustomer; customer: Customer | null };
 

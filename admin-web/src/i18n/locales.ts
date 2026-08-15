@@ -1,8 +1,7 @@
-export type Locale = "en" | "hi" | "ml" | "ta";
+export type Locale = "en" | "ml" | "ta";
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
-  hi: "हिन्दी",
   ml: "മലയാളം",
   ta: "தமிழ்",
 };
@@ -99,50 +98,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       save: "Save",
       cancel: "Cancel",
       logout: "Sign out",
-    },
-  },
-  hi: {
-    nav: {
-      dashboard: "डैशबोर्ड",
-      liveMap: "लाइव मैप",
-      fleet: "फ्लीट",
-      masterData: "मास्टर डेटा",
-      masterSettings: "मास्टर सेटिंग्स",
-      importExport: "आयात / निर्यात",
-      approvals: "अनुमोदन और सिंक",
-      reports: "रिपोर्ट",
-      alerts: "अलर्ट",
-      targets: "लक्ष्य",
-      users: "उपयोगकर्ता",
-      roles: "भूमिकाएँ",
-      notifications: "सूचनाएं",
-      payments: "भुगतान",
-      collections: "वसूली",
-      orders: "ऑर्डर",
-      returns: "वापसी",
-      groups: {
-        overview: "अवलोकन",
-        fleetSync: "फ्लीट और सिंक",
-        master: "मास्टर",
-        insights: "इनसाइट्स",
-        access: "एक्सेस",
-        alertsPayments: "अलर्ट और भुगतान",
-        sales: "सेल्स",
-      },
-    },
-    login: {
-      heading: "bpro FieldOps में साइन इन करें",
-      subheading: "फील्ड सेल्स, फ्लीट, फाइनेंस और कंप्लायंस के लिए बैक-ऑफिस कंसोल एक्सेस करें।",
-      username: "उपयोगकर्ता नाम",
-      password: "पासवर्ड",
-      signIn: "साइन इन करें",
-      signingIn: "साइन इन हो रहा है…",
-      backToHome: "← bpro FieldOps होम पर वापस जाएँ",
-    },
-    common: {
-      save: "सेव करें",
-      cancel: "रद्द करें",
-      logout: "साइन आउट",
     },
   },
   ml: {

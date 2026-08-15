@@ -3,7 +3,7 @@
 import { useTranslation } from "@/i18n/LanguageContext";
 import { LOCALE_LABELS, type Locale } from "@/i18n/locales";
 
-const LOCALE_ORDER: Locale[] = ["en", "hi", "ml", "ta"];
+const LOCALE_ORDER: Locale[] = ["en", "ml", "ta"];
 
 export default function LanguageSwitcher() {
   const { locale, setLocale } = useTranslation();
