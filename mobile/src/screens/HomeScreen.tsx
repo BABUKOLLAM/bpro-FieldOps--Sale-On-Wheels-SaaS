@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,8 +19,10 @@ import Attendance from '../db/models/Attendance';
 import { synchronize } from '../sync/synchronize';
 import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from '../i18n/LanguageContext';
-import { LOCALE_LABELS } from '../i18n/locales';
+import { LOCALE_LABELS, type Locale } from '../i18n/locales';
 import { colors } from '../theme/colors';
+
+const LOCALE_ORDER: Locale[] = ['en', 'hi', 'ml', 'ta'];
 
 type Stop = { beatCustomer: BeatCustomer; customer: Customer | null };
 
@@ -35,6 +38,7 @@ export default function HomeScreen({ navigation }: any) {
     count: number;
     firstError: string;
   }>({ count: 0, firstError: '' });
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   const loadData = useCallback(async () => {
     const beats = await database.get<Beat>('beats').query().fetch();
@@ -140,12 +144,10 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.languagePill}
-            onPress={() => setLocale(locale === 'en' ? 'hi' : 'en')}
+            onPress={() => setShowLanguagePicker(true)}
             accessibilityLabel={t.home.language}
           >
-            <Text style={styles.languagePillText}>
-              {LOCALE_LABELS[locale === 'en' ? 'hi' : 'en']}
-            </Text>
+            <Text style={styles.languagePillText}>{LOCALE_LABELS[locale]}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={logout}>
             <Text style={styles.logout}>{t.home.signOut}</Text>
@@ -271,6 +273,44 @@ export default function HomeScreen({ navigation }: any) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>{t.home.noRoute}</Text>}
       />
+
+      <Modal
+        visible={showLanguagePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLanguagePicker(false)}
+      >
+        <TouchableOpacity
+          style={styles.languageModalBackdrop}
+          activeOpacity={1}
+          onPress={() => setShowLanguagePicker(false)}
+        >
+          <View style={styles.languageModalCard}>
+            {LOCALE_ORDER.map((code) => (
+              <TouchableOpacity
+                key={code}
+                style={[
+                  styles.languageOption,
+                  code === locale && styles.languageOptionActive,
+                ]}
+                onPress={() => {
+                  setLocale(code);
+                  setShowLanguagePicker(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.languageOptionText,
+                    code === locale && styles.languageOptionTextActive,
+                  ]}
+                >
+                  {LOCALE_LABELS[code]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -297,6 +337,36 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 12,
     fontWeight: '600',
+  },
+  languageModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  languageModalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 12,
+    width: '100%',
+    maxWidth: 280,
+  },
+  languageOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  languageOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  languageOptionText: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  languageOptionTextActive: {
+    color: '#fff',
   },
   logout: { color: colors.danger, fontSize: 14 },
   attendanceButton: {
