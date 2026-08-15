@@ -20,7 +20,10 @@ type IconName =
   | "users"
   | "roles"
   | "notifications"
-  | "payments";
+  | "payments"
+  | "collections"
+  | "orders"
+  | "returns";
 
 const ICON_PATHS: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -120,6 +123,24 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
       <path d="M6.5 14.8h4" />
     </>
   ),
+  collections: (
+    <>
+      <path d="M4 12.5 9.5 18 20 6" />
+      <circle cx="4.5" cy="4.5" r="1.5" fill="currentColor" stroke="none" />
+    </>
+  ),
+  orders: (
+    <>
+      <path d="M4 7h16l-1.5 11.5a1.5 1.5 0 0 1-1.5 1.3H7a1.5 1.5 0 0 1-1.5-1.3L4 7Z" />
+      <path d="M8.5 7V5.5a3.5 3.5 0 0 1 7 0V7" />
+    </>
+  ),
+  returns: (
+    <>
+      <path d="M4 12a8 8 0 1 1 2.6 5.9" />
+      <path d="M4 17.5v-4h4" />
+    </>
+  ),
 };
 
 function NavIcon({ name, className }: { name: IconName; className?: string }) {
@@ -202,6 +223,16 @@ function buildGroups(t: Dictionary): NavGroup[] {
       items: [
         { href: "/notifications", label: t.nav.notifications, icon: "notifications" },
         { href: "/payments", label: t.nav.payments, icon: "payments" },
+      ],
+    },
+    {
+      key: "sales",
+      label: t.nav.groups.sales,
+      icon: "collections",
+      items: [
+        { href: "/collections", label: t.nav.collections, icon: "collections" },
+        { href: "/orders", label: t.nav.orders, icon: "orders" },
+        { href: "/returns", label: t.nav.returns, icon: "returns" },
       ],
     },
   ];

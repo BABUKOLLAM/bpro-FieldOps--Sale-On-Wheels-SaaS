@@ -21,6 +21,9 @@ export type Dictionary = {
     roles: string;
     notifications: string;
     payments: string;
+    collections: string;
+    orders: string;
+    returns: string;
     groups: {
       overview: string;
       fleetSync: string;
@@ -28,6 +31,7 @@ export type Dictionary = {
       insights: string;
       access: string;
       alertsPayments: string;
+      sales: string;
     };
   };
   login: {
@@ -67,6 +71,9 @@ export const dictionaries: Record<Locale, Dictionary> = {
       roles: "Roles",
       notifications: "Notifications",
       payments: "Payments",
+      collections: "Collections",
+      orders: "Orders",
+      returns: "Returns",
       groups: {
         overview: "Overview",
         fleetSync: "Fleet & Sync",
@@ -74,6 +81,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
         insights: "Insights",
         access: "Access",
         alertsPayments: "Alerts & Payments",
+        sales: "Sales",
       },
     },
     login: {
@@ -107,6 +115,9 @@ export const dictionaries: Record<Locale, Dictionary> = {
       roles: "भूमिकाएँ",
       notifications: "सूचनाएं",
       payments: "भुगतान",
+      collections: "वसूली",
+      orders: "ऑर्डर",
+      returns: "वापसी",
       groups: {
         overview: "अवलोकन",
         fleetSync: "फ्लीट और सिंक",
@@ -114,6 +125,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
         insights: "इनसाइट्स",
         access: "एक्सेस",
         alertsPayments: "अलर्ट और भुगतान",
+        sales: "सेल्स",
       },
     },
     login: {
