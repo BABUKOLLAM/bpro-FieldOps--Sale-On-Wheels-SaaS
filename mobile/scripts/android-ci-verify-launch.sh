@@ -40,12 +40,31 @@ adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
 READY=0
 for i in $(seq 1 30); do
   sleep 4
+  # Two acceptable readiness signals, because either alone has a proven
+  # failure mode on these runners:
+  #  - mCurrentFocus misses when a SYSTEM dialog holds focus over the
+  #    (fully launched) app — observed with a "Pixel Launcher isn't
+  #    responding" ANR dialog that predated our app's launch entirely.
+  #  - the resumed-activity line's exact field name varies by Android
+  #    version (mResumedActivity vs topResumedActivity), so match both.
   if adb shell dumpsys window 2>/dev/null | grep -q "mCurrentFocus.*${APP_ID}"; then
     READY=1
     break
   fi
+  if adb shell dumpsys activity activities 2>/dev/null | grep -E "mResumedActivity|topResumedActivity" | grep -q "${APP_ID}"; then
+    READY=1
+    break
+  fi
+  # The emulator's own launcher sometimes ANRs from boot-time load; its
+  # dialog steals focus and would also ruin the evidence screenshot.
+  # Killing the launcher process dismisses the dialog (the system
+  # restarts the launcher on its own); our app is unaffected.
+  if adb shell dumpsys window 2>/dev/null | grep -qi "Application Not Responding: com.google.android.apps.nexuslauncher"; then
+    echo "Launcher ANR dialog detected — clearing it"
+    adb shell am force-stop com.google.android.apps.nexuslauncher || true
+  fi
 done
-echo "App window focused: $READY"
+echo "App ready: $READY"
 
 if [ "$READY" -eq 1 ]; then
   sleep 100
