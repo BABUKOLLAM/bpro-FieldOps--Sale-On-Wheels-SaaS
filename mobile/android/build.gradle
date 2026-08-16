@@ -19,3 +19,22 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Some native module dependencies (e.g. react-native-thermal-receipt-
+// printer) ship an android/build.gradle hardcoding an old compileSdk
+// (29) from whenever they were last published. AGP 8.x refuses to
+// compile Java 9+ source below compileSdk 30 ("In order to compile
+// Java 9+ source, please set compileSdkVersion to 30 or above"). Force
+// every Android library subproject onto this project's own compileSdk/
+// buildTools instead of patching node_modules — this also covers any
+// other dependency that hits the same wall, not just this one module.
+subprojects { subproject ->
+    afterEvaluate {
+        if (subproject.plugins.hasPlugin("com.android.library") || subproject.plugins.hasPlugin("com.android.application")) {
+            android {
+                compileSdkVersion rootProject.ext.compileSdkVersion
+                buildToolsVersion rootProject.ext.buildToolsVersion
+            }
+        }
+    }
+}
