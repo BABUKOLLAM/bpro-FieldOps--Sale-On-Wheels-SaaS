@@ -37,9 +37,26 @@ adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
 # once the window-focus signal confirms the app launched at all (not
 # crashed/backgrounded), wait a generous fixed settle time — grounded in
 # that observed duration plus margin — before capturing evidence.
+# The emulator's own launcher sometimes ANRs from boot-time load; its
+# dialog steals window focus from the (healthy) app and photobombs the
+# evidence screenshot. Killing the launcher process dismisses the
+# dialog (the system restarts the launcher on its own); our app is
+# unaffected. Called before each readiness check AND right before the
+# screenshot — a prior run confirmed readiness via the resumed-activity
+# fallback and exited the loop without ever reaching a clearing step,
+# leaving the dialog overlaying an otherwise perfect screenshot.
+clear_launcher_anr() {
+  if adb shell dumpsys window 2>/dev/null | grep -qi "Application Not Responding: com.google.android.apps.nexuslauncher"; then
+    echo "Launcher ANR dialog detected — clearing it"
+    adb shell am force-stop com.google.android.apps.nexuslauncher || true
+    sleep 2
+  fi
+}
+
 READY=0
 for i in $(seq 1 30); do
   sleep 4
+  clear_launcher_anr
   # Two acceptable readiness signals, because either alone has a proven
   # failure mode on these runners:
   #  - mCurrentFocus misses when a SYSTEM dialog holds focus over the
@@ -55,21 +72,18 @@ for i in $(seq 1 30); do
     READY=1
     break
   fi
-  # The emulator's own launcher sometimes ANRs from boot-time load; its
-  # dialog steals focus and would also ruin the evidence screenshot.
-  # Killing the launcher process dismisses the dialog (the system
-  # restarts the launcher on its own); our app is unaffected.
-  if adb shell dumpsys window 2>/dev/null | grep -qi "Application Not Responding: com.google.android.apps.nexuslauncher"; then
-    echo "Launcher ANR dialog detected — clearing it"
-    adb shell am force-stop com.google.android.apps.nexuslauncher || true
-  fi
 done
 echo "App ready: $READY"
 
 if [ "$READY" -eq 1 ]; then
+  # Both readiness signals fire when the Activity is up, which is still
+  # before Metro finishes serving/parsing the JS bundle — the settle
+  # time covers the remaining bundle load + WatermelonDB init + first
+  # paint (empirically up to ~2 minutes total cold in this CI).
   sleep 100
 fi
 
+clear_launcher_anr
 adb exec-out screencap -p > "$ARTIFACTS_DIR/tier2-01-launch.png"
 adb logcat -d > "$ARTIFACTS_DIR/logcat.txt"
 
