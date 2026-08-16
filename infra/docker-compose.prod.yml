@@ -48,6 +48,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.production
       POSTGRES_HOST: postgres
       REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
     volumes:
       - static-files:/app/staticfiles
       - media-files:/app/media
@@ -65,6 +66,15 @@ services:
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60"
+    # Probes /healthz/ (DB + Redis round-trip, see apps/core/views.py) —
+    # python-based because the slim image ships no curl/wget. start_period
+    # covers the migrate+collectstatic phase of the command above.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; r=urllib.request.urlopen('http://localhost:8000/healthz/', timeout=5); sys.exit(0 if r.status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
     # No published port — nginx proxies to this container's 8000 over the
     # internal compose network.
 
@@ -78,6 +88,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.production
       POSTGRES_HOST: postgres
       REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,6 +106,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.production
       POSTGRES_HOST: postgres
       REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
     depends_on:
       postgres:
         condition: service_healthy
