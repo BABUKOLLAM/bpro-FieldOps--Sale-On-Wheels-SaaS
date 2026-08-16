@@ -29,6 +29,16 @@ jobs:
         working-directory: mobile
         run: npm ci
 
+      # Cheap gates first — fail in seconds on a type or lint error
+      # instead of minutes into the gradle build.
+      - name: Typecheck
+        working-directory: mobile
+        run: npm run typecheck
+
+      - name: Lint
+        working-directory: mobile
+        run: npm run lint
+
       - uses: actions/setup-java@v4
         with:
           distribution: "temurin"
@@ -123,3 +133,60 @@ jobs:
             mobile/artifacts/**
             /tmp/metro.log
           if-no-files-found: warn
+
+  # Production-signed release APK — the one to actually distribute.
+  # Runs only on pushes to main (not PRs, where fork runs wouldn't have
+  # the signing secrets anyway) and skips itself gracefully if the
+  # secrets haven't been configured.
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install JS dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Decode release keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No ANDROID_RELEASE_KEYSTORE_BASE64 secret configured — skipping release build."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build signed release APK
+        if: steps.keystore.outputs.present == 'true'
+        working-directory: mobile/android
+        env:
+          RELEASE_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload signed release APK
+        if: steps.keystore.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpro-fieldops-release-apk
+          path: mobile/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

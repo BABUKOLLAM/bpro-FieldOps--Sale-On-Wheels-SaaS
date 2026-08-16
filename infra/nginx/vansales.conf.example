@@ -33,6 +33,15 @@ server {
 
     ssl_certificate     /etc/letsencrypt/live/app.YOURDOMAIN.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/app.YOURDOMAIN.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    # Next.js doesn't emit these itself — set them at the edge. `always`
+    # so they're present on error responses too.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "same-origin" always;
 
     # Signature images / logo uploads go through admin-web's proxy route.
     client_max_body_size 15m;
@@ -53,6 +62,14 @@ server {
 
     ssl_certificate     /etc/letsencrypt/live/app.YOURDOMAIN.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/app.YOURDOMAIN.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    # Django sets security headers on its own (proxied) responses, but
+    # /static/ and /media/ below are served directly by nginx and would
+    # otherwise ship with none.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
 
     # Direct invoice/signature/logo uploads from the mobile app and
     # Django admin.

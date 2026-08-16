@@ -6,6 +6,11 @@ export default function NavLayoutToggle() {
   const [isColumn, setIsColumn] = useState<boolean | null>(null);
 
   useEffect(() => {
+    // SSR-safe hydration read: the attribute is set pre-hydration by the
+    // chrome-init script in layout.tsx, and the server render can't know
+    // it — reading it post-mount (one extra render) is the standard
+    // pattern for this, which the lint rule can't distinguish.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsColumn(document.documentElement.getAttribute("data-nav-layout") === "column");
   }, []);
 

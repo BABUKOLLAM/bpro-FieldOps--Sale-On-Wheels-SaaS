@@ -156,6 +156,19 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    # Brute-force / abuse protection. The "login" scope is deliberately
+    # tight (per-IP, unauthenticated); the anon/user defaults are high
+    # enough that the mobile app's sync bursts (a pull + a page of
+    # pushes) never come near them.
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/min",
+        "user": "600/min",
+        "login": "10/min",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -179,6 +192,18 @@ SIMPLE_JWT = {
 # ---- CORS ----
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"])
 CORS_ALLOW_CREDENTIALS = True
+
+# ---- Cache ----
+# Redis-backed (Django's native backend, no extra package) so throttle
+# counters are shared across all gunicorn workers — the default
+# LocMemCache is per-process, which would multiply every rate limit by
+# the worker count. DB 1 keeps it out of Celery's DB 0.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("REDIS_CACHE_URL", default="redis://localhost:6379/1"),
+    }
+}
 
 # ---- Celery ----
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")

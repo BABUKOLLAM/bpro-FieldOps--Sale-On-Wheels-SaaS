@@ -89,15 +89,31 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // Real production signing, driven entirely by environment
+        // variables so the keystore never lives in the repo. CI decodes
+        // it from the ANDROID_RELEASE_KEYSTORE_BASE64 repo secret (see
+        // .github/workflows/mobile-android-ci.yml); the canonical copy
+        // is held offline by the maintainer — losing it permanently
+        // forfeits the ability to ship updates under this app identity.
+        release {
+            if (System.getenv('RELEASE_KEYSTORE_FILE')) {
+                storeFile file(System.getenv('RELEASE_KEYSTORE_FILE'))
+                storePassword System.getenv('RELEASE_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('RELEASE_KEY_ALIAS')
+                keyPassword System.getenv('RELEASE_KEY_PASSWORD') ?: System.getenv('RELEASE_KEYSTORE_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Falls back to the debug keystore for local `assembleRelease`
+            // runs without the release env vars — convenient for smoke
+            // tests, but such an APK is NOT distributable (devices treat
+            // it as a different app identity than the real release key).
+            signingConfig System.getenv('RELEASE_KEYSTORE_FILE') ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

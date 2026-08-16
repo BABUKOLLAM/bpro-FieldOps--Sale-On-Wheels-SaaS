@@ -10,6 +10,15 @@ CELERY_TASK_EAGER_PROPAGATES = True
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
+# In-process cache for tests, same reason as eager Celery above — the
+# base settings point the cache (which backs DRF throttle counters) at
+# Redis, and tests must run with no Redis available.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
 FIELD_ENCRYPTION_KEY = "b142MqNTXKs46wWNs1s02ZIpPmFWhoAAy6P1Hy4AMxU="
 
 # Two extra, statically-declared database aliases purely for testing

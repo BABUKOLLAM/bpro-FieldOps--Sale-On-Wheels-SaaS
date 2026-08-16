@@ -65,7 +65,7 @@ export default function InstantiateTemplateForm({ templateId, agents }: { templa
         disabled={submitting} variant="success" size="sm">
         {submitting ? "Creating…" : "Instantiate as new route"}
       </Button>
-      {createdBeatName && <span className="text-xs text-emerald-600">Created "{createdBeatName}" — see Routes above.</span>}
+      {createdBeatName && <span className="text-xs text-emerald-600">Created &quot;{createdBeatName}&quot; — see Routes above.</span>}
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </form>
   );

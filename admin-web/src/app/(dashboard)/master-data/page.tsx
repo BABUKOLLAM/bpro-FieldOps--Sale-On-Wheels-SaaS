@@ -146,7 +146,7 @@ export default async function MasterDataPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Routes / Beats ({beats.count})</h2>
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Assign each agent an ordered list of outlets to visit (FR-15 / AR-08). Feeds the Live Map's route-adherence view.
+          Assign each agent an ordered list of outlets to visit (FR-15 / AR-08). Feeds the Live Map&apos;s route-adherence view.
         </p>
         <div className="space-y-4">
           {beats.results.map((beat) => {

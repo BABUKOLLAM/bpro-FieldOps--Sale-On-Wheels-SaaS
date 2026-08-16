@@ -1,0 +1,41 @@
+name: admin-web-ci
+
+on:
+  push:
+    paths: ["admin-web/**", ".github/workflows/admin-web-ci.yml"]
+  pull_request:
+    paths: ["admin-web/**", ".github/workflows/admin-web-ci.yml"]
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: admin-web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: admin-web
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: admin-web
+        run: npm run typecheck
+
+      - name: Lint
+        working-directory: admin-web
+        run: npm run lint
+
+      # The real gate — catches Server/Client component violations,
+      # invalid route exports, and other Next.js-specific errors that
+      # typecheck and lint don't see.
+      - name: Production build
+        working-directory: admin-web
+        run: npm run build

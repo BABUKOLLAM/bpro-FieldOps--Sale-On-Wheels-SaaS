@@ -6,6 +6,10 @@ export default function ThemeToggle() {
   const [isDark, setIsDark] = useState<boolean | null>(null);
 
   useEffect(() => {
+    // SSR-safe hydration read: the class is set pre-hydration by the
+    // chrome-init script in layout.tsx — see NavLayoutToggle for why
+    // this pattern is deliberate.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
 

@@ -160,7 +160,11 @@ export default schemaMigrations({
           name: 'credit_notes',
           columns: [
             { name: 'server_id', type: 'string', isIndexed: true },
-            { name: 'original_invoice_server_id', type: 'string', isIndexed: true },
+            {
+              name: 'original_invoice_server_id',
+              type: 'string',
+              isIndexed: true,
+            },
             { name: 'customer_server_id', type: 'string' },
             { name: 'trip_server_id', type: 'string' },
             { name: 'reason_code', type: 'string' },

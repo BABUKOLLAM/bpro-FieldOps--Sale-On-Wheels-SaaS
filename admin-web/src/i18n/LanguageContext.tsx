@@ -17,8 +17,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
+    // SSR-safe hydration read: localStorage doesn't exist during the
+    // server render, so the stored locale can only be applied post-mount
+    // (one extra render) — the standard pattern for this, which the
+    // lint rule can't distinguish from an accidental cascade.
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "en" || stored === "ml" || stored === "ta") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocaleState(stored);
     }
   }, []);

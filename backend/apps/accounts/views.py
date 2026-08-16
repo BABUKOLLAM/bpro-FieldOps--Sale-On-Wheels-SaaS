@@ -2,6 +2,7 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.accounts.constants import PERM_ROLES_MANAGE, PERM_USERS_MANAGE
@@ -15,6 +16,8 @@ from .serializers import (
 
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
 
 
 class MeView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):

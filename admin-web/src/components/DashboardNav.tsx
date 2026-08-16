@@ -259,6 +259,10 @@ export default function DashboardNav() {
   const rowRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    // Close any open dropdown on navigation. Deliberately effect-driven:
+    // it must react to route changes made from anywhere (including a
+    // link inside the open dropdown itself).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpenKey(null);
   }, [pathname]);
 
