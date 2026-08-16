@@ -1,7 +1,14 @@
 buildscript {
     ext {
         buildToolsVersion = "34.0.0"
-        minSdkVersion = 23
+        // react-native-camera-kit (barcode scanning in SpotBillingScreen)
+        // declares minSdkVersion 24 in its own manifest — the manifest
+        // merger fails hard if the app project's own minSdk is lower
+        // ("might be using APIs not available" below 24). API 24 is
+        // Android 7.0 (2016); no other dependency or app code assumes
+        // anything from 23-24, so this is a safe, unconditional bump
+        // rather than dropping camera-kit or overriding the merge check.
+        minSdkVersion = 24
         compileSdkVersion = 34
         targetSdkVersion = 34
         ndkVersion = "26.1.10909125"
