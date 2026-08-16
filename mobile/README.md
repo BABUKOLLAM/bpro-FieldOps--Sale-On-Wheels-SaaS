@@ -63,10 +63,23 @@ Bluetooth hardware or native project to test against.
 
 ## Native project setup
 
-`ios/` and `android/` native projects are checked into this repo and are
-what `mobile-ios-ci` (GitHub Actions) builds and runs against the iOS
-Simulator on every push — see `.github/workflows/mobile-ios-ci.yml` and
-`mobile/e2e/salesman-flow.yaml` for the automated end-to-end coverage.
+`ios/` and `android/` native projects are checked into this repo. Two
+GitHub Actions workflows build against them on every push:
+
+- `mobile-ios-ci` (`.github/workflows/mobile-ios-ci.yml`) builds for the
+  iOS Simulator and runs the full salesman workflow end-to-end via
+  Maestro (`mobile/e2e/salesman-flow.yaml`).
+- `mobile-android-ci` (`.github/workflows/mobile-android-ci.yml`) builds
+  a debug APK (`./gradlew assembleDebug`), boots an emulator, installs
+  and launches it, and screenshots the launch screen. Both the built APK
+  and the screenshot are uploaded as the `mobile-android-ci-artifacts`
+  workflow artifact — download it from the Actions run to sideload onto
+  a real Android device (Settings will prompt to allow installs from
+  whatever app you used to open the file, then the standard package
+  installer confirmation). It does not yet run the full backend-driven
+  Maestro flow the iOS workflow does — see the workflow file if you want
+  to extend it the same way.
+
 To run locally:
 
 ```bash
@@ -75,25 +88,26 @@ npx pod-install ios       # iOS only
 npm run ios                # or: npm run android
 ```
 
-CI's build is Simulator-only (ad-hoc signed, no provisioning profile) —
-it cannot install on a real device. See
+CI's iOS build is Simulator-only (ad-hoc signed, no provisioning
+profile) and the Android build is debug-signed (the committed RN
+placeholder `debug.keystore`, not a production key) — neither is what
+you'd distribute to real users. See
 [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) for what physical
 device testing still needs and why it's a separate, currently-unverified
 step from what CI already proves.
 
 ## Multi-language UI (FR-17)
 
-`src/i18n/` is a small hand-maintained dictionary (English + Hindi so
-far — see `locales.ts`) plus a `LanguageProvider`/`useTranslation()`
+`src/i18n/` is a small hand-maintained dictionary (English, Malayalam,
+Tamil — see `locales.ts`) plus a `LanguageProvider`/`useTranslation()`
 context (`LanguageContext.tsx`), not a full i18n library — the app's
 string surface is small enough that this is simpler to review and
 extend. The chosen language persists via
-`@react-native-async-storage/async-storage` and is switchable from the
-pill button next to "Sign out" on the home screen. Currently wired into
-navigation titles and the home screen; other screens still show
-English strings and can be migrated the same way (add keys to both
-locales in `locales.ts`, then `const { t } = useTranslation()` in the
-screen).
+`@react-native-async-storage/async-storage` and is switchable from a
+pill button on the home screen, which opens a 3-way language picker —
+see the header comment in `locales.ts` for which English strings are
+load-bearing for the Maestro E2E flow and must never be edited without
+also updating `e2e/salesman-flow.yaml`. Wired into every screen.
 
 ## OTP proof-of-delivery (FR-12 remainder)
 

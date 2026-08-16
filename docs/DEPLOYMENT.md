@@ -165,3 +165,28 @@ R2/S3 upload — the script has a commented example line for `rclone`.
   production image (currently ships full `node_modules`).
 - Set `SENTRY_DSN` for error tracking — already wired up in
   `config/settings/production.py`, just needs the env var.
+- Wrap admin-web as an installable Android APK (Trusted Web Activity),
+  once `app.YOURDOMAIN.com` above is a real, live HTTPS domain — a TWA
+  can't be built against a placeholder or localhost, because Android
+  verifies the APK against a `.well-known/assetlinks.json` file hosted
+  on that same domain (this is what lets the app open full-screen,
+  without a browser URL bar, unlike a plain "Add to Home Screen"
+  bookmark). Steps once the domain is live:
+  1. `npm install -g @bubblewrap/cli`
+  2. `bubblewrap init --manifest https://app.yourdomain.com/manifest.webmanifest`
+     — this reads the existing PWA manifest (`admin-web/public/manifest.webmanifest`,
+     already shipped) and interactively asks for a package name (e.g.
+     `com.bpro.fieldops.admin`), app name, and signing key details;
+     generates a `twa-manifest.json` + Android project.
+  3. `bubblewrap build` — produces a signed release APK/AAB and prints
+     the SHA-256 fingerprint of the signing key.
+  4. Add that fingerprint to `admin-web/public/.well-known/assetlinks.json`
+     (Bubblewrap prints the exact JSON to paste) and deploy — nginx
+     already serves static files from `admin-web/public/`, so no new
+     server config is needed, just the file existing before the next
+     deploy.
+  5. Re-run `bubblewrap build` after any admin-web `manifest.webmanifest`
+     change (icon, name, theme color) to keep the wrapper in sync.
+  A mirror of `mobile-android-ci.yml` could automate steps 2–3 once the
+  signing key is generated once and stored as a repo secret — not set up
+  yet since it needs that one-time interactive key generation first.
