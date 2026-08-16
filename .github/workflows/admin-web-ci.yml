@@ -25,17 +25,20 @@ jobs:
         working-directory: admin-web
         run: npm ci
 
-      - name: Typecheck
-        working-directory: admin-web
-        run: npm run typecheck
-
       - name: Lint
         working-directory: admin-web
         run: npm run lint
 
-      # The real gate — catches Server/Client component violations,
-      # invalid route exports, and other Next.js-specific errors that
-      # typecheck and lint don't see.
+      # Build BEFORE typecheck: Next generates route/layout helper types
+      # (e.g. LayoutProps) into .next/types during the build, and
+      # tsconfig includes them — on a fresh checkout tsc fails with
+      # "Cannot find name 'LayoutProps'" until they exist. The build is
+      # also the stronger gate anyway (Server/Client component
+      # violations, invalid route exports).
       - name: Production build
         working-directory: admin-web
         run: npm run build
+
+      - name: Typecheck
+        working-directory: admin-web
+        run: npm run typecheck
