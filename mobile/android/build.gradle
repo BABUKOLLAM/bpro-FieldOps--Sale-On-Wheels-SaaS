@@ -29,9 +29,20 @@ apply plugin: "com.facebook.react.rootproject"
 // buildTools instead of patching node_modules — this also covers any
 // other dependency that hits the same wall, not just this one module.
 subprojects { subproject ->
+    // RNGP's own build-tool module (:gradle-plugin:react-native-gradle-
+    // plugin, an included/composite build) is already fully evaluated —
+    // and some of its tasks already run — by the time this block
+    // executes, since included builds configure earlier than the root
+    // project's own build.gradle body. afterEvaluate throws on a project
+    // past that point ("Cannot run Project.afterEvaluate(Closure) when
+    // the project is already evaluated"), and it's a JVM/Kotlin tooling
+    // project with no `android {}` block to override anyway, so skip it.
+    if (subproject.state.executed) {
+        return
+    }
     afterEvaluate {
         if (subproject.plugins.hasPlugin("com.android.library") || subproject.plugins.hasPlugin("com.android.application")) {
-            android {
+            subproject.android {
                 compileSdkVersion rootProject.ext.compileSdkVersion
                 buildToolsVersion rootProject.ext.buildToolsVersion
             }
