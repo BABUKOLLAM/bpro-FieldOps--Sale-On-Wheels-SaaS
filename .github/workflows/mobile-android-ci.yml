@@ -95,14 +95,43 @@ jobs:
           # dev-mode bundle fetch (which always targets localhost:8081,
           # not 10.0.2.2) resolves correctly without an app code change.
           disable-animations: true
+          # Headless + no GPU/audio subsystems: a first pass with default
+          # options produced an emulator so resource-starved that even
+          # the Pixel Launcher (the emulator's own home screen, not our
+          # app) ANR'd — visible in the screenshot, not just inferred.
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: |
             adb reverse tcp:8081 tcp:8081
             adb install -r mobile/artifacts/bpro-fieldops-debug.apk
             adb shell monkey -p ${{ env.APP_ID }} -c android.intent.category.LAUNCHER 1
-            sleep 15
             mkdir -p mobile/artifacts
+
+            # A cold debug launch has to download and parse the full JS
+            # bundle from Metro before the app renders anything real —
+            # a flat 15s sleep here produced a screenshot of the app
+            # still at "Bundling 72%..." with the emulator's launcher
+            # already ANR'd from the load, while the step still exited 0
+            # (nothing in it actually checked readiness). Poll for the
+            # app's activity being resumed instead, with a generous
+            # ceiling, and fail the step for real if it never gets
+            # there — the screenshot + logcat are still captured either
+            # way so a timeout leaves visible evidence, not a silent gap.
+            READY=0
+            for i in $(seq 1 30); do
+              sleep 4
+              if adb shell dumpsys activity activities 2>/dev/null | grep -q "mResumedActivity.*${{ env.APP_ID }}"; then
+                READY=1
+                sleep 3
+                break
+              fi
+            done
+            echo "App resumed: $READY"
             adb exec-out screencap -p > mobile/artifacts/tier2-01-launch.png
             adb logcat -d > mobile/artifacts/logcat.txt
+            if [ "$READY" -ne 1 ]; then
+              echo "App never reached a resumed foreground state within the timeout — see tier2-01-launch.png and logcat.txt"
+              exit 1
+            fi
 
       - name: Logs (diagnostic, always)
         if: always()
