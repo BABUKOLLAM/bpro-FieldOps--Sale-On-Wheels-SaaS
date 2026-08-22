@@ -27,6 +27,16 @@ deliberately different from the dev `.env` (repo root, see
 - A domain you control DNS for.
 - This repo cloned onto the VPS (`git clone ... vansales-saas`).
 
+**If this VPS already runs Caddy for other projects** (a shared box
+hosting more than one client site, each with its own reverse proxy
+entry in one Caddyfile) — skip straight to
+["Shared VPS behind an existing Caddy"](#shared-vps-behind-an-existing-caddy)
+near the end of this doc instead of the steps below. Steps 1, 3, 4, and 5
+differ in that case (no certbot, a different nginx config, a different
+compose file) — trying to run this doc's default nginx-owns-TLS-directly
+path on a box where Caddy already holds ports 80/443 fails with
+`Bind for 0.0.0.0:80 failed: port is already allocated`.
+
 ## 1. DNS
 
 Point four A records at the VPS's IP address:
@@ -135,6 +145,72 @@ production deployment.
 - Log in via the superuser account created in step 6.
 - Point the mobile app's API base URL at `https://api.fieldopspro.in`
   and confirm a sync pull succeeds.
+
+## Shared VPS behind an existing Caddy
+
+Skip this whole section if this box only ever hosts this one project —
+use steps 1–7 above instead. This path is for a VPS that already runs
+Caddy as the front door for other client sites, each with its own entry
+in one shared Caddyfile (discovered in practice on the current
+production VPS: `docker-proxy` already held ports 80/443 for Caddy, and
+`/root/<other-project>/deploy/Caddyfile` existed for sibling projects —
+the same convention this section follows).
+
+Caddy terminates TLS for every hostname on the box and reverse-proxies
+plain HTTP to each project's own containers over the internal Docker
+network, by Compose service name. This project's nginx therefore never
+terminates TLS itself and never needs to be reachable from the host
+directly — only from Caddy, container-to-container. Two files exist
+specifically for this:
+
+- `infra/nginx/vansales.caddy-fronted.conf.example` — nginx listens on
+  plain `80` only (no `ssl` block, since it would need certificate
+  files this path never generates), doing the same Host-header routing
+  to admin-web/backend as the standalone config.
+- `infra/docker-compose.prod.caddy-fronted.yml` — the same stack as
+  `docker-compose.prod.yml` minus nginx's host port publish (Caddy
+  already holds 80/443; publishing them again from this project's nginx
+  conflicts — `Bind for 0.0.0.0:80 failed: port is already allocated`
+  is that conflict) and minus the `certbot` service (nothing here ever
+  calls it, since Caddy handles all certificate issuance itself).
+
+Steps, replacing 1/3/4/5 above:
+
+1. **DNS** — same four A records as step 1, all pointed at the VPS's
+   existing IP (the one Caddy is already reachable on).
+2. **Configure secrets** — identical to step 2.
+3. **nginx config**:
+   ```bash
+   mkdir -p nginx
+   cp nginx/vansales.caddy-fronted.conf.example nginx/vansales.conf
+   ```
+4. **Add this project's Caddy block** — merge `deploy/Caddyfile`'s
+   contents into the box's shared Caddyfile (find it with
+   `docker inspect <caddy-container> --format '{{ range .Mounts }}{{ .Source }} -> {{ .Destination }}{{println}}{{end}}'`
+   to locate the host-side file Caddy's container has it bind-mounted
+   from — editing inside the container's own filesystem layer won't
+   persist across a container restart). Then reload Caddy so it picks
+   up the change and provisions certificates for the new hostnames —
+   `docker exec <caddy-container> caddy reload --config /etc/caddy/Caddyfile`,
+   or restart the container if `reload` isn't available. This step is
+   the one place DNS actually matters here: Caddy's automatic HTTPS
+   can't provision a certificate for a hostname that doesn't yet
+   resolve to this VPS.
+5. **Build and bring the stack up** (this project's own containers —
+   the shared Caddy container is managed separately, not by this
+   compose file):
+   ```bash
+   docker compose -f docker-compose.prod.caddy-fronted.yml build
+   docker compose -f docker-compose.prod.caddy-fronted.yml up -d
+   ```
+
+Steps 2 ("Configure secrets"), 6 ("Create the client's first data"), 7
+("Verify"), 8 ("Backups"), and 9 ("Ongoing maintenance") above all
+still apply as written — only replace every `docker-compose.prod.yml`
+in those commands with `docker-compose.prod.caddy-fronted.yml`, and
+skip the cert-renewal cron entry in step 9 (Caddy renews its own
+certificates automatically; there's nothing here for this project's
+own cron to do).
 
 ## 8. Backups
 

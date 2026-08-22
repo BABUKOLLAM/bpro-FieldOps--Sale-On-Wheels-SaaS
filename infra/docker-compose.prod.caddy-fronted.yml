@@ -1,0 +1,173 @@
+# Production compose file for deployments running BEHIND A SHARED CADDY
+# FRONT DOOR that already owns ports 80/443 on the box — e.g. a VPS
+# hosting several bpro client projects, where one Caddy instance handles
+# TLS/routing for all of them (see infra/nginx/
+# vansales.caddy-fronted.conf.example for the full explanation and the
+# Caddyfile block this expects).
+#
+# This is a complete alternate file, not an override layered on top of
+# docker-compose.prod.yml — the two differ enough (nginx's ports, the
+# certbot service, what nginx's volumes mount) that a partial merge risked
+# depending on Docker Compose's list-merge semantics, which vary by
+# version. Keeping both as full, independently-readable files matches how
+# this project already separates dev (docker-compose.yml) from standalone
+# production (docker-compose.prod.yml) — a third complete file for this
+# third topology, not a delta of the second.
+#
+# If this box is NOT sharing a front door with other projects, use
+# docker-compose.prod.yml instead (nginx owns 80/443 directly, TLS via
+# certbot) and follow docs/DEPLOYMENT.md's standalone path.
+#
+# Usage: see docs/DEPLOYMENT.md's "Shared VPS behind an existing Caddy"
+# section. Short version:
+#   docker compose -f infra/docker-compose.prod.caddy-fronted.yml build
+#   docker compose -f infra/docker-compose.prod.caddy-fronted.yml up -d
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No published port — only reachable from other containers on this
+    # compose network. Use `docker compose exec postgres psql ...` or
+    # infra/backup.sh for direct access.
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No published port, same reasoning as postgres.
+
+  backend:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
+    volumes:
+      - static-files:/app/staticfiles
+      - media-files:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # migrate + collectstatic on every start is safe for this app's
+    # migration history (additive, already run in sequence throughout
+    # development) and keeps a solo-operator deploy to one command. Static
+    # files land in the shared volume nginx serves directly (faster than
+    # proxying through gunicorn/whitenoise for a VPS this size).
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60"
+    # Probes /healthz/ (DB + Redis round-trip, see apps/core/views.py) —
+    # python-based because the slim image ships no curl/wget. start_period
+    # covers the migrate+collectstatic phase of the command above.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; r=urllib.request.urlopen('http://localhost:8000/healthz/', timeout=5); sys.exit(0 if r.status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    # No published port — nginx proxies to this container's 8000 over the
+    # internal compose network.
+
+  celery-worker:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A config worker -l info
+
+  celery-beat:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: postgres
+      REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A config beat -l info
+
+  admin-web:
+    build:
+      context: ../admin-web
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+    restart: unless-stopped
+    environment:
+      # Browser-facing API calls that don't go through admin-web's own
+      # proxy route hit this URL directly — must be the public API domain.
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      # admin-web's server-side proxy route talks to the backend over the
+      # compose network directly, never through the public domain/nginx.
+      API_BASE_URL_INTERNAL: http://backend:8000
+    depends_on:
+      - backend
+    # No published port — nginx proxies to this container's 3000.
+
+  # No host ports here — Caddy (a separate container/stack already
+  # running on this box) reaches this service over the internal Docker
+  # network by its Compose service name ("nginx") and internal port 80,
+  # the same way it already reaches other projects' containers (see
+  # infra/nginx/vansales.caddy-fronted.conf.example). Publishing 80/443
+  # here too would conflict with Caddy already holding those ports on
+  # the host — the exact "port is already allocated" failure this file
+  # exists to avoid. No certbot-etc/certbot-www mounts either: this
+  # nginx never terminates TLS, so it never needs certificate files —
+  # Caddy handles all of that itself.
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx/vansales.conf:/etc/nginx/conf.d/default.conf:ro
+      - static-files:/var/www/static:ro
+      - media-files:/var/www/media:ro
+    depends_on:
+      - backend
+      - admin-web
+
+volumes:
+  postgres-data:
+  static-files:
+  media-files:

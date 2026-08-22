@@ -1,0 +1,77 @@
+# Nginx config for deployments running BEHIND a shared Caddy front door —
+# use this instead of vansales.conf.example when this app is NOT the only
+# site on the box. On the current production VPS, Caddy already owns
+# ports 80/443 for every client site hosted there (see the box's shared
+# Caddyfile) and reverse-proxies plain HTTP to this container by its
+# Docker Compose service name:
+#
+#   app.fieldopspro.in, fieldopspro.in, www.fieldopspro.in, api.fieldopspro.in {
+#       reverse_proxy nginx:80
+#   }
+#
+# One Caddy block for all four hostnames is enough — nginx below does its
+# own Host-header routing to admin-web vs backend, so Caddy doesn't need
+# per-domain logic on its side.
+#
+# Nginx here does NOT terminate TLS and does NOT redirect to HTTPS —
+# Caddy already did both before the request ever reaches this container.
+# A `listen 443 ssl` block would need certificate files this deployment
+# never generates (Caddy handles all of that itself via its own
+# automatic HTTPS), so nginx would fail to start entirely if you tried
+# to keep one — this is why this is a separate file from
+# vansales.conf.example rather than a small variant of it.
+#
+# Also requires infra/docker-compose.caddy-override.yml (drops nginx's
+# host port publish — Caddy reaches it over the internal Docker network
+# only, and trying to also bind the host's 80/443 directly conflicts
+# with Caddy already holding them). See docs/DEPLOYMENT.md's
+# "Shared VPS behind an existing Caddy" section.
+
+server {
+    listen 80;
+    server_name app.fieldopspro.in fieldopspro.in www.fieldopspro.in;
+
+    # Caddy already terminates TLS and sets these before forwarding —
+    # relayed through rather than re-derived from nginx's own (always
+    # plain-HTTP) connection to Caddy.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "same-origin" always;
+
+    client_max_body_size 15m;
+
+    location / {
+        proxy_pass http://admin-web:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $http_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    }
+}
+
+server {
+    listen 80;
+    server_name api.fieldopspro.in;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    client_max_body_size 15m;
+
+    location /static/ {
+        alias /var/www/static/;
+    }
+
+    location /media/ {
+        alias /var/www/media/;
+    }
+
+    location / {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $http_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    }
+}

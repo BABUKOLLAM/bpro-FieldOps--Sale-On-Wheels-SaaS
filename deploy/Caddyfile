@@ -1,0 +1,15 @@
+# bpro FieldOps — Sales on Wheels. Block to add/merge into this VPS's
+# shared Caddyfile (see docs/DEPLOYMENT.md's "Shared VPS behind an
+# existing Caddy" section — this file is documentation/version control
+# for that block, matching how the other bpro projects on this box each
+# keep their own deploy/Caddyfile; it is NOT auto-loaded by Caddy itself,
+# the live edit happens in the shared Caddyfile directly).
+#
+# One block for all four hostnames: nginx (this project's own container,
+# reached by Compose service name over the internal Docker network) does
+# its own Host-header routing to admin-web vs backend — see
+# infra/nginx/vansales.caddy-fronted.conf.example — so Caddy doesn't need
+# per-domain logic here.
+app.fieldopspro.in, fieldopspro.in, www.fieldopspro.in, api.fieldopspro.in {
+	reverse_proxy nginx:80
+}
