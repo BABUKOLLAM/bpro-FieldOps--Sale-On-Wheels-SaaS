@@ -32,8 +32,8 @@ deliberately different from the dev `.env` (repo root, see
 Point two A records at the VPS's IP address:
 
 ```
-app.YOURDOMAIN.com   A   <vps-ip>   # admin-web — the back-office console
-api.YOURDOMAIN.com   A   <vps-ip>   # backend — hit directly by the mobile app
+app.fieldopspro.in   A   <vps-ip>   # admin-web — the back-office console
+api.fieldopspro.in   A   <vps-ip>   # backend — hit directly by the mobile app
 ```
 
 No wildcard record needed for this model — just the two.
@@ -45,8 +45,8 @@ cd vansales-saas/infra
 cp ../.env.production.example .env
 ```
 
-Edit `infra/.env`: replace every `YOURDOMAIN.com` with the real domain,
-and generate real values for `SECRET_KEY`, `POSTGRES_PASSWORD`,
+Edit `infra/.env`: the domain values (`app.`/`api.fieldopspro.in`) are
+already filled in; generate real values for `SECRET_KEY`, `POSTGRES_PASSWORD`,
 `FIELD_ENCRYPTION_KEY`, and `CONNECTOR_API_KEY` (commands are inline as
 comments in the file). Leave the email/FCM/SMS/Sentry vars blank for now
 — every one of them safely falls back to console-logging instead of
@@ -58,13 +58,12 @@ All commands from here on assume you're inside `infra/`.
 
 ```bash
 mkdir -p nginx
-cp nginx/vansales.bootstrap.conf.example nginx/vansales.conf
-sed -i "s/YOURDOMAIN.com/yourdomain.com/g" nginx/vansales.conf   # your real domain
+cp nginx/vansales.bootstrap.conf.example nginx/vansales.conf   # already carries fieldopspro.in
 
 docker compose -f docker-compose.prod.yml up -d nginx
 ```
 
-Visit `http://app.yourdomain.com` — you should see the "nginx is up"
+Visit `http://app.fieldopspro.in` — you should see the "nginx is up"
 placeholder text. If not, fix DNS/firewall (port 80 open) before
 continuing.
 
@@ -76,19 +75,18 @@ than managing two:
 ```bash
 docker compose -f docker-compose.prod.yml run --rm certbot \
   certonly --webroot -w /var/www/certbot \
-  -d app.yourdomain.com -d api.yourdomain.com \
-  --email you@yourdomain.com --agree-tos --no-eff-email
+  -d app.fieldopspro.in -d api.fieldopspro.in \
+  --email <your-email-for-expiry-notices> --agree-tos --no-eff-email
 ```
 
-This creates `/etc/letsencrypt/live/app.yourdomain.com/` (named after
+This creates `/etc/letsencrypt/live/app.fieldopspro.in/` (named after
 the first `-d`) inside the `certbot-etc` volume — matches what
 `nginx/vansales.conf.example` already points at.
 
 ## 5. Switch to the real nginx config and bring everything up
 
 ```bash
-cp nginx/vansales.conf.example nginx/vansales.conf
-sed -i "s/YOURDOMAIN.com/yourdomain.com/g" nginx/vansales.conf
+cp nginx/vansales.conf.example nginx/vansales.conf   # already carries fieldopspro.in
 
 docker compose -f docker-compose.prod.yml build
 docker compose -f docker-compose.prod.yml up -d
@@ -113,7 +111,7 @@ docker compose -f docker-compose.prod.yml exec backend python manage.py createsu
 ```
 
 Then create the `Company`/`GSTRegistration` row(s) — either via Django
-admin at `https://api.yourdomain.com/admin/` (log in with the superuser
+admin at `https://api.fieldopspro.in/admin/` (log in with the superuser
 above) or a one-off shell command; see `docs/PROVISIONING.md` §2 for the
 exact snippet. **Do not run `seed_demo_data`** against this database —
 that command is for local dev/demo only.
@@ -124,12 +122,12 @@ production deployment.
 
 ## 7. Verify
 
-- `https://app.yourdomain.com` loads the login page, padlock shows a
+- `https://app.fieldopspro.in` loads the login page, padlock shows a
   valid cert.
-- `https://api.yourdomain.com/api/` responds (401 without a token is
+- `https://api.fieldopspro.in/api/` responds (401 without a token is
   correct — confirms the domain reaches Django, not that auth works).
 - Log in via the superuser account created in step 6.
-- Point the mobile app's API base URL at `https://api.yourdomain.com`
+- Point the mobile app's API base URL at `https://api.fieldopspro.in`
   and confirm a sync pull succeeds.
 
 ## 8. Backups
@@ -166,14 +164,14 @@ R2/S3 upload — the script has a commented example line for `rclone`.
 - Set `SENTRY_DSN` for error tracking — already wired up in
   `config/settings/production.py`, just needs the env var.
 - Wrap admin-web as an installable Android APK (Trusted Web Activity),
-  once `app.YOURDOMAIN.com` above is a real, live HTTPS domain — a TWA
+  once `app.fieldopspro.in` above is a real, live HTTPS domain — a TWA
   can't be built against a placeholder or localhost, because Android
   verifies the APK against a `.well-known/assetlinks.json` file hosted
   on that same domain (this is what lets the app open full-screen,
   without a browser URL bar, unlike a plain "Add to Home Screen"
   bookmark). Steps once the domain is live:
   1. `npm install -g @bubblewrap/cli`
-  2. `bubblewrap init --manifest https://app.yourdomain.com/manifest.webmanifest`
+  2. `bubblewrap init --manifest https://app.fieldopspro.in/manifest.webmanifest`
      — this reads the existing PWA manifest (`admin-web/public/manifest.webmanifest`,
      already shipped) and interactively asks for a package name (e.g.
      `com.bpro.fieldops.admin`), app name, and signing key details;

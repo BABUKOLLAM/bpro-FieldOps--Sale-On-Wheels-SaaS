@@ -1,8 +1,8 @@
 # Production nginx config for a single-client deployment — two public
 # hostnames sharing one Let's Encrypt certificate (issued with both as
 # Subject Alternative Names, see docs/DEPLOYMENT.md step 6):
-#   app.YOURDOMAIN.com  -> admin-web (Next.js) — the back-office console
-#   api.YOURDOMAIN.com  -> backend (Django)    — hit directly by the
+#   app.fieldopspro.in  -> admin-web (Next.js) — the back-office console
+#   api.fieldopspro.in  -> backend (Django)    — hit directly by the
 #                                                 mobile app; admin-web's
 #                                                 own server-side proxy
 #                                                 talks to `backend:8000`
@@ -10,12 +10,12 @@
 #                                                 instead, never through
 #                                                 this domain.
 #
-# Copy to nginx/vansales.conf and replace YOURDOMAIN.com throughout
-# before using — see docs/DEPLOYMENT.md.
+# Copy to nginx/vansales.conf as-is — the domain (fieldopspro.in) is
+# already filled in. See docs/DEPLOYMENT.md.
 
 server {
     listen 80;
-    server_name app.YOURDOMAIN.com api.YOURDOMAIN.com;
+    server_name app.fieldopspro.in api.fieldopspro.in;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -29,10 +29,10 @@ server {
 server {
     listen 443 ssl;
     http2 on;
-    server_name app.YOURDOMAIN.com;
+    server_name app.fieldopspro.in;
 
-    ssl_certificate     /etc/letsencrypt/live/app.YOURDOMAIN.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.YOURDOMAIN.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/app.fieldopspro.in/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.fieldopspro.in/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers off;
 
@@ -58,10 +58,10 @@ server {
 server {
     listen 443 ssl;
     http2 on;
-    server_name api.YOURDOMAIN.com;
+    server_name api.fieldopspro.in;
 
-    ssl_certificate     /etc/letsencrypt/live/app.YOURDOMAIN.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.YOURDOMAIN.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/app.fieldopspro.in/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.fieldopspro.in/privkey.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers off;
 

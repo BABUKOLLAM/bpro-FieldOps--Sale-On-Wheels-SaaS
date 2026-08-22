@@ -5,11 +5,11 @@
 # issue the certificate, then replace it with vansales.conf.example
 # (the real, SSL-enabled config) and reload.
 #
-# Replace YOURDOMAIN.com below with the real domain before using.
+# Domain: fieldopspro.in (already filled in) — copy to nginx/vansales.conf as-is.
 
 server {
     listen 80;
-    server_name app.YOURDOMAIN.com api.YOURDOMAIN.com;
+    server_name app.fieldopspro.in api.fieldopspro.in;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;

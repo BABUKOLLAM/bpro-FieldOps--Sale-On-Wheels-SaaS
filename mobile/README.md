@@ -122,8 +122,10 @@ silently hanging or pretending to work offline.
 
 ## Configuration
 
-Edit `src/config.ts` to point at your backend (`API_BASE_URL`). For a real
-per-client build, wire this through `react-native-config` instead of a
+`src/config.ts` sets `API_BASE_URL` by build type: debug builds use
+`http://localhost:8000` (local dev + CI E2E), release builds use
+`https://api.fieldopspro.in` (production). For a second client on a
+different backend, wire this through `react-native-config` instead of a
 hardcoded constant, so the same source tree can be built once per client
 with a different `.env` — see `docs/PROVISIONING.md`.
 
