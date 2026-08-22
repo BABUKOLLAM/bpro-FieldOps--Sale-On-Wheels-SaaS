@@ -34,6 +34,10 @@ async function forward(request: NextRequest, path: string[]) {
     headers: {
       Authorization: `Bearer ${token}`,
       ...(isMultipart ? {} : { "Content-Type": "application/json" }),
+      // See lib/api.ts's apiFetch for why this is set — Django's
+      // SECURE_SSL_REDIRECT otherwise redirect-loops this internal,
+      // Caddy/nginx-bypassing call forever.
+      "X-Forwarded-Proto": "https",
     },
     body: hasBody ? (isMultipart ? await request.formData() : await request.text()) : undefined,
     cache: "no-store",

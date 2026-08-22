@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
 
   const backendResponse = await fetch(`${API_BASE_URL_INTERNAL}/api/signup-requests/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    // See lib/api.ts's apiFetch for why X-Forwarded-Proto is set here —
+    // Django's SECURE_SSL_REDIRECT otherwise redirect-loops this
+    // internal, Caddy/nginx-bypassing call forever.
+    headers: { "Content-Type": "application/json", "X-Forwarded-Proto": "https" },
     body: JSON.stringify(body),
     // See lib/backendDispatcher.ts — fetch() to the backend by hostname
     // hangs on this VPS; this connects to its resolved IP directly.

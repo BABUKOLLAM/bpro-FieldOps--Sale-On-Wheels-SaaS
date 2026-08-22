@@ -22,6 +22,16 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
       ...(init.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       "Content-Type": "application/json",
+      // Django's SECURE_SSL_REDIRECT trusts this header (see
+      // SECURE_PROXY_SSL_HEADER in production.py) to know a request
+      // arrived over HTTPS, since it never terminates TLS itself. This
+      // call reaches the backend directly over the internal Docker
+      // network, bypassing Caddy/nginx (which would normally set this
+      // header) — so without it, Django considers every internal call
+      // insecure and redirects it to HTTPS forever. Safe to assert here:
+      // the original client request this is fulfilling already came in
+      // over HTTPS (enforced by Caddy in front of admin-web itself).
+      "X-Forwarded-Proto": "https",
     },
     cache: "no-store",
     // See backendDispatcher.ts — fetch() to the backend by hostname
