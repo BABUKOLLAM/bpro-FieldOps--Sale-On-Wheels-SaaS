@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from .models import AuditLog, Device, Role, User, UserRole
+from .models import AuditLog, Device, Role, SignupRequest, User, UserRole
 
 
 @admin.register(User)
@@ -25,6 +25,13 @@ class UserRoleAdmin(admin.ModelAdmin):
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     list_display = ("user", "device_id", "platform", "is_active", "last_synced_at")
+
+
+@admin.register(SignupRequest)
+class SignupRequestAdmin(admin.ModelAdmin):
+    list_display = ("name", "email", "requested_role_name", "status", "created_at", "decided_by")
+    list_filter = ("status",)
+    readonly_fields = ("created_at", "decided_at", "decided_by", "created_user")
 
 
 @admin.register(AuditLog)

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ACCESS_COOKIE } from "@/lib/api";
 
-// "/" is the public marketing/pricing landing page — open to everyone.
+// "/" is the public marketing/pricing landing page, "/signup" is the
+// public self-service access-request form — both open to everyone.
 // Everything else in the (dashboard) route group requires a session.
-const PUBLIC_PATHS = new Set(["/", "/login"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup"]);
 
 export function proxy(request: NextRequest) {
   const isAuthenticated = Boolean(request.cookies.get(ACCESS_COOKIE)?.value);

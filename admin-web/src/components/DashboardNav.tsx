@@ -23,7 +23,8 @@ type IconName =
   | "payments"
   | "collections"
   | "orders"
-  | "returns";
+  | "returns"
+  | "signupRequests";
 
 const ICON_PATHS: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -141,6 +142,13 @@ const ICON_PATHS: Record<IconName, React.ReactNode> = {
       <path d="M4 17.5v-4h4" />
     </>
   ),
+  signupRequests: (
+    <>
+      <circle cx="9" cy="8" r="3.25" />
+      <path d="M3.25 20c0-3.6 2.6-6 5.75-6s5.75 2.4 5.75 6" />
+      <path d="M16.5 8.5h5M19 6v5" />
+    </>
+  ),
 };
 
 function NavIcon({ name, className }: { name: IconName; className?: string }) {
@@ -160,12 +168,30 @@ function NavIcon({ name, className }: { name: IconName; className?: string }) {
   );
 }
 
+type NavItem = { href: string; label: string; icon: IconName; requiredPermission?: string };
+
 type NavGroup = {
   key: string;
   label: string;
   icon: IconName;
-  items: { href: string; label: string; icon: IconName }[];
+  items: NavItem[];
 };
+
+/**
+ * Nav-level permission gating is deliberately scoped to just these three
+ * access-sensitive items for now, not every page in the app — showing a
+ * dead "Fleet" or "Reports" link to someone who lacks that permission is
+ * a minor annoyance (the page itself still enforces access), but showing
+ * "Users"/"Roles"/"Signup Requests" to a non-admin invites confusion
+ * about who can actually manage accounts. Extending this to the rest of
+ * the nav is a reasonable follow-up once each page's exact required
+ * permission is confirmed against its backend viewset one at a time.
+ */
+function isVisible(item: NavItem, permissionCodes: string[] | null) {
+  if (!item.requiredPermission) return true;
+  if (permissionCodes === null) return true; // unknown yet — fail open, not closed
+  return permissionCodes.includes(item.requiredPermission);
+}
 
 function buildGroups(t: Dictionary): NavGroup[] {
   return [
@@ -212,8 +238,14 @@ function buildGroups(t: Dictionary): NavGroup[] {
       label: t.nav.groups.access,
       icon: "users",
       items: [
-        { href: "/users", label: t.nav.users, icon: "users" },
-        { href: "/roles", label: t.nav.roles, icon: "roles" },
+        { href: "/users", label: t.nav.users, icon: "users", requiredPermission: "users.manage" },
+        { href: "/roles", label: t.nav.roles, icon: "roles", requiredPermission: "roles.manage" },
+        {
+          href: "/signup-requests",
+          label: t.nav.signupRequests,
+          icon: "signupRequests",
+          requiredPermission: "users.manage",
+        },
       ],
     },
     {
@@ -251,10 +283,12 @@ function subLinkClass(active: boolean) {
   ].join(" ");
 }
 
-export default function DashboardNav() {
+export default function DashboardNav({ permissionCodes = null }: { permissionCodes?: string[] | null }) {
   const { t } = useTranslation();
   const pathname = usePathname();
-  const groups = buildGroups(t);
+  const groups = buildGroups(t)
+    .map((group) => ({ ...group, items: group.items.filter((item) => isVisible(item, permissionCodes)) }))
+    .filter((group) => group.items.length > 0);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const rowRef = useRef<HTMLElement>(null);
 

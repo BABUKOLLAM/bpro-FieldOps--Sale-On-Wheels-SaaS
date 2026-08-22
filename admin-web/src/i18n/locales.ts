@@ -20,6 +20,7 @@ export type Dictionary = {
     targets: string;
     users: string;
     roles: string;
+    signupRequests: string;
     notifications: string;
     payments: string;
     collections: string;
@@ -70,6 +71,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       targets: "Targets",
       users: "Users",
       roles: "Roles",
+      signupRequests: "Signup Requests",
       notifications: "Notifications",
       payments: "Payments",
       collections: "Collections",
@@ -114,6 +116,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       targets: "ലക്ഷ്യങ്ങൾ",
       users: "ഉപയോക്താക്കൾ",
       roles: "റോളുകൾ",
+      signupRequests: "സൈൻഅപ്പ് അഭ്യർത്ഥനകൾ",
       notifications: "അറിയിപ്പുകൾ",
       payments: "പേയ്‌മെന്റുകൾ",
       collections: "പിരിവ്",
@@ -158,6 +161,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       targets: "இலக்குகள்",
       users: "பயனர்கள்",
       roles: "பங்குகள்",
+      signupRequests: "பதிவு கோரிக்கைகள்",
       notifications: "அறிவிப்புகள்",
       payments: "கட்டணங்கள்",
       collections: "வசூல்",

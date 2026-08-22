@@ -93,6 +93,54 @@ class Device(models.Model):
         return f"{self.user} — {self.device_id} ({self.platform})"
 
 
+class SignupRequest(models.Model):
+    """Self-service access request (public sign-up form on admin-web).
+    Never creates a User directly — an admin/IT-head holding
+    PERM_USERS_MANAGE reviews it and either approves it (creating a real
+    User + assigning a Role, see AccountsViews.SignupRequestViewSet.approve)
+    or rejects it. Mirrors the same "propose, someone else decides"
+    shape as apps.governance's ChangeRequest, but deliberately kept
+    separate: a signup request isn't editing an existing record, and the
+    approver picks the password/role themselves rather than applying
+    exactly what was proposed."""
+
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True)
+    # Free text at submission time — the requester's own pick from the same
+    # ROLE_CHOICES shown elsewhere, purely informational. The approver
+    # assigns the real Role FK independently (see UserRole) and isn't
+    # bound by what was requested here.
+    requested_role_name = models.CharField(max_length=50, choices=ROLE_CHOICES, blank=True)
+    department = models.CharField(max_length=150, blank=True)
+    message = models.TextField(blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="decided_signup_requests"
+    )
+    created_user = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name} <{self.email}> ({self.status})"
+
+
 class AuditLog(models.Model):
     """Full audit trail of transactions, edits, approvals, and sync events
     (BRD NFR: Auditability). Written by apps.accounts.middleware.AuditLogMiddleware

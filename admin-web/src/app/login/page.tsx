@@ -108,8 +108,15 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <p className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            Need an account?{" "}
+            <Link href="/signup" className="font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400">
+              Request access
+            </Link>
+          </p>
+
           {process.env.NODE_ENV !== "production" && (
-            <p className="mt-6 text-xs text-neutral-400">
+            <p className="mt-4 text-xs text-neutral-400">
               Admin: tech@bpropms.com / Bpro#1234
             </p>
           )}

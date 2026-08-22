@@ -1,16 +1,22 @@
+from django.db import IntegrityError
+from django.utils import timezone
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.accounts.constants import PERM_ROLES_MANAGE, PERM_USERS_MANAGE
 
-from .models import Device, Role, User, UserRole
+from .models import Device, Role, SignupRequest, User, UserRole
+from .notifications import (
+    send_signup_request_approved, send_signup_request_rejected, send_signup_request_submitted,
+)
 from .permissions import HasRolePermission
 from .serializers import (
-    DeviceSerializer, LoginSerializer, RoleSerializer, UserRoleSerializer, UserSerializer,
+    DeviceSerializer, LoginSerializer, RoleSerializer, SignupRequestApproveSerializer,
+    SignupRequestCreateSerializer, SignupRequestSerializer, UserRoleSerializer, UserSerializer,
 )
 
 
@@ -67,6 +73,103 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save(update_fields=["is_active"])
         Device.objects.filter(user=user).update(is_active=False)
         return Response({"status": "deactivated"})
+
+
+class SignupRequestViewSet(viewsets.ModelViewSet):
+    """Public self-service access requests, admin-approved. Anyone can
+    submit one (`create`); everything else — seeing the queue, approving,
+    rejecting — requires PERM_USERS_MANAGE, the same gate UserViewSet
+    uses, since approving one is equivalent to creating a user directly."""
+
+    queryset = SignupRequest.objects.all()
+    http_method_names = ["get", "post", "head", "options"]
+    required_permission_codes = {
+        "list": PERM_USERS_MANAGE,
+        "retrieve": PERM_USERS_MANAGE,
+        "approve": PERM_USERS_MANAGE,
+        "reject": PERM_USERS_MANAGE,
+    }
+
+    throttle_scope = "signup_request"
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [AllowAny()]
+        return [HasRolePermission()]
+
+    def get_throttles(self):
+        if self.action == "create":
+            return [ScopedRateThrottle()]
+        return [AnonRateThrottle(), UserRateThrottle()]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return SignupRequestCreateSerializer
+        if self.action == "approve":
+            return SignupRequestApproveSerializer
+        return SignupRequestSerializer
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        send_signup_request_submitted(instance)
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        signup_request = self.get_object()
+        if signup_request.status != SignupRequest.STATUS_PENDING:
+            return Response({"detail": "This request has already been decided."}, status=400)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        name_parts = signup_request.name.split(" ", 1)
+        try:
+            user = User.objects.create_user(
+                username=data.get("username") or signup_request.email,
+                email=signup_request.email,
+                first_name=name_parts[0],
+                last_name=name_parts[1] if len(name_parts) > 1 else "",
+                phone=signup_request.phone,
+                # Explicit None, not the field's own "" default — this
+                # column is unique, and a second user left at "" would
+                # collide with the first (see UserForm.tsx client-side,
+                # which does the same `|| null` for the same reason).
+                employee_code=None,
+                password=data["password"],
+            )
+        except IntegrityError:
+            return Response(
+                {"detail": "A user with this username/email already exists."}, status=400
+            )
+
+        role = data.get("role")
+        if role:
+            UserRole.objects.create(user=user, role=role)
+
+        signup_request.status = SignupRequest.STATUS_APPROVED
+        signup_request.decided_at = timezone.now()
+        signup_request.decided_by = request.user
+        signup_request.created_user = user
+        signup_request.save(update_fields=["status", "decided_at", "decided_by", "created_user"])
+
+        send_signup_request_approved(signup_request)
+        return Response(SignupRequestSerializer(signup_request).data)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        signup_request = self.get_object()
+        if signup_request.status != SignupRequest.STATUS_PENDING:
+            return Response({"detail": "This request has already been decided."}, status=400)
+
+        reason = request.data.get("reason", "")
+        signup_request.status = SignupRequest.STATUS_REJECTED
+        signup_request.decided_at = timezone.now()
+        signup_request.decided_by = request.user
+        signup_request.save(update_fields=["status", "decided_at", "decided_by"])
+
+        send_signup_request_rejected(signup_request, reason)
+        return Response(SignupRequestSerializer(signup_request).data)
 
 
 class RoleViewSet(viewsets.ReadOnlyModelViewSet):

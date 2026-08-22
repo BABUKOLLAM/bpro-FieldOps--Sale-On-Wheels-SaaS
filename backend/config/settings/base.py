@@ -168,6 +168,11 @@ REST_FRAMEWORK = {
         "anon": "60/min",
         "user": "600/min",
         "login": "10/min",
+        # Public sign-up submissions — tighter than the general anon rate
+        # since each one emails every PERM_USERS_MANAGE holder plus the
+        # requester; unlike login, there's no legitimate reason for one IP
+        # to submit many of these quickly.
+        "signup_request": "5/min",
     },
 }
 
