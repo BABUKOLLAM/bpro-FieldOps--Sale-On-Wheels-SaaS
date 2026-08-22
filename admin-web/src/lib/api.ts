@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { backendDispatcher } from "./backendDispatcher";
 
 const API_BASE_URL_INTERNAL = process.env.API_BASE_URL_INTERNAL || "http://localhost:8000";
 
@@ -23,7 +24,10 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
       "Content-Type": "application/json",
     },
     cache: "no-store",
-  });
+    // See backendDispatcher.ts — fetch() to the backend by hostname
+    // hangs on this VPS; this connects to its resolved IP directly.
+    dispatcher: await backendDispatcher(API_BASE_URL_INTERNAL),
+  } as RequestInit);
 
   return response;
 }

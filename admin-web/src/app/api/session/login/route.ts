@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/api";
+import { backendDispatcher } from "@/lib/backendDispatcher";
 
 const API_BASE_URL_INTERNAL = process.env.API_BASE_URL_INTERNAL || "http://localhost:8000";
 
@@ -15,7 +16,10 @@ export async function POST(request: NextRequest) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+    // See lib/backendDispatcher.ts — fetch() to the backend by hostname
+    // hangs on this VPS; this connects to its resolved IP directly.
+    dispatcher: await backendDispatcher(API_BASE_URL_INTERNAL),
+  } as RequestInit);
 
   if (!backendResponse.ok) {
     const errorBody = await backendResponse.json().catch(() => ({}));

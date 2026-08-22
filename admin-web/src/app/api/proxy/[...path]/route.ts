@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ACCESS_COOKIE } from "@/lib/api";
+import { backendDispatcher } from "@/lib/backendDispatcher";
 
 const API_BASE_URL_INTERNAL = process.env.API_BASE_URL_INTERNAL || "http://localhost:8000";
 
@@ -36,7 +37,10 @@ async function forward(request: NextRequest, path: string[]) {
     },
     body: hasBody ? (isMultipart ? await request.formData() : await request.text()) : undefined,
     cache: "no-store",
-  });
+    // See lib/backendDispatcher.ts — fetch() to the backend by hostname
+    // hangs on this VPS; this connects to its resolved IP directly.
+    dispatcher: await backendDispatcher(API_BASE_URL_INTERNAL),
+  } as RequestInit);
 
   const contentType = backendResponse.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
