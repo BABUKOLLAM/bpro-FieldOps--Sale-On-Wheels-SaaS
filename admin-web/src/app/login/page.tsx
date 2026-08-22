@@ -11,7 +11,11 @@ import { useTranslation } from "@/i18n/LanguageContext";
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [username, setUsername] = useState("tech@bpropms.com");
+  // Prefilled only in local dev — this must never reach a real client's
+  // production login page (see the demo-credentials hint below).
+  const [username, setUsername] = useState(
+    process.env.NODE_ENV === "production" ? "" : "tech@bpropms.com"
+  );
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -104,9 +108,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-xs text-neutral-400">
-            Admin: tech@bpropms.com / Bpro#1234
-          </p>
+          {process.env.NODE_ENV !== "production" && (
+            <p className="mt-6 text-xs text-neutral-400">
+              Admin: tech@bpropms.com / Bpro#1234
+            </p>
+          )}
         </div>
       </div>
 
