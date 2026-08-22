@@ -1,7 +1,10 @@
 # Production nginx config for a single-client deployment — two public
 # hostnames sharing one Let's Encrypt certificate (issued with both as
 # Subject Alternative Names, see docs/DEPLOYMENT.md step 6):
-#   app.fieldopspro.in  -> admin-web (Next.js) — the back-office console
+#   app.fieldopspro.in,
+#   fieldopspro.in,
+#   www.fieldopspro.in  -> admin-web (Next.js) — the back-office console,
+#                           reachable under all three names
 #   api.fieldopspro.in  -> backend (Django)    — hit directly by the
 #                                                 mobile app; admin-web's
 #                                                 own server-side proxy
@@ -15,7 +18,7 @@
 
 server {
     listen 80;
-    server_name app.fieldopspro.in api.fieldopspro.in;
+    server_name app.fieldopspro.in fieldopspro.in www.fieldopspro.in api.fieldopspro.in;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -29,7 +32,9 @@ server {
 server {
     listen 443 ssl;
     http2 on;
-    server_name app.fieldopspro.in;
+    # fieldopspro.in and www. both serve the same admin-web app as
+    # app. — same console, three names (see docs/DEPLOYMENT.md).
+    server_name app.fieldopspro.in fieldopspro.in www.fieldopspro.in;
 
     ssl_certificate     /etc/letsencrypt/live/app.fieldopspro.in/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/app.fieldopspro.in/privkey.pem;

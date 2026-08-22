@@ -9,7 +9,7 @@
 
 server {
     listen 80;
-    server_name app.fieldopspro.in api.fieldopspro.in;
+    server_name app.fieldopspro.in fieldopspro.in www.fieldopspro.in api.fieldopspro.in;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;

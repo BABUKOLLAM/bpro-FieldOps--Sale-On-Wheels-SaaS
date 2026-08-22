@@ -29,14 +29,19 @@ deliberately different from the dev `.env` (repo root, see
 
 ## 1. DNS
 
-Point two A records at the VPS's IP address:
+Point four A records at the VPS's IP address:
 
 ```
 app.fieldopspro.in   A   <vps-ip>   # admin-web — the back-office console
+fieldopspro.in       A   <vps-ip>   # same console, bare/apex domain
+www.fieldopspro.in   A   <vps-ip>   # same console, www
 api.fieldopspro.in   A   <vps-ip>   # backend — hit directly by the mobile app
 ```
 
-No wildcard record needed for this model — just the two.
+The apex record (`fieldopspro.in` with no subdomain — sometimes shown
+as `@` in a DNS panel) and `www` both serve the identical admin-web
+console as `app.` — see the nginx config's `server_name` line. No
+wildcard record needed for this model — just these four.
 
 ## 2. Configure secrets
 
@@ -69,13 +74,13 @@ continuing.
 
 ## 4. Issue the TLS certificate
 
-One certificate, both domains as Subject Alternative Names — simpler
-than managing two:
+One certificate, all four names as Subject Alternative Names — simpler
+than managing separate certs:
 
 ```bash
 docker compose -f docker-compose.prod.yml run --rm certbot \
   certonly --webroot -w /var/www/certbot \
-  -d app.fieldopspro.in -d api.fieldopspro.in \
+  -d app.fieldopspro.in -d fieldopspro.in -d www.fieldopspro.in -d api.fieldopspro.in \
   --email <your-email-for-expiry-notices> --agree-tos --no-eff-email
 ```
 
@@ -122,8 +127,9 @@ production deployment.
 
 ## 7. Verify
 
-- `https://app.fieldopspro.in` loads the login page, padlock shows a
-  valid cert.
+- `https://app.fieldopspro.in`, `https://fieldopspro.in`, and
+  `https://www.fieldopspro.in` all load the login page, padlock shows
+  a valid cert on each.
 - `https://api.fieldopspro.in/api/` responds (401 without a token is
   correct — confirms the domain reaches Django, not that auth works).
 - Log in via the superuser account created in step 6.
