@@ -127,6 +127,15 @@ class SetPasswordConfirmSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """"Forgot password" entry point — accepts either their email or
+    username, since either is a valid login identifier (a signup-approved
+    account's username defaults to their email, but an admin can set it
+    to something else — see SignupRequestApproveSerializer)."""
+
+    email = serializers.CharField()
+
+
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device

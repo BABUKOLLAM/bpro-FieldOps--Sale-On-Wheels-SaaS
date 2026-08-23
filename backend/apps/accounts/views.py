@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -18,14 +19,25 @@ from apps.accounts.constants import PERM_ROLES_MANAGE, PERM_USERS_MANAGE
 
 from .models import Device, Role, SignupRequest, User, UserRole
 from .notifications import (
-    send_signup_request_approved, send_signup_request_rejected, send_signup_request_submitted,
+    send_password_reset_link, send_signup_request_approved, send_signup_request_rejected,
+    send_signup_request_submitted,
 )
 from .permissions import HasRolePermission
 from .serializers import (
-    DeviceSerializer, LoginSerializer, RoleSerializer, SetPasswordConfirmSerializer,
-    SignupRequestApproveSerializer, SignupRequestCreateSerializer, SignupRequestSerializer,
-    UserRoleSerializer, UserSerializer,
+    DeviceSerializer, LoginSerializer, PasswordResetRequestSerializer, RoleSerializer,
+    SetPasswordConfirmSerializer, SignupRequestApproveSerializer, SignupRequestCreateSerializer,
+    SignupRequestSerializer, UserRoleSerializer, UserSerializer,
 )
+
+
+def build_set_password_url(user):
+    """Standard Django password-reset token pair — stateless (no extra
+    table), and self-invalidating the moment the user actually sets a
+    real password, since the token hash incorporates the current
+    password value. Shared by signup approval and "forgot password"."""
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    return f"{settings.FRONTEND_BASE_URL}/set-password?uid={uid}&token={token}"
 
 
 class LoginView(TokenObtainPairView):
@@ -165,14 +177,7 @@ class SignupRequestViewSet(viewsets.ModelViewSet):
         signup_request.created_user = user
         signup_request.save(update_fields=["status", "decided_at", "decided_by", "created_user"])
 
-        # Standard Django password-reset token pair — stateless (no extra
-        # table), and self-invalidating the moment the user actually sets
-        # a real password, since the token hash incorporates the current
-        # (unusable) password value.
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        set_password_url = f"{settings.FRONTEND_BASE_URL}/set-password?uid={uid}&token={token}"
-
+        set_password_url = build_set_password_url(user)
         send_signup_request_approved(signup_request, set_password_url)
         return Response({**SignupRequestSerializer(signup_request).data, "set_password_url": set_password_url})
 
@@ -224,6 +229,35 @@ class SetPasswordConfirmView(APIView):
         user.set_password(data["password"])
         user.save(update_fields=["password"])
         return Response({"status": "password_set"})
+
+
+class PasswordResetRequestView(APIView):
+    """"Forgot password" for an existing (or freshly-approved but never
+    logged in) account — same one-time link mechanism as signup approval
+    (build_set_password_url / SetPasswordConfirmView), just triggered by
+    the user themselves instead of an admin approving a request.
+
+    Always returns the same generic response regardless of whether the
+    email/username actually matches an account — a distinguishable
+    response here would let anyone probe which emails have accounts."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
+
+    GENERIC_RESPONSE = {"detail": "If that account exists, a password reset link has been sent."}
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        identifier = serializer.validated_data["email"].strip()
+
+        user = User.objects.filter(
+            Q(email__iexact=identifier) | Q(username__iexact=identifier), is_active=True
+        ).first()
+        if user:
+            send_password_reset_link(user, build_set_password_url(user))
+
+        return Response(self.GENERIC_RESPONSE)
 
 
 class RoleViewSet(viewsets.ReadOnlyModelViewSet):

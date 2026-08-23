@@ -70,6 +70,23 @@ def send_signup_request_approved(signup_request, set_password_url):
     ).send(fail_silently=False)
 
 
+def send_password_reset_link(user, set_password_url):
+    if not user.email:
+        return
+    EmailMessage(
+        subject="Reset your bpro FieldOps password",
+        body=(
+            f"Hi {user.get_full_name() or user.username},\n\n"
+            "We received a request to reset your bpro FieldOps password. Use this link to set "
+            f"a new one:\n\n{set_password_url}\n\n"
+            "This link is one-time use. If you didn't request this, you can safely ignore this email "
+            "— your password hasn't been changed.\n\n"
+            "— bpro FieldOps"
+        ),
+        to=[user.email],
+    ).send(fail_silently=False)
+
+
 def send_signup_request_rejected(signup_request, reason=""):
     if not signup_request.email:
         return
