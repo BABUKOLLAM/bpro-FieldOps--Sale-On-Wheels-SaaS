@@ -26,8 +26,8 @@ from .notifications import (
 from .permissions import HasRolePermission
 from .serializers import (
     DeviceSerializer, LoginSerializer, PasswordResetRequestSerializer, RoleSerializer,
-    SetPasswordConfirmSerializer, SignupRequestApproveSerializer, SignupRequestCreateSerializer,
-    SignupRequestSerializer, UserRoleSerializer, UserSerializer,
+    SetPasswordConfirmSerializer, SetPasswordLookupSerializer, SignupRequestApproveSerializer,
+    SignupRequestCreateSerializer, SignupRequestSerializer, UserRoleSerializer, UserSerializer,
 )
 
 
@@ -39,6 +39,24 @@ def build_set_password_url(user):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     return f"{settings.FRONTEND_BASE_URL}/set-password?uid={uid}&token={token}"
+
+
+def resolve_user_from_set_password_link(uid_b64, token):
+    """Decodes/validates a set-password uid+token pair (see
+    build_set_password_url). Returns (user, None) on success or
+    (None, detail_message) on failure — shared by the lookup view (so
+    the /set-password page can show *whose* account this is and fail
+    fast on a dead link) and the confirm view (which actually sets it)."""
+    try:
+        uid = force_str(urlsafe_base64_decode(uid_b64))
+        user = User.objects.get(pk=uid)
+    except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+        return None, "This link is invalid."
+
+    if not default_token_generator.check_token(user, token):
+        return None, "This link is invalid or has expired."
+
+    return user, None
 
 
 class LoginView(TokenObtainPairView):
@@ -227,6 +245,29 @@ class SignupRequestViewSet(viewsets.ModelViewSet):
         return Response(SignupRequestSerializer(signup_request).data)
 
 
+class SetPasswordLookupView(APIView):
+    """Read-only companion to SetPasswordConfirmView: given a uid/token
+    pair, reports which account it belongs to (so the /set-password page
+    can show "you're setting a password for x@example.com" instead of a
+    blind form) and fails fast with a clean message on a dead link,
+    rather than only discovering that after the user fills in and
+    submits a whole password form."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
+
+    def get(self, request):
+        serializer = SetPasswordLookupSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user, error = resolve_user_from_set_password_link(data["uid"], data["token"])
+        if error:
+            return Response({"detail": error}, status=400)
+
+        return Response({"username": user.username, "email": user.email})
+
+
 class SetPasswordConfirmView(APIView):
     """Public endpoint behind the one-time set-password link a newly
     approved user is emailed (SignupRequestViewSet.approve issues it).
@@ -242,14 +283,9 @@ class SetPasswordConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        try:
-            uid = force_str(urlsafe_base64_decode(data["uid"]))
-            user = User.objects.get(pk=uid)
-        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
-            return Response({"detail": "This link is invalid."}, status=400)
-
-        if not default_token_generator.check_token(user, data["token"]):
-            return Response({"detail": "This link is invalid or has expired."}, status=400)
+        user, error = resolve_user_from_set_password_link(data["uid"], data["token"])
+        if error:
+            return Response({"detail": error}, status=400)
 
         try:
             validate_password(data["password"], user=user)

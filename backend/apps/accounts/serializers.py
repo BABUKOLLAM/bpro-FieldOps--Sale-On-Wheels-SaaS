@@ -154,6 +154,14 @@ class SetPasswordConfirmSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
 
+class SetPasswordLookupSerializer(serializers.Serializer):
+    """Query params for SetPasswordLookupView — same uid/token pair as
+    above, read-only (no password)."""
+
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     """"Forgot password" entry point — accepts either their email or
     username, since either is a valid login identifier (a signup-approved

@@ -1,20 +1,49 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
+
+type Lookup = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; username: string; email: string };
 
 function SetPasswordForm() {
   const searchParams = useSearchParams();
   const uid = searchParams.get("uid") || "";
   const token = searchParams.get("token") || "";
 
+  const [lookup, setLookup] = useState<Lookup>(() =>
+    uid && token
+      ? { status: "loading" }
+      : { status: "error", message: "This link is missing required information. Please use the exact link from your email." }
+  );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!uid || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`/api/session/set-password-lookup?uid=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}`);
+        const data = await response.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!response.ok) {
+          setLookup({ status: "error", message: data.detail || "This link is invalid or has expired." });
+          return;
+        }
+        setLookup({ status: "ok", username: data.username, email: data.email });
+      } catch {
+        if (!cancelled) setLookup({ status: "error", message: "Could not verify this link. Please try again." });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [uid, token]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -42,10 +71,14 @@ function SetPasswordForm() {
     }
   }
 
-  if (!uid || !token) {
+  if (lookup.status === "loading") {
+    return <p className="text-sm text-neutral-500 dark:text-neutral-400">Verifying your link…</p>;
+  }
+
+  if (lookup.status === "error") {
     return (
       <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-        This link is missing required information. Please use the exact link from your email.
+        {lookup.message}
       </p>
     );
   }
@@ -68,6 +101,15 @@ function SetPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <span className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Setting a password for</span>
+        <p className="mt-1 rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100">
+          {lookup.email || lookup.username}
+          {lookup.email && lookup.email !== lookup.username && (
+            <span className="ml-1 text-neutral-500 dark:text-neutral-400">({lookup.username})</span>
+          )}
+        </p>
+      </div>
       <div>
         <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">New password</label>
         <input
@@ -128,7 +170,7 @@ export default function SetPasswordPage() {
             Set your password
           </h1>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Your access request was approved — choose a password to finish setting up your account.
+            Confirm the account below, then choose a password.
           </p>
 
           <div className="mt-6">

@@ -79,3 +79,32 @@ def test_inactive_user_gets_generic_response_and_no_email(existing_user):
     resp = APIClient().post("/api/auth/password-reset/", {"email": "priya@example.com"}, format="json")
     assert resp.status_code == 200
     assert len(mail.outbox) == 0
+
+
+def test_lookup_returns_the_account_a_valid_link_belongs_to(existing_user):
+    APIClient().post("/api/auth/password-reset/", {"email": "priya@example.com"}, format="json")
+    uid, token = _extract_uid_token(mail.outbox[0].body)
+
+    resp = APIClient().get("/api/auth/set-password/lookup/", {"uid": uid, "token": token})
+    assert resp.status_code == 200
+    assert resp.data == {"username": "priya@example.com", "email": "priya@example.com"}
+
+
+def test_lookup_rejects_a_bad_token(existing_user):
+    APIClient().post("/api/auth/password-reset/", {"email": "priya@example.com"}, format="json")
+    uid, _token = _extract_uid_token(mail.outbox[0].body)
+
+    resp = APIClient().get("/api/auth/set-password/lookup/", {"uid": uid, "token": "not-a-real-token"})
+    assert resp.status_code == 400
+
+
+def test_lookup_no_longer_matches_once_the_password_has_been_set(existing_user):
+    APIClient().post("/api/auth/password-reset/", {"email": "priya@example.com"}, format="json")
+    uid, token = _extract_uid_token(mail.outbox[0].body)
+
+    APIClient().post(
+        "/api/auth/set-password/", {"uid": uid, "token": token, "password": "Br4nd#NewPass"}, format="json"
+    )
+
+    resp = APIClient().get("/api/auth/set-password/lookup/", {"uid": uid, "token": token})
+    assert resp.status_code == 400
