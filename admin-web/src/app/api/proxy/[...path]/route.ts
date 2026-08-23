@@ -46,6 +46,14 @@ async function forward(request: NextRequest, path: string[]) {
     dispatcher: await backendDispatcher(API_BASE_URL_INTERNAL),
   } as RequestInit);
 
+  // 204/205/304 are "null body status" per the Fetch spec — the Response
+  // constructor throws if given a body at all, even an empty one (e.g.
+  // DRF's default DELETE returns a bodyless 204). Must short-circuit
+  // before any of the read-the-body branches below.
+  if ([204, 205, 304].includes(backendResponse.status)) {
+    return new NextResponse(null, { status: backendResponse.status });
+  }
+
   const contentType = backendResponse.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     const data = await backendResponse.json().catch(() => ({}));
