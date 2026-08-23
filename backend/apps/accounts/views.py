@@ -1,10 +1,17 @@
+from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
 from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.accounts.constants import PERM_ROLES_MANAGE, PERM_USERS_MANAGE
@@ -15,8 +22,9 @@ from .notifications import (
 )
 from .permissions import HasRolePermission
 from .serializers import (
-    DeviceSerializer, LoginSerializer, RoleSerializer, SignupRequestApproveSerializer,
-    SignupRequestCreateSerializer, SignupRequestSerializer, UserRoleSerializer, UserSerializer,
+    DeviceSerializer, LoginSerializer, RoleSerializer, SetPasswordConfirmSerializer,
+    SignupRequestApproveSerializer, SignupRequestCreateSerializer, SignupRequestSerializer,
+    UserRoleSerializer, UserSerializer,
 )
 
 
@@ -136,7 +144,11 @@ class SignupRequestViewSet(viewsets.ModelViewSet):
                 # collide with the first (see UserForm.tsx client-side,
                 # which does the same `|| null` for the same reason).
                 employee_code=None,
-                password=data["password"],
+                # No password from the admin — create_user(password=None)
+                # calls set_unusable_password() internally. The account
+                # only becomes usable once the new user sets their own
+                # password via the one-time link below.
+                password=None,
             )
         except IntegrityError:
             return Response(
@@ -153,8 +165,16 @@ class SignupRequestViewSet(viewsets.ModelViewSet):
         signup_request.created_user = user
         signup_request.save(update_fields=["status", "decided_at", "decided_by", "created_user"])
 
-        send_signup_request_approved(signup_request)
-        return Response(SignupRequestSerializer(signup_request).data)
+        # Standard Django password-reset token pair — stateless (no extra
+        # table), and self-invalidating the moment the user actually sets
+        # a real password, since the token hash incorporates the current
+        # (unusable) password value.
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        set_password_url = f"{settings.FRONTEND_BASE_URL}/set-password?uid={uid}&token={token}"
+
+        send_signup_request_approved(signup_request, set_password_url)
+        return Response({**SignupRequestSerializer(signup_request).data, "set_password_url": set_password_url})
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
@@ -170,6 +190,40 @@ class SignupRequestViewSet(viewsets.ModelViewSet):
 
         send_signup_request_rejected(signup_request, reason)
         return Response(SignupRequestSerializer(signup_request).data)
+
+
+class SetPasswordConfirmView(APIView):
+    """Public endpoint behind the one-time set-password link a newly
+    approved user is emailed (SignupRequestViewSet.approve issues it).
+    The account is created with an unusable password specifically so
+    this is the only way it becomes usable — no admin-assigned temp
+    password to communicate out-of-band."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle]
+
+    def post(self, request):
+        serializer = SetPasswordConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            uid = force_str(urlsafe_base64_decode(data["uid"]))
+            user = User.objects.get(pk=uid)
+        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+            return Response({"detail": "This link is invalid."}, status=400)
+
+        if not default_token_generator.check_token(user, data["token"]):
+            return Response({"detail": "This link is invalid or has expired."}, status=400)
+
+        try:
+            validate_password(data["password"], user=user)
+        except DjangoValidationError as exc:
+            return Response({"detail": " ".join(exc.messages)}, status=400)
+
+        user.set_password(data["password"])
+        user.save(update_fields=["password"])
+        return Response({"status": "password_set"})
 
 
 class RoleViewSet(viewsets.ReadOnlyModelViewSet):

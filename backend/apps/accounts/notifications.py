@@ -54,15 +54,16 @@ def send_signup_request_submitted(signup_request):
         ).send(fail_silently=False)
 
 
-def send_signup_request_approved(signup_request):
+def send_signup_request_approved(signup_request, set_password_url):
     if not signup_request.email:
         return
     EmailMessage(
         subject="Your bpro FieldOps access request was approved",
         body=(
             f"Hi {signup_request.name},\n\n"
-            "Your access request has been approved. An administrator will share your login "
-            "details with you separately.\n\n"
+            "Your access request has been approved. Set your password to finish creating your "
+            f"account:\n\n{set_password_url}\n\n"
+            "This link is one-time use and specific to your account.\n\n"
             "— bpro FieldOps"
         ),
         to=[signup_request.email],

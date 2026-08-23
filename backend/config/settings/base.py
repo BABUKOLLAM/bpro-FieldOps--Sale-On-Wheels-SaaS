@@ -198,6 +198,12 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"])
 CORS_ALLOW_CREDENTIALS = True
 
+# admin-web's public origin — used to build links that get emailed out
+# (e.g. the signup-approval set-password link in apps.accounts.views),
+# since those are sent from a request/response cycle that has no Host
+# header of admin-web's own to infer it from.
+FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://localhost:3000")
+
 # ---- Cache ----
 # Redis-backed (Django's native backend, no extra package) so throttle
 # counters are shared across all gunicorn workers — the default

@@ -19,10 +19,11 @@ const ROLE_LABELS: Record<string, string> = {
 export default function SignupRequestActions({ requestId, roles }: { requestId: string; roles: Role[] }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
-  const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [setPasswordUrl, setSetPasswordUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function handleApprove(event: React.FormEvent) {
     event.preventDefault();
@@ -31,16 +32,25 @@ export default function SignupRequestActions({ requestId, roles }: { requestId: 
     try {
       const response = await fetch(`/api/proxy/signup-requests/${requestId}/approve`, {
         method: "POST",
-        body: JSON.stringify({ password, role: roleId || undefined }),
+        body: JSON.stringify({ role: roleId || undefined }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(JSON.stringify(data));
-      router.refresh();
+      // Account now exists but has no password — this one-time link is
+      // the only way to set one. Show it instead of refreshing right
+      // away, or it's gone for good (the API never returns it again).
+      setSetPasswordUrl(data.set_password_url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not approve this request.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleCopyLink() {
+    if (!setPasswordUrl) return;
+    await navigator.clipboard.writeText(setPasswordUrl);
+    setCopied(true);
   }
 
   async function handleReject() {
@@ -59,6 +69,31 @@ export default function SignupRequestActions({ requestId, roles }: { requestId: 
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (setPasswordUrl) {
+    return (
+      <div className="mt-3 space-y-2 rounded-md border border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 p-3">
+        <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+          Account created. Share this one-time link with them so they can set their own password — it
+          won&apos;t be shown again. It was also emailed to them automatically.
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={setPasswordUrl}
+            onFocus={(e) => e.target.select()}
+            className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-xs text-neutral-900 dark:text-neutral-100"
+          />
+          <Button type="button" onClick={handleCopyLink}>
+            {copied ? "Copied" : "Copy link"}
+          </Button>
+        </div>
+        <Button type="button" variant="success" onClick={() => router.refresh()}>
+          Done
+        </Button>
+      </div>
+    );
   }
 
   if (!expanded) {
@@ -82,17 +117,6 @@ export default function SignupRequestActions({ requestId, roles }: { requestId: 
 
   return (
     <form onSubmit={handleApprove} className="mt-3 flex flex-wrap items-end gap-3 rounded-md border border-dashed border-neutral-300 dark:border-neutral-700 p-3">
-      <div>
-        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Temporary password</label>
-        <input
-          required
-          type="text"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Share this with them separately"
-          className="mt-1 w-56 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1.5 text-sm text-neutral-900 dark:text-neutral-100"
-        />
-      </div>
       <div>
         <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400">Assign role</label>
         <select

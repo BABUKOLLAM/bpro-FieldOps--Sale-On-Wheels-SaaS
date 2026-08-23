@@ -107,13 +107,24 @@ class SignupRequestCreateSerializer(serializers.ModelSerializer):
 
 
 class SignupRequestApproveSerializer(serializers.Serializer):
-    """What an approving admin submits: the password they're assigning
-    (communicated to the new user out-of-band — no email-link flow), and
-    optionally the real Role to grant (independent of what was requested)."""
+    """What an approving admin submits: no password — the account is
+    created with an unusable one, and the new user sets their own via the
+    one-time link SignupRequestViewSet.approve() emails them (see
+    SetPasswordConfirmSerializer). Optionally the real Role to grant
+    (independent of what was requested)."""
 
     username = serializers.CharField(required=False, allow_blank=True)
-    password = serializers.CharField(write_only=True, style={"input_type": "password"})
     role = serializers.PrimaryKeyRelatedField(queryset=Role.objects.all(), required=False, allow_null=True)
+
+
+class SetPasswordConfirmSerializer(serializers.Serializer):
+    """What the new user submits from the one-time set-password link
+    (uid/token = Django's standard PasswordResetTokenGenerator pair, see
+    SignupRequestViewSet.approve() for how they're issued)."""
+
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
 
 class DeviceSerializer(serializers.ModelSerializer):
