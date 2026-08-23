@@ -6,7 +6,9 @@ from .models import Device, Role, SignupRequest, User, UserRole
 
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
+    role_assignments = serializers.SerializerMethodField()
     permission_codes = serializers.SerializerMethodField()
+    deletable = serializers.SerializerMethodField()
     password = serializers.CharField(write_only=True, required=False, allow_blank=True, style={"input_type": "password"})
 
     class Meta:
@@ -14,14 +16,39 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id", "username", "first_name", "last_name", "email", "phone",
             "employee_code", "is_field_agent", "reporting_manager", "roles",
-            "permission_codes", "is_active", "password",
+            "role_assignments", "permission_codes", "is_active", "deletable", "password",
         ]
 
     def get_roles(self, obj):
         return list(obj.user_roles.values_list("role__name", flat=True))
 
+    def get_role_assignments(self, obj):
+        # {UserRole id, Role id, Role name} per assignment — the plain
+        # "roles" field above is just names (kept as-is since the login
+        # response and permission checks already depend on that exact
+        # shape); this one exists so the admin-web Users page can target
+        # a *specific* assignment to remove, since a user can hold more
+        # than one role (accounts.UserRole has no one-role-per-user
+        # constraint, only unique_together on (user, role)).
+        return [
+            {"id": str(ur.id), "role_id": str(ur.role_id), "role_name": ur.role.name}
+            for ur in obj.user_roles.select_related("role").all()
+        ]
+
     def get_permission_codes(self, obj):
         return sorted(obj.permission_codes())
+
+    def get_deletable(self, obj):
+        # A user can only be hard-deleted if nothing PROTECTs against it
+        # (see the on_delete audit behind UserViewSet.destroy) — sales
+        # orders/invoices/receipts/credit notes/trips/expenses/attendance
+        # all block deletion at the DB level. Surfaced here so the UI can
+        # show *why* delete isn't available instead of just failing.
+        return not (
+            obj.sales_orders.exists() or obj.invoices.exists() or obj.receipts.exists()
+            or obj.credit_notes.exists() or obj.trips.exists() or obj.expenses.exists()
+            or obj.attendance_records.exists()
+        )
 
     def create(self, validated_data):
         password = validated_data.pop("password", None)

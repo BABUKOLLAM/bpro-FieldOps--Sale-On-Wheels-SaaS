@@ -1,10 +1,14 @@
 import { apiGet } from "@/lib/api";
 import UserForm from "./UserForm";
-import DeactivateUserButton from "./DeactivateUserButton";
+import UserStatusButton from "./UserStatusButton";
+import DeleteUserButton from "./DeleteUserButton";
+import RoleAssignments from "./RoleAssignments";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 
 type Paginated<T> = { count: number; results: T[] };
+
+type RoleAssignment = { id: string; role_id: string; role_name: string };
 
 type UserRow = {
   id: string;
@@ -15,20 +19,12 @@ type UserRow = {
   employee_code: string | null;
   is_field_agent: boolean;
   roles: string[];
+  role_assignments: RoleAssignment[];
   is_active: boolean;
+  deletable: boolean;
 };
 
 type Role = { id: string; name: string; is_active: boolean };
-
-const ROLE_LABELS: Record<string, string> = {
-  van_salesman: "Van Salesman",
-  pre_sales_order_booker: "Pre-Sales / Order Booker",
-  sales_supervisor: "Sales Supervisor",
-  back_office_admin: "Back-Office Admin",
-  finance_accounts: "Finance / Accounts",
-  fleet_manager: "Fleet Manager",
-  system_it_admin: "System / IT Admin",
-};
 
 export default async function UsersPage() {
   const [users, roles] = await Promise.all([
@@ -70,17 +66,11 @@ export default async function UsersPage() {
                   <td className="px-4 py-2 font-mono text-xs text-neutral-700 dark:text-neutral-300">{u.username}</td>
                   <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{u.phone || "—"}</td>
                   <td className="px-4 py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {u.roles.length === 0 && <span className="text-xs text-neutral-400">No role</span>}
-                      {u.roles.map((r) => (
-                        <span
-                          key={r}
-                          className="rounded-full bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-300"
-                        >
-                          {ROLE_LABELS[r] || r}
-                        </span>
-                      ))}
-                    </div>
+                    <RoleAssignments
+                      userId={u.id}
+                      assignments={u.role_assignments}
+                      availableRoles={roles.results.filter((r) => r.is_active)}
+                    />
                   </td>
                   <td className="px-4 py-2 text-neutral-700 dark:text-neutral-300">{u.is_field_agent ? "Yes" : "—"}</td>
                   <td className="px-4 py-2">
@@ -88,7 +78,12 @@ export default async function UsersPage() {
                       {u.is_active ? "Active" : "Deactivated"}
                     </Badge>
                   </td>
-                  <td className="px-4 py-2">{u.is_active && <DeactivateUserButton userId={u.id} />}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex flex-col items-start gap-1">
+                      <UserStatusButton userId={u.id} isActive={u.is_active} />
+                      <DeleteUserButton userId={u.id} deletable={u.deletable} />
+                    </div>
+                  </td>
                 </tr>
               ))}
               {users.results.length === 0 && (

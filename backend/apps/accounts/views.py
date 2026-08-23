@@ -4,6 +4,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -93,6 +94,35 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save(update_fields=["is_active"])
         Device.objects.filter(user=user).update(is_active=False)
         return Response({"status": "deactivated"})
+
+    @action(detail=True, methods=["post"])
+    def activate(self, request, pk=None):
+        # Deliberately doesn't touch Device rows — re-enabling every old
+        # device a deactivated user ever logged in from isn't implied by
+        # "let them back in"; they re-register devices as they log in
+        # again, same as any new device today.
+        user = self.get_object()
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        return Response({"status": "activated"})
+
+    def destroy(self, request, *args, **kwargs):
+        # PROTECT on sales/trip/expense/attendance FKs (see
+        # UserSerializer.get_deletable) means Django itself refuses this
+        # for any user with real history — turn that into a clean 400
+        # instead of an unhandled 500, and name the actual blocker.
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {
+                    "detail": (
+                        "This user has sales, trip, expense, or attendance history and can't be "
+                        "deleted — deactivate them instead."
+                    )
+                },
+                status=400,
+            )
 
 
 class SignupRequestViewSet(viewsets.ModelViewSet):

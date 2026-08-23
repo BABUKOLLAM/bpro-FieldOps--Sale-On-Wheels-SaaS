@@ -3,18 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
+import { ROLE_LABELS } from "@/lib/roleLabels";
 
 type Role = { id: string; name: string };
-
-const ROLE_LABELS: Record<string, string> = {
-  van_salesman: "Van Salesman / Field Sales Executive",
-  pre_sales_order_booker: "Pre-Sales / Order Booker",
-  sales_supervisor: "Sales Supervisor / Area Sales Manager",
-  back_office_admin: "Back-Office / Admin User",
-  finance_accounts: "Finance / Accounts User",
-  fleet_manager: "Fleet / Transport Manager",
-  system_it_admin: "System / IT Administrator",
-};
 
 export default function UserForm({ roles }: { roles: Role[] }) {
   const router = useRouter();
