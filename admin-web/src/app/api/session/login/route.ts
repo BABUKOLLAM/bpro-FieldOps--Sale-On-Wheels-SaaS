@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/api";
+import { ACCESS_COOKIE, REFRESH_COOKIE, authCookieOptions } from "@/lib/api";
 import { backendDispatcher } from "@/lib/backendDispatcher";
 
 const API_BASE_URL_INTERNAL = process.env.API_BASE_URL_INTERNAL || "http://localhost:8000";
@@ -32,13 +32,9 @@ export async function POST(request: NextRequest) {
   const data = await backendResponse.json();
   const response = NextResponse.json({ user: data.user });
 
-  const isProduction = process.env.NODE_ENV === "production";
-  const cookieOptions = {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict" as const,
-    path: "/",
-  };
+  // See lib/api.ts authCookieOptions for why sameSite is lax and how
+  // AUTH_COOKIE_DOMAIN scopes the session across apex/www/app hosts.
+  const cookieOptions = authCookieOptions();
 
   response.cookies.set(ACCESS_COOKIE, data.access, { ...cookieOptions, maxAge: 60 * 15 });
   response.cookies.set(REFRESH_COOKIE, data.refresh, { ...cookieOptions, maxAge: 60 * 60 * 24 * 14 });

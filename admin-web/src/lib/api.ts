@@ -7,6 +7,37 @@ export const ACCESS_COOKIE = "vs_access";
 export const REFRESH_COOKIE = "vs_refresh";
 
 /**
+ * One source of truth for auth-cookie attributes — the set (login) and
+ * clear (logout) sides MUST agree on path/domain or the browser treats
+ * them as different cookies and logout silently leaves the session
+ * behind.
+ *
+ * sameSite is "lax", not "strict": with Strict, a top-level navigation
+ * into the app from anywhere external (a link in an email, WhatsApp,
+ * another site) arrives WITHOUT the session cookie, so an already
+ * logged-in user gets bounced to /login — exactly the redirect problem
+ * seen with emailed deep links. Lax still withholds cookies on
+ * cross-site POSTs (the CSRF-relevant case; all our mutations are
+ * same-origin fetch calls), while letting ordinary link-ins stay
+ * signed in.
+ *
+ * AUTH_COOKIE_DOMAIN (optional, e.g. ".fieldopspro.in") widens the
+ * cookie to every subdomain so one login works across the apex, www,
+ * and app hosts, which all serve this same console. Unset = host-only
+ * cookie, the pre-existing behavior.
+ */
+export function authCookieOptions() {
+  const domain = process.env.AUTH_COOKIE_DOMAIN;
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    ...(domain ? { domain } : {}),
+  };
+}
+
+/**
  * Server-side fetch to the Django API, forwarding the access token from
  * the HttpOnly cookie set at login (see app/api/session/login/route.ts).
  * The token never touches browser JS — every read here happens in a

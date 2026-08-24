@@ -128,6 +128,10 @@ services:
       # admin-web's server-side proxy route talks to the backend over the
       # compose network directly, never through the public domain/nginx.
       API_BASE_URL_INTERNAL: http://backend:8000
+      # Optional: scope the auth cookies to every subdomain (e.g.
+      # ".fieldopspro.in") so one login spans apex/www/app — see
+      # admin-web/src/lib/api.ts authCookieOptions. Blank = host-only.
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
     depends_on:
       - backend
     # No published port — nginx proxies to this container's 3000.
