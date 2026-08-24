@@ -111,8 +111,9 @@ function SetPasswordForm() {
         </p>
       </div>
       <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">New password</label>
+        <label htmlFor="new-password" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">New password</label>
         <input
+          id="new-password"
           type="password"
           required
           autoFocus
@@ -122,8 +123,9 @@ function SetPasswordForm() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Confirm password</label>
+        <label htmlFor="confirm-password" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Confirm password</label>
         <input
+          id="confirm-password"
           type="password"
           required
           value={confirmPassword}

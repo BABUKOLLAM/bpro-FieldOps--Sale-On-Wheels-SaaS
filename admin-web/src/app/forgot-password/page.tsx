@@ -62,10 +62,11 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <label htmlFor="reset-identifier" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   Email or username
                 </label>
                 <input
+                  id="reset-identifier"
                   type="text"
                   required
                   autoFocus

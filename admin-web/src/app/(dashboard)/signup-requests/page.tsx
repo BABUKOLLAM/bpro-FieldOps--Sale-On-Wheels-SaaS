@@ -52,7 +52,8 @@ export default async function SignupRequestsPage() {
         <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Signup Requests</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Self-service access requests from the public sign-up page. Approving one creates a real
-          account with a role and password you set here — nothing is granted automatically.
+          account and emails the person a one-time link to set their own password — nothing is
+          granted automatically.
         </p>
       </div>
 

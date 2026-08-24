@@ -113,8 +113,9 @@ export default function SignupPage() {
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Full name</label>
+                  <label htmlFor="signup-name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Full name</label>
                   <input
+                    id="signup-name"
                     type="text"
                     required
                     autoFocus
@@ -125,8 +126,9 @@ export default function SignupPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Email</label>
+                    <label htmlFor="signup-email" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Email</label>
                     <input
+                      id="signup-email"
                       type="email"
                       required
                       value={email}
@@ -135,8 +137,9 @@ export default function SignupPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Phone</label>
+                    <label htmlFor="signup-phone" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Phone</label>
                     <input
+                      id="signup-phone"
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -146,8 +149,9 @@ export default function SignupPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Requesting role</label>
+                    <label htmlFor="signup-role" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Requesting role</label>
                     <select
+                      id="signup-role"
                       required
                       value={requestedRole}
                       onChange={(e) => setRequestedRole(e.target.value)}
@@ -162,8 +166,9 @@ export default function SignupPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Department</label>
+                    <label htmlFor="signup-department" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Department</label>
                     <input
+                      id="signup-department"
                       type="text"
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}

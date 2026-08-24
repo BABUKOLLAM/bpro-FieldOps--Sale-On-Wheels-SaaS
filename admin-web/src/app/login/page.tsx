@@ -72,8 +72,9 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t.login.username}</label>
+              <label htmlFor="login-username" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t.login.username}</label>
               <input
+                id="login-username"
                 type="text"
                 required
                 autoFocus
@@ -84,12 +85,13 @@ export default function LoginPage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t.login.password}</label>
+                <label htmlFor="login-password" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">{t.login.password}</label>
                 <Link href="/forgot-password" className="text-xs font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400">
                   Forgot password?
                 </Link>
               </div>
               <input
+                id="login-password"
                 type="password"
                 required
                 value={password}
