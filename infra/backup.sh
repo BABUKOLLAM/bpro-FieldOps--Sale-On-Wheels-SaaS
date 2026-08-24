@@ -11,6 +11,11 @@ set -euo pipefail
 cd "$(dirname "$0")"
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
+# Match whichever compose file this deployment actually runs (the
+# caddy-fronted VPS uses docker-compose.prod.caddy-fronted.yml). Both
+# files share the same Compose project/service names, so exec resolves
+# the same postgres container either way — but say what we mean.
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 STAMP=$(date +%Y%m%d-%H%M%S)
 
 # Reads POSTGRES_USER/POSTGRES_DB from .env (lives next to
@@ -21,7 +26,7 @@ set +a
 
 mkdir -p "$BACKUP_DIR"
 
-docker compose -f docker-compose.prod.yml exec -T postgres \
+docker compose -f "$COMPOSE_FILE" exec -T postgres \
   pg_dump -U "${POSTGRES_USER}" "${POSTGRES_DB}" \
   | gzip > "$BACKUP_DIR/vansales-$STAMP.sql.gz"
 

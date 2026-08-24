@@ -226,14 +226,22 @@ R2/S3 upload — the script has a commented example line for `rclone`.
 
 ## 9. Ongoing maintenance
 
-- **Cert renewal**: Certbot certs last 90 days. Add a monthly cron entry:
+Day-2 operations — deploys, rollbacks, backup restore-testing, health
+checks, and the stack's known failure modes — live in
+[OPERATIONS.md](OPERATIONS.md). The short version:
+
+- **Deploying a code update**: `cd infra && ./deploy.sh` — never the
+  manual pull/build/up sequence (the script also restarts the proxies
+  and verifies the site actually came back; see OPERATIONS.md for why
+  each of those steps exists).
+- **Rolling back**: `./deploy.sh <previous-commit>` (every deploy
+  prints this command for its predecessor).
+- **Cert renewal** (standalone-nginx path only; the shared-Caddy path
+  renews itself). Certbot certs last 90 days — add a monthly cron entry:
   ```
   0 3 1 * * cd /path/to/vansales-saas/infra && docker compose -f docker-compose.prod.yml run --rm certbot renew && docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
   ```
-- **Deploying a code update**: `git pull`, then (from `infra/`)
-  `docker compose -f docker-compose.prod.yml up -d --build`
-  (rebuilds only what changed; migrate/collectstatic re-run automatically).
-- **Checking logs**: `docker compose -f docker-compose.prod.yml logs -f <service>`.
+- **Checking logs**: `docker compose -f <compose-file> logs -f <service>`.
 
 ## Optional next steps (not needed to go live)
 
