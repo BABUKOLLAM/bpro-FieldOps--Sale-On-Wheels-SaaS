@@ -42,3 +42,10 @@ jobs:
       - name: Typecheck
         working-directory: admin-web
         run: npm run typecheck
+
+      - name: Dependency vulnerability scan
+        working-directory: admin-web
+        # Fails the build on any high/critical advisory in the installed
+        # tree. Moderate-and-below stay visible in the log without
+        # blocking, so upgrades can be batched deliberately.
+        run: npm audit --audit-level=high

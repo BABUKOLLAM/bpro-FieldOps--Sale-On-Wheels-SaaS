@@ -67,3 +67,12 @@ jobs:
           POSTGRES_HOST: localhost
           FIELD_ENCRYPTION_KEY: b142MqNTXKs46wWNs1s02ZIpPmFWhoAAy6P1Hy4AMxU=
         run: python -m pytest -v
+
+      - name: Dependency vulnerability scan
+        # pip-audit checks installed packages against the PyPI advisory
+        # DB. Advisory-only for now (|| true would hide regressions;
+        # instead known-unfixable findings get --ignore-vuln entries
+        # here, so anything NEW still fails the build).
+        run: |
+          pip install pip-audit
+          pip-audit

@@ -265,3 +265,67 @@ def test_middleware_full_dispatch_sets_urlconf_only_for_platform_requests():
     middleware(RequestFactory().get("/", HTTP_HOST="testserver", HTTP_X_TENANT_SLUG="ghost"))
     assert seen["urlconf"] == "apps.tenancy.platform_urls"
     assert seen["tenant"] is None
+
+
+# ---- Production-like hostname layouts ----
+
+
+@pytest.mark.django_db
+def test_middleware_single_tenant_production_hosts_fall_through(settings):
+    """The actual fieldopspro.in deployment: PLATFORM_ROOT_DOMAINS unset,
+    four real public hostnames — every one must fall straight through to
+    the normal app urlconf, or login/dashboard would 404 into the
+    platform namespace."""
+    settings.PLATFORM_ROOT_DOMAINS = []
+    settings.ALLOWED_HOSTS = [
+        "fieldopspro.in", "www.fieldopspro.in", "app.fieldopspro.in", "api.fieldopspro.in",
+    ]
+    middleware = TenantResolutionMiddleware(lambda r: r)
+    for host in settings.ALLOWED_HOSTS:
+        request = RequestFactory().get("/", HTTP_HOST=host)
+        tenant, is_platform_request = middleware._resolve(request)
+        assert tenant is None, host
+        assert is_platform_request is False, host
+
+
+@pytest.mark.django_db
+def test_middleware_strips_port_and_lowercases_host(settings):
+    settings.PLATFORM_ROOT_DOMAINS = ["vansales.test"]
+    settings.ALLOWED_HOSTS = [".vansales.test"]
+    Tenant.objects.create(slug="acme", name="Acme", db_name="x", db_host="x", db_user="x")
+
+    request = RequestFactory().get("/", HTTP_HOST="ACME.vansales.test:8443")
+    middleware = TenantResolutionMiddleware(lambda r: r)
+    tenant, is_platform_request = middleware._resolve(request)
+    assert tenant is not None
+    assert tenant.slug == "acme"
+    assert is_platform_request is True
+
+
+@pytest.mark.django_db
+def test_middleware_reserved_subdomain_routes_to_platform_not_a_tenant(settings):
+    """www./api. under a multi-tenant root can never be tenants
+    (provisioning's RESERVED_SLUGS forbids them) — they must resolve as
+    platform requests, not accidentally match anything."""
+    settings.PLATFORM_ROOT_DOMAINS = ["vansales.test"]
+    settings.ALLOWED_HOSTS = [".vansales.test"]
+    middleware = TenantResolutionMiddleware(lambda r: r)
+    for host in ("www.vansales.test", "api.vansales.test"):
+        request = RequestFactory().get("/", HTTP_HOST=host)
+        tenant, is_platform_request = middleware._resolve(request)
+        assert tenant is None, host
+        assert is_platform_request is True, host
+
+
+@pytest.mark.django_db
+def test_middleware_lookalike_domain_does_not_match_root(settings):
+    """"evilvansales.test" ends with "vansales.test" as a *string* but is
+    not a subdomain of it — the dot-prefixed suffix check must not let a
+    lookalike domain reach tenant resolution or the platform namespace."""
+    settings.PLATFORM_ROOT_DOMAINS = ["vansales.test"]
+    settings.ALLOWED_HOSTS = ["evilvansales.test"]
+    request = RequestFactory().get("/", HTTP_HOST="evilvansales.test")
+    middleware = TenantResolutionMiddleware(lambda r: r)
+    tenant, is_platform_request = middleware._resolve(request)
+    assert tenant is None
+    assert is_platform_request is False

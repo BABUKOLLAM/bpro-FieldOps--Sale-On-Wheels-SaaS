@@ -9,6 +9,7 @@ import psycopg2
 import pytest
 from django.conf import settings
 from django.db import connections
+from django.db.backends.base.base import BaseDatabaseWrapper
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -19,6 +20,23 @@ from apps.tenancy.provisioning import ProvisioningError, provision_tenant, valid
 from apps.tenancy.routing import deactivate_tenant, set_current_tenant_alias
 
 PLATFORM_HEADER = {"HTTP_X_TENANT_SLUG": "no-such-tenant-routes-to-platform"}
+
+@pytest.fixture
+def allow_dynamically_provisioned_databases(monkeypatch, django_db_blocker):
+    """Django 5.1+ blocks test connections to any alias registered in
+    `connections` but absent from the test's `databases` set. Its own
+    comment says "dynamically created connections are always allowed",
+    but the check can't tell an alias registered *mid-test* (our
+    provisioning flow's documented mechanism, apps.tenancy.routing) from
+    a statically configured one it should guard — so the two end-to-end
+    provisioning tests would fail on the very connection they exist to
+    prove. Restoring the genuine ensure_connection (pytest-django's
+    blocker keeps it at _real_ensure_connection) for just these tests
+    leaves the isolation guard active everywhere else. Test-harness-only:
+    production code never runs under either patch."""
+    monkeypatch.setattr(
+        BaseDatabaseWrapper, "ensure_connection", django_db_blocker._real_ensure_connection
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -160,7 +178,7 @@ def test_provision_request_cannot_smuggle_db_connection_fields(platform_admin):
 
 
 @pytest.mark.django_db
-def test_provision_tenant_end_to_end_via_api(platform_admin):
+def test_provision_tenant_end_to_end_via_api(platform_admin, allow_dynamically_provisioned_databases):
     tokens = tokens_for_platform_admin(platform_admin)
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
@@ -189,7 +207,7 @@ def test_provision_tenant_end_to_end_via_api(platform_admin):
 
 
 @pytest.mark.django_db
-def test_provision_tenant_duplicate_slug_returns_400(platform_admin):
+def test_provision_tenant_duplicate_slug_returns_400(platform_admin, allow_dynamically_provisioned_databases):
     tokens = tokens_for_platform_admin(platform_admin)
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
