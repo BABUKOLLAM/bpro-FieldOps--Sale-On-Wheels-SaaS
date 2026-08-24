@@ -128,6 +128,33 @@ ever from a dump you have restore-tested this way.
 | Dependency CVEs | CI fails on new advisories (`pip-audit` in backend-ci, `npm audit --audit-level=high` in admin-web-ci) |
 | Logs | `docker compose -f docker-compose.prod.caddy-fronted.yml logs <service> --tail 100` — `backend`, `admin-web`, `celery-worker`, `nginx` |
 
+## Load testing
+
+`infra/loadtest/k6-baseline.js` — a repeatable baseline with pass/fail
+thresholds (p95 latency per traffic kind, <1% errors), not a one-off
+eyeball run. Two scenarios ramp concurrently for ~5 minutes: anonymous
+page traffic (Caddy → nginx → admin-web SSR + API health) and
+authenticated API reads (JWT login + the dashboard's real endpoints,
+exercising Django + Postgres).
+
+Run it with [k6](https://k6.io) (single binary, nothing added to the
+repo) — **against staging, or production only in an agreed low-traffic
+window**, using a dedicated load-test account:
+
+```bash
+k6 run \
+  -e APP_URL=https://fieldopspro.in \
+  -e API_URL=https://api.fieldopspro.in \
+  -e LOGIN_USERNAME=loadtest@example.com \
+  -e LOGIN_PASSWORD='...' \
+  infra/loadtest/k6-baseline.js
+```
+
+A non-zero exit means a threshold was breached — treat that as a
+release blocker, and tune thresholds deliberately (never delete one to
+make a run pass). Without credentials the authenticated scenario skips
+itself rather than reporting fake success.
+
 ## Known failure modes
 
 Every entry below happened in production at least once. `deploy.sh`
