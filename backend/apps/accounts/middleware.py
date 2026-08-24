@@ -24,10 +24,20 @@ class AuditLogMiddleware:
 
     @staticmethod
     def _log(request, response):
-        from .models import AuditLog
+        from .models import AuditLog, User
 
+        # Non-User principals (the connector agent — see
+        # apps.integrations.authentication.ConnectorAgentUser) are
+        # authenticated but have no User row for the actor FK. Log the
+        # write with actor=None; the action string still records what
+        # happened, and str(principal) names who.
+        actor = request.user if isinstance(request.user, User) else None
+        action = f"{request.method} {request.path}" + ("" if actor else f" (by {request.user})")
         AuditLog.objects.create(
-            actor=request.user,
-            action=f"{request.method} {request.path}",
+            actor=actor,
+            # action is varchar(100); a UUID-bearing path plus the
+            # principal suffix can exceed it — truncate, never crash the
+            # request that already succeeded.
+            action=action[:100],
             ip_address=request.META.get("REMOTE_ADDR"),
         )

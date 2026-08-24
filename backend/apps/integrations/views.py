@@ -73,7 +73,14 @@ class ConnectorJobViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
 
     authentication_classes = [ConnectorAPIKeyAuthentication]
-    permission_classes = []  # authentication itself is the gate
+    # IsAuthenticated is NOT redundant here: with an empty permission
+    # list, a request with no X-Connector-Key header at all sails
+    # through as AnonymousUser (the authenticator returns None for a
+    # missing header, and DRF only enforces auth via permissions) —
+    # which made every one of these endpoints, sync-job payloads
+    # included, publicly readable. ConnectorAgentUser.is_authenticated
+    # is True, so the agent passes; anonymous does not.
+    permission_classes = [IsAuthenticated]
     serializer_class = ConnectorJobSerializer
 
     def get_queryset(self):
@@ -85,6 +92,13 @@ class ConnectorJobViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         result = ConnectorJobResultSerializer(data=request.data)
         result.is_valid(raise_exception=True)
         data = result.validated_data
+
+        # Idempotency: results only apply to a job still awaiting one.
+        # A duplicate/late delivery (agent retry, network replay) for an
+        # entry that has already been decided must not flip its status —
+        # e.g. a stale "failed" arriving after an ack, or vice versa.
+        if entry.status != SyncLogEntry.STATUS_PENDING:
+            return Response({"status": entry.status, "detail": "Result already recorded; ignored."})
 
         if data["status"] == "acknowledged":
             entry.status = SyncLogEntry.STATUS_ACKNOWLEDGED

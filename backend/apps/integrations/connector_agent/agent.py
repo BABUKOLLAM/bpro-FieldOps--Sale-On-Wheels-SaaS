@@ -28,13 +28,17 @@ the endpoint shape there is illustrative, not vendor-verified):
     python agent.py --once   # process one poll cycle and exit (for testing)
 """
 import argparse
+import hashlib
+import hmac
 import json
 import logging
 import os
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
+import uuid
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))  # backend/
 
@@ -70,12 +74,34 @@ class AgentConfig:
         return connector_cls({"base_url": self.erp_base_url, "api_key": self.erp_api_key})
 
 
+def _sign(key: str, timestamp: str, nonce: str, method: str, path: str, body: bytes) -> str:
+    """Must mirror apps.integrations.authentication.build_connector_signature
+    exactly — HMAC-SHA256 over timestamp.nonce.METHOD.path.sha256(body).
+    Signing (rather than just sending the static key) is what makes a
+    captured request useless to a replayer: the server rejects stale
+    timestamps, reuses of a nonce, and any altered body."""
+    body_hash = hashlib.sha256(body or b"").hexdigest()
+    message = f"{timestamp}.{nonce}.{method.upper()}.{path}.{body_hash}"
+    return hmac.new(key.encode(), message.encode(), hashlib.sha256).hexdigest()
+
+
 def _request(config: AgentConfig, method: str, path: str, body: dict | None = None) -> dict:
     url = f"{config.api_base_url}{path}"
     data = json.dumps(body).encode() if body is not None else None
+    timestamp = str(int(time.time()))
+    nonce = uuid.uuid4().hex
+    # The signature covers the request path exactly as the server sees it
+    # (request.path — no query string, which these endpoints don't use).
+    signed_path = urllib.parse.urlsplit(url).path
     request = urllib.request.Request(
         url, data=data, method=method,
-        headers={"X-Connector-Key": config.connector_key, "Content-Type": "application/json"},
+        headers={
+            "X-Connector-Key": config.connector_key,
+            "X-Connector-Timestamp": timestamp,
+            "X-Connector-Nonce": nonce,
+            "X-Connector-Signature": _sign(config.connector_key, timestamp, nonce, method, signed_path, data or b""),
+            "Content-Type": "application/json",
+        },
     )
     with urllib.request.urlopen(request, timeout=20) as response:
         raw = response.read()
