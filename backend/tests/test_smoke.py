@@ -13,10 +13,23 @@ from apps.sales.services import finalize_invoice
 
 
 @pytest.mark.django_db
+def test_seed_demo_data_refuses_to_run_outside_debug():
+    """The demo admin credentials are published in the repo — with
+    DEBUG=False (as in these test settings, matching production) the
+    command must refuse unless explicitly forced."""
+    from django.core.management.base import CommandError
+
+    with pytest.raises(CommandError, match="Refusing to seed demo data"):
+        call_command("seed_demo_data")
+
+
+@pytest.mark.django_db
 def test_seed_demo_data_runs_end_to_end():
     """The seed command touches nearly every app's models — if this
-    passes, the whole model layer + migrations are internally consistent."""
-    call_command("seed_demo_data")
+    passes, the whole model layer + migrations are internally consistent.
+    --force exercises the deliberate escape hatch (test settings run
+    DEBUG=False, same as production)."""
+    call_command("seed_demo_data", force=True)
 
     from apps.accounts.models import User
 

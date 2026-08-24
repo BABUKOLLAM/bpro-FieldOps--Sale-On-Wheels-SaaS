@@ -1,7 +1,8 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.accounts.constants import ROLE_SYSTEM_IT_ADMIN, ROLE_VAN_SALESMAN
@@ -18,8 +19,26 @@ from apps.inventory.services import post_stock_movement
 class Command(BaseCommand):
     help = "Seed a working demo deployment: company, roles, users, catalog, customers, a beat, and opening van stock."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--force", action="store_true",
+            help="Run even with DEBUG=False. The demo admin password is published in this "
+            "repository — seeding it into a production database is a real credential leak.",
+        )
+
     @transaction.atomic
     def handle(self, *args, **options):
+        # This command creates an admin account whose password is
+        # committed to the repo (README, this file). On a DEBUG=False
+        # deployment that is a publicly-known password on a live
+        # superuser — refuse unless explicitly forced.
+        if not settings.DEBUG and not options["force"]:
+            raise CommandError(
+                "Refusing to seed demo data with DEBUG=False: the demo admin credentials are "
+                "published in this repository. Use seed_default_roles + createsuperuser for real "
+                "deployments (docs/DEPLOYMENT.md §6), or pass --force if this really is a demo box."
+            )
+
         Role.seed_defaults()
         self.stdout.write(self.style.SUCCESS(f"Seeded {Role.objects.count()} roles."))
 
