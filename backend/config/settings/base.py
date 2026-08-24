@@ -235,6 +235,11 @@ FIELD_ENCRYPTION_KEY = env("FIELD_ENCRYPTION_KEY", default="")
 
 # ---- Connector agent auth ----
 CONNECTOR_API_KEY = env("CONNECTOR_API_KEY", default="")
+# Signed connector requests (timestamp + nonce + HMAC — see
+# apps.integrations.authentication) are required by default. This flag
+# exists ONLY to bridge an already-deployed agent binary that predates
+# signing; never enable it for a fresh deployment.
+CONNECTOR_ALLOW_UNSIGNED = env.bool("CONNECTOR_ALLOW_UNSIGNED", default=False)
 
 # ---- Outbound email (AR-02/FM-13 "emailable" reports) ----
 # No SMTP account is configured out of the box. Without EMAIL_HOST set,
