@@ -13,4 +13,4 @@ Pillow==12.3.0
 openpyxl==3.1.5
 reportlab==4.2.5
 qrcode==7.4.2
-hvac==1.5.1
+hvac==1.2.1
