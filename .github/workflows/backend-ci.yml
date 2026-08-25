@@ -107,29 +107,84 @@ jobs:
           pip install pip-audit
           pip-audit
 
-      - name: Build & push images (only on main)
-        if: github.ref == 'refs/heads/main'
+      - name: Build backend image (load for local scan)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          push: true
+          push: false
+          load: true
           tags: |
             ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
             ghcr.io/${{ github.repository }}/vansales-backend:latest
 
-      - name: Build & push admin-web image (only on main)
-        if: github.ref == 'refs/heads/main'
+      - name: Build admin-web image (load for local scan)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: docker/build-push-action@v5
         with:
           context: ./admin-web
           file: ./admin-web/Dockerfile.prod
-          push: true
+          push: false
+          load: true
           tags: |
             ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
             ghcr.io/${{ github.repository }}/vansales-admin-web:latest
 
+      - name: Trivy scan backend image
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
+
+      - name: Trivy scan admin-web image
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
+
+      - name: Login to registry
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push backend images
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker push ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}/vansales-backend:latest
+
+      - name: Push admin-web images
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker push ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}/vansales-admin-web:latest
+
       - name: Publish image metadata
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
           echo "IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY}/" >> $GITHUB_ENV
           echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Release tag promotion (tagged refs)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker tag ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }} ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
+          docker tag ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+
+      - name: Deploy to VPS (optional)
+        if: github.ref == 'refs/heads/main' && secrets.VPS_SSH_PRIVATE_KEY != ''
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_SSH_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || '22' }}
+          script: |
+            set -e
+            cd ${{ secrets.VPS_REPO_PATH }}
+            echo "IMAGE_REGISTRY=${IMAGE_REGISTRY}" > infra/.env
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> infra/.env
+            ./infra/deploy.sh
