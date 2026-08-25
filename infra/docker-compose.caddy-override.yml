@@ -1,0 +1,22 @@
+# Overlay for running behind the box's shared Caddy front door (see
+# nginx/vansales.caddy-fronted.conf.example for the full explanation).
+# Drops nginx's host port publishing — Caddy already owns 80/443 and
+# reverse-proxies to this container over the shared Docker network — and
+# joins nginx to the Caddy project's network under the name the shared
+# Caddyfile expects ("nginx"). Same pattern as bpro-hrms-hcm's
+# docker-compose.shared-caddy.yml on this host.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.caddy-override.yml up -d
+services:
+  nginx:
+    ports: !reset []
+    networks:
+      default: {}
+      deploy_default:
+        aliases:
+          - nginx
+
+networks:
+  deploy_default:
+    external: true

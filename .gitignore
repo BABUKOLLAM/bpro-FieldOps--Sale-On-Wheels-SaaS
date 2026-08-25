@@ -59,3 +59,8 @@ infra/redis-data/
 htmlcov/
 .pytest_cache/
 coverage.xml
+infra/nginx/certs/
+infra/nginx/private/
+infra/ssl-certs/
+infra/nginx/*.backup
+infra/nginx/*.bak
