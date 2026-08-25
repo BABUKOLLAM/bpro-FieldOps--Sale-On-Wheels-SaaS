@@ -106,3 +106,26 @@ jobs:
         run: |
           pip install pip-audit
           pip-audit
+
+      - name: Build & push images (only on main)
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}:vansales-backend-${{ github.sha }}
+
+      - name: Build & push admin-web image (only on main)
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./admin-web
+          file: ./admin-web/Dockerfile.prod
+          push: true
+          tags: ghcr.io/${{ github.repository }}:vansales-admin-web-${{ github.sha }}
+
+      - name: Publish image metadata
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV

@@ -113,16 +113,25 @@ fi
 NEW_COMMIT=$(git rev-parse --short HEAD)
 echo "    $OLD_COMMIT -> $NEW_COMMIT ($(git log -1 --format=%s))"
 
-# ---- 3. Build ----
-say "Building backend + admin-web images"
+# ---- 3. Build or pull images ----
+say "Preparing backend + admin-web images"
 cd "$INFRA_DIR"
-docker compose -f "$COMPOSE_FILE" build backend admin-web
+if [ -n "${IMAGE_TAG:-}" ]; then
+    say "IMAGE_TAG is set to $IMAGE_TAG — pulling images from registry"
+    docker compose -f "$COMPOSE_FILE" pull backend admin-web || fail "Failed to pull images for tag $IMAGE_TAG from registry (IMAGE_REGISTRY=${IMAGE_REGISTRY:-})"
+else
+    say "No IMAGE_TAG provided — building images locally"
+    docker compose -f "$COMPOSE_FILE" build backend admin-web
+fi
 
 # ---- 4. Recreate EVERY service on the new images ----
 # No service list on purpose: celery-worker and celery-beat run the
 # backend image too — 'up -d backend admin-web' leaves them on the old
 # image, silently running stale task code.
 say "Recreating containers"
+# When pulling by tag Docker Compose will use the image: fields from the
+# compose file (IMAGE_REGISTRY/IMAGE_TAG). When building locally the build
+# block is used to produce images with the same tag.
 docker compose -f "$COMPOSE_FILE" up -d
 
 # ---- 5. Restart the proxies ----

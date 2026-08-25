@@ -39,6 +39,7 @@ services:
     # No published port, same reasoning as postgres.
 
   backend:
+    image: "${IMAGE_REGISTRY:-}vansales-backend:${IMAGE_TAG:-latest}"
     build:
       context: ../backend
     restart: unless-stopped
@@ -115,6 +116,7 @@ services:
     command: celery -A config beat -l info
 
   admin-web:
+    image: "${IMAGE_REGISTRY:-}vansales-admin-web:${IMAGE_TAG:-latest}"
     build:
       context: ../admin-web
       dockerfile: Dockerfile.prod
