@@ -83,6 +83,19 @@ jobs:
           FIELD_ENCRYPTION_KEY: b142MqNTXKs46wWNs1s02ZIpPmFWhoAAy6P1Hy4AMxU=
         run: python -m pytest -v
 
+      - name: Vault acceptance test
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+          POSTGRES_HOST: localhost
+          FIELD_ENCRYPTION_KEY: b142MqNTXKs46wWNs1s02ZIpPmFWhoAAy6P1Hy4AMxU=
+          CI_EXPECTED_SECRET: dummy-secret
+        run: |
+          python backend/scripts/ci_vault_acceptance.py
+
+      - name: Stop Vault (cleanup)
+        run: |
+          docker stop vault || true
+
       - name: Dependency vulnerability scan
         # pip-audit checks installed packages against the PyPI advisory
         # DB. Advisory-only for now (|| true would hide regressions;

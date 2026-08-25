@@ -48,8 +48,41 @@ echo "    secrets look real."
 # ---- 1b. Vault preflight: if Vault is configured, ensure it's reachable and usable
 if [ -n "${VAULT_ADDR:-}" ]; then
     say "Preflight: Vault detected at $VAULT_ADDR — validating token and connectivity"
+
+    # If a token isn't supplied directly, try AppRole exchange when role/secret are present
     if [ -z "${VAULT_TOKEN:-}" ]; then
-        fail "VAULT_ADDR is set but VAULT_TOKEN is not provided in the environment. Provide a short-lived token or use Vault Agent/AppRole injection."
+        if [ -n "${VAULT_ROLE_ID:-}" ] && [ -n "${VAULT_SECRET_ID:-}" ]; then
+            say "No VAULT_TOKEN provided; attempting AppRole login with VAULT_ROLE_ID/VAULT_SECRET_ID"
+            # Use python to parse the JSON response so we don't depend on jq
+            token_json=$(curl -s -X POST -d "{\"role_id\":\"$VAULT_ROLE_ID\",\"secret_id\":\"$VAULT_SECRET_ID\"}" "$VAULT_ADDR/v1/auth/approle/login" || true)
+            VAULT_TOKEN=$(python - <<PY
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    print(data.get('auth', {}).get('client_token', ''))
+except Exception:
+    sys.exit(1)
+PY
+<<<"$token_json") || true
+            if [ -z "${VAULT_TOKEN:-}" ]; then
+                fail "AppRole exchange did not yield a token. Check VAULT_ROLE_ID/VAULT_SECRET_ID or Vault AppRole configuration."
+            fi
+            say "AppRole login succeeded; token acquired (will be used for preflight checks)."
+        else
+            fail "VAULT_ADDR is set but VAULT_TOKEN is not provided. Provide a short-lived token or supply VAULT_ROLE_ID and VAULT_SECRET_ID for AppRole exchange."
+        fi
+    fi
+
+    # If Vault Agent is being used (sidecar/agent injection) it may expose a local address
+    if [ -n "${VAULT_AGENT_ADDR:-}" ]; then
+        say "Vault Agent detected at $VAULT_AGENT_ADDR — validating agent connectivity"
+        agent_status=$(curl -s -o /dev/null -w '%{http_code}' "$VAULT_AGENT_ADDR/v1/sys/health" || echo 000)
+        if [ "$agent_status" != "200" ] && [ "$agent_status" != "429" ]; then
+            fail "Vault Agent at $VAULT_AGENT_ADDR not responding as expected (HTTP $agent_status)."
+        fi
+        # Prefer agent address for secret reads if present
+        VAULT_ADDR="$VAULT_AGENT_ADDR"
+        say "Using Vault Agent address for subsequent checks ($VAULT_ADDR)."
     fi
 
     # Attempt a lightweight GET for a critical secret path (KV v2 default)
