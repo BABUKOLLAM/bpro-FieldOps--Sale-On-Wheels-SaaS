@@ -122,7 +122,7 @@ ever from a dump you have restore-tested this way.
 | What | How |
 |---|---|
 | Backend liveness | `https://api.fieldopspro.in/healthz/` → 200 (also used by deploy.sh and the compose healthcheck) |
-| Console liveness | `https://fieldopspro.in/` → 200 |
+| Console liveness | `https://www.fieldopspro.in/` → 200 |
 | Container states | `docker compose -f docker-compose.prod.caddy-fronted.yml ps` — anything `Restarting`/`Exited` is an incident |
 | Error tracking | Sentry is fully wired (API + celery) but **dormant until `SENTRY_DSN` is set** in `infra/.env`. Creating a free Sentry project and setting that one variable turns on real alerting — the single highest-value monitoring step still open. |
 | Dependency CVEs | CI fails on new advisories (`pip-audit` in backend-ci, `npm audit --audit-level=high` in admin-web-ci) |
@@ -172,7 +172,7 @@ window**, using a dedicated load-test account:
 
 ```bash
 k6 run \
-  -e APP_URL=https://fieldopspro.in \
+  -e APP_URL=https://www.fieldopspro.in \
   -e API_URL=https://api.fieldopspro.in \
   -e LOGIN_USERNAME=loadtest@example.com \
   -e LOGIN_PASSWORD='...' \

@@ -13,14 +13,14 @@
 #   PROJECT_NGINX  project nginx container to restart (infra-nginx-1)
 #   SHARED_CADDY   shared front-door container to restart (deploy-caddy-1;
 #                  set empty to skip, e.g. on a non-Caddy deployment)
-#   APP_URL        public URL that must return 200 after deploy (https://fieldopspro.in/)
+#   APP_URL        public URL that must return 200 after deploy (https://www.fieldopspro.in/)
 #   API_URL        API health URL that must return 200 (https://api.fieldopspro.in/healthz/)
 set -euo pipefail
 
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.caddy-fronted.yml}"
 PROJECT_NGINX="${PROJECT_NGINX:-infra-nginx-1}"
 SHARED_CADDY="${SHARED_CADDY:-deploy-caddy-1}"
-APP_URL="${APP_URL:-https://fieldopspro.in/}"
+APP_URL="${APP_URL:-https://www.fieldopspro.in/}"
 API_URL="${API_URL:-https://api.fieldopspro.in/healthz/}"
 REF="${1:-origin/main}"
 

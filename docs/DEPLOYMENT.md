@@ -39,19 +39,14 @@ path on a box where Caddy already holds ports 80/443 fails with
 
 ## 1. DNS
 
-Point four A records at the VPS's IP address:
+Point the two production A records at the dedicated VPS's IP address:
 
 ```
-app.fieldopspro.in   A   <vps-ip>   # admin-web — the back-office console
-fieldopspro.in       A   <vps-ip>   # same console, bare/apex domain
-www.fieldopspro.in   A   <vps-ip>   # same console, www
+www.fieldopspro.in   A   <vps-ip>   # admin-web — the back-office console
 api.fieldopspro.in   A   <vps-ip>   # backend — hit directly by the mobile app
 ```
 
-The apex record (`fieldopspro.in` with no subdomain — sometimes shown
-as `@` in a DNS panel) and `www` both serve the identical admin-web
-console as `app.` — see the nginx config's `server_name` line. No
-wildcard record needed for this model — just these four.
+No wildcard record is needed for this model.
 
 ## 2. Configure secrets
 
@@ -118,7 +113,7 @@ cp nginx/vansales.bootstrap.conf.example nginx/vansales.conf   # already carries
 docker compose -f docker-compose.prod.yml up -d nginx
 ```
 
-Visit `http://app.fieldopspro.in` — you should see the "nginx is up"
+Visit `http://www.fieldopspro.in` — you should see the "nginx is up"
 placeholder text. If not, fix DNS/firewall (port 80 open) before
 continuing.
 
@@ -130,11 +125,11 @@ than managing separate certs:
 ```bash
 docker compose -f docker-compose.prod.yml run --rm certbot \
   certonly --webroot -w /var/www/certbot \
-  -d app.fieldopspro.in -d fieldopspro.in -d www.fieldopspro.in -d api.fieldopspro.in \
+  -d www.fieldopspro.in -d api.fieldopspro.in \
   --email <your-email-for-expiry-notices> --agree-tos --no-eff-email
 ```
 
-This creates `/etc/letsencrypt/live/app.fieldopspro.in/` (named after
+This creates `/etc/letsencrypt/live/www.fieldopspro.in/` (named after
 the first `-d`) inside the `certbot-etc` volume — matches what
 `nginx/vansales.conf.example` already points at.
 
@@ -177,9 +172,8 @@ production deployment.
 
 ## 7. Verify
 
-- `https://app.fieldopspro.in`, `https://fieldopspro.in`, and
-  `https://www.fieldopspro.in` all load the login page, padlock shows
-  a valid cert on each.
+- `https://www.fieldopspro.in` loads the login page and shows a valid
+  certificate.
 - `https://api.fieldopspro.in/api/` responds (401 without a token is
   correct — confirms the domain reaches Django, not that auth works).
 - Log in via the superuser account created in step 6.
@@ -294,14 +288,14 @@ checks, and the stack's known failure modes — live in
 - Set `SENTRY_DSN` for error tracking — already wired up in
   `config/settings/production.py`, just needs the env var.
 - Wrap admin-web as an installable Android APK (Trusted Web Activity),
-  once `app.fieldopspro.in` above is a real, live HTTPS domain — a TWA
+  once `www.fieldopspro.in` above is a real, live HTTPS domain — a TWA
   can't be built against a placeholder or localhost, because Android
   verifies the APK against a `.well-known/assetlinks.json` file hosted
   on that same domain (this is what lets the app open full-screen,
   without a browser URL bar, unlike a plain "Add to Home Screen"
   bookmark). Steps once the domain is live:
   1. `npm install -g @bubblewrap/cli`
-  2. `bubblewrap init --manifest https://app.fieldopspro.in/manifest.webmanifest`
+  2. `bubblewrap init --manifest https://www.fieldopspro.in/manifest.webmanifest`
      — this reads the existing PWA manifest (`admin-web/public/manifest.webmanifest`,
      already shipped) and interactively asks for a package name (e.g.
      `com.bpro.fieldops.admin`), app name, and signing key details;

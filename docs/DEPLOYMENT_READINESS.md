@@ -239,7 +239,7 @@ docker compose -f docker-compose.prod.yml exec backend \
   python manage.py createsuperuser
 
 # Test admin-web
-# Open: https://fieldopspro.in/admin
+# Open: https://www.fieldopspro.in/admin
 # Login with superuser credentials
 ```
 
@@ -253,8 +253,8 @@ docker compose -f docker-compose.prod.yml exec backend \
 
 - [ ] Health endpoint responds: https://api.<your-domain>/healthz/
 - [ ] Backend logs show SECRET_KEY validation passed
-- [ ] Admin-web loads: https://app.fieldopspro.in/
-- [ ] Admin user can login: https://fieldopspro.in/admin
+- [ ] Admin-web loads: https://www.fieldopspro.in/
+- [ ] Admin user can login: https://www.fieldopspro.in/admin
 - [ ] Database migrations ran successfully
 - [ ] Redis cache working
 - [ ] Nginx reverse proxy working

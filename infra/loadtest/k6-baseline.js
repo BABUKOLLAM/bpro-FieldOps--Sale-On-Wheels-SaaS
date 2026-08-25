@@ -22,7 +22,7 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 
-const APP_URL = __ENV.APP_URL || "https://fieldopspro.in";
+const APP_URL = __ENV.APP_URL || "https://www.fieldopspro.in";
 const API_URL = __ENV.API_URL || "https://api.fieldopspro.in";
 const USERNAME = __ENV.LOGIN_USERNAME || "";
 const PASSWORD = __ENV.LOGIN_PASSWORD || "";

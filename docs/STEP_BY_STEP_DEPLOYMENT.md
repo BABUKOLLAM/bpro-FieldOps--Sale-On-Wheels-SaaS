@@ -137,10 +137,10 @@ nano infra/.env
    **Keep as-is** (unless your domain is different)
    Example: `ALLOWED_HOSTS=api.yourdomain.com,backend`
 
-6. **Find line:** `CORS_ALLOWED_ORIGINS=https://app.fieldopspro.in,https://fieldopspro.in,https://www.fieldopspro.in`
+6. **Find line:** `CORS_ALLOWED_ORIGINS=https://www.fieldopspro.in`
    **Update if needed** (use your actual frontend domains)
 
-7. **Find line:** `FRONTEND_BASE_URL=https://fieldopspro.in`
+7. **Find line:** `FRONTEND_BASE_URL=https://www.fieldopspro.in`
    **Update if needed** (your primary domain)
 
 8. **Find line:** `NEXT_PUBLIC_API_BASE_URL=https://api.fieldopspro.in`
@@ -435,7 +435,7 @@ Superuser created successfully.
 
 1. **Open browser** and go to:
    ```
-   https://fieldopspro.in
+   https://www.fieldopspro.in
    ```
 
 2. **You should see:** Admin login page (or redirected to login)
@@ -461,7 +461,7 @@ curl -s https://api.fieldopspro.in/api/v1/ -H "Authorization: Bearer YOUR_TOKEN"
 
 **Frontend:**
 ```bash
-curl -s https://app.fieldopspro.in/ | head -20
+curl -s https://www.fieldopspro.in/ | head -20
 ```
 
 **Should show HTML content** ✅
@@ -505,8 +505,7 @@ Your bpro FieldOps SaaS platform is now live on the dedicated VPS!
 
 ### What's Running:
 - ✅ Backend API: https://api.fieldopspro.in
-- ✅ Admin Dashboard: https://fieldopspro.in
-- ✅ Frontend (App): https://app.fieldopspro.in
+- ✅ Admin Dashboard: https://www.fieldopspro.in
 - ✅ Database: PostgreSQL (postgres:6379)
 - ✅ Cache: Redis (redis:6379)
 - ✅ Reverse Proxy: Nginx

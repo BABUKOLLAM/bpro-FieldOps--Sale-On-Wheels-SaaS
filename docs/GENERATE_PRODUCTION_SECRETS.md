@@ -153,7 +153,7 @@ docker compose -f infra/docker-compose.prod.yml exec postgres psql -U vansales -
 docker compose -f infra/docker-compose.prod.yml exec backend python manage.py createsuperuser
 
 # 8. Test frontend loads
-curl https://fieldopspro.in/ -L
+curl https://www.fieldopspro.in/ -L
 ```
 
 ## Disaster Recovery

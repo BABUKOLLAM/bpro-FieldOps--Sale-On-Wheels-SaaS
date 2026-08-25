@@ -5,7 +5,7 @@
 # Caddyfile) and reverse-proxies plain HTTP to this container by its
 # Docker Compose service name:
 #
-#   app.fieldopspro.in, fieldopspro.in, www.fieldopspro.in, api.fieldopspro.in {
+#   www.fieldopspro.in, api.fieldopspro.in {
 #       reverse_proxy nginx:80
 #   }
 #
@@ -29,7 +29,7 @@
 
 server {
     listen 80;
-    server_name app.fieldopspro.in fieldopspro.in www.fieldopspro.in;
+    server_name www.fieldopspro.in;
 
     # Caddy already terminates TLS and sets these before forwarding —
     # relayed through rather than re-derived from nginx's own (always
