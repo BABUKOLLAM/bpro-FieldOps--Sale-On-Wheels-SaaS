@@ -140,6 +140,64 @@ jobs:
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
 
+      - name: Generate SBOM for backend image
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }} -o cyclonedx-json=/tmp/sbom-backend.json || true
+          cp /tmp/sbom-backend.json sbom-backend.json || true
+
+      - name: Upload backend SBOM
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-backend-${{ github.sha }}
+          path: sbom-backend.json
+
+      - name: Generate SBOM for admin-web image
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} -o cyclonedx-json=/tmp/sbom-admin.json || true
+          cp /tmp/sbom-admin.json sbom-admin.json || true
+
+      - name: Upload admin-web SBOM
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-admin-${{ github.sha }}
+          path: sbom-admin.json
+
+      - name: Install cosign
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        uses: sigstore/cosign-installer@v2
+
+      - name: Prepare cosign key
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+        run: |
+          if echo "$COSIGN_PRIVATE_KEY" | grep -q "BEGIN"; then
+            printf '%s' "$COSIGN_PRIVATE_KEY" > cosign.key
+          else
+            echo "$COSIGN_PRIVATE_KEY" | base64 -d > cosign.key
+          fi
+          chmod 600 cosign.key
+
+      - name: Sign backend image with cosign
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD || '' }}
+        run: |
+          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
+          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-backend:latest
+
+      - name: Sign admin-web image with cosign
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD || '' }}
+        run: |
+          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
+          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-admin-web:latest
+
       - name: Login to registry
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: docker/login-action@v2
@@ -174,8 +232,21 @@ jobs:
           docker tag ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
           docker push ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
 
-      - name: Deploy to VPS (optional)
-        if: github.ref == 'refs/heads/main' && secrets.VPS_SSH_PRIVATE_KEY != ''
+# End of test job steps
+
+  deploy_with_approval:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Using an environment allows GitHub to require manual approval via
+    # environment protection rules — configure 'production' in repo settings
+    # and require reviewers to force a manual approval before this job runs.
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS (requires secrets)
         uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -185,6 +256,6 @@ jobs:
           script: |
             set -e
             cd ${{ secrets.VPS_REPO_PATH }}
-            echo "IMAGE_REGISTRY=${IMAGE_REGISTRY}" > infra/.env
-            echo "IMAGE_TAG=${IMAGE_TAG}" >> infra/.env
+            echo "IMAGE_REGISTRY=ghcr.io/${{ github.repository }}/" > infra/.env
+            echo "IMAGE_TAG=${{ github.sha }}" >> infra/.env
             ./infra/deploy.sh
