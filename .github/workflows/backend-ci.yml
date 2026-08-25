@@ -45,7 +45,8 @@ jobs:
           cache-dependency-path: backend/requirements/dev.txt
 
       - name: Install dependencies
-        run: pip install -r requirements/dev.txt
+        # Install base requirements (includes hvac) and dev extras used for tests
+        run: pip install -r requirements/base.txt -r requirements/dev.txt
 
       - name: Start Vault (dev) for settings smoke test
         # Runs a local Vault dev server and injects small example secrets
@@ -89,8 +90,9 @@ jobs:
           POSTGRES_HOST: localhost
           FIELD_ENCRYPTION_KEY: b142MqNTXKs46wWNs1s02ZIpPmFWhoAAy6P1Hy4AMxU=
           CI_EXPECTED_SECRET: dummy-secret
+        # defaults.run sets working-directory: backend, so invoke the script path relative to that
         run: |
-          python backend/scripts/ci_vault_acceptance.py
+          python scripts/ci_vault_acceptance.py
 
       - name: Stop Vault (cleanup)
         run: |
