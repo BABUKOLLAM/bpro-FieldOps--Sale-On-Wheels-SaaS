@@ -1,5 +1,7 @@
 # bpro FieldOps — Sales on Wheels
 
+[![CI/CD Pipeline](https://github.com/BABUKOLLAM/bpro-FieldOps--Sale-On-Wheels-SaaS/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/BABUKOLLAM/bpro-FieldOps--Sale-On-Wheels-SaaS/actions/workflows/backend-ci.yml)
+
 Phase 1 MVP of a field/van sales platform: offline-first mobile billing app,
 web admin/back-office panel, and a Tally Prime sync layer. Built as a
 per-client-deployment template — see [`docs/PROVISIONING.md`](docs/PROVISIONING.md)
@@ -45,6 +47,39 @@ npm run ios     # or: npm run android
 
 Set `API_BASE_URL` in `mobile/.env` to your backend's reachable address
 (use your machine's LAN IP, not `localhost`, when testing on a physical device).
+
+## Production Deployment & CI/CD
+
+**Full production-grade deployment** with automated testing, security scanning, image signing, and optional auto-deploy:
+
+- [**CI/CD Quick Start**](docs/CI_CD_QUICK_START.md) — 5-minute setup guide for GitHub Actions automation
+- [**Deployment Guide**](docs/DEPLOYMENT.md) — Complete deployment runbook including Vault integration, secrets management, and VPS setup
+- [**Verify Image Signatures**](scripts/verify-image-signature.sh) — Script to verify Docker images signed by CI (keyless cosign)
+
+### Key Features
+
+- ✅ **Automated testing** — 296 backend tests, Django checks, dependency scanning
+- ✅ **Security scanning** — Trivy CVE scans, pip-audit, Bandit code analysis
+- ✅ **SBOM generation** — CycloneDX SBOMs attached to releases for compliance
+- ✅ **Image signing** — Sigstore cosign keyless OIDC signing (no secrets needed)
+- ✅ **Vault integration** — AppRole support, production fail-fast checks
+- ✅ **Immutable deployments** — Images tagged by commit SHA for reproducibility
+- ✅ **Manual approval gates** — Protected production environment requiring reviewer sign-off
+- ✅ **Release automation** — GitHub Releases with SBOMs and verification instructions
+
+### Quick Deploy
+
+```bash
+# Create a release (tags images, signs, generates SBOMs, creates release)
+git tag v1.0.0
+git push origin v1.0.0
+
+# On your VPS, deploy with
+export IMAGE_REGISTRY=ghcr.io/OWNER/REPO/
+export IMAGE_TAG=v1.0.0
+cd infra
+./deploy.sh
+```
 
 ## Status
 
