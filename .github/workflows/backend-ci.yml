@@ -113,7 +113,9 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ghcr.io/${{ github.repository }}:vansales-backend-${{ github.sha }}
+          tags: |
+            ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/vansales-backend:latest
 
       - name: Build & push admin-web image (only on main)
         if: github.ref == 'refs/heads/main'
@@ -122,10 +124,12 @@ jobs:
           context: ./admin-web
           file: ./admin-web/Dockerfile.prod
           push: true
-          tags: ghcr.io/${{ github.repository }}:vansales-admin-web-${{ github.sha }}
+          tags: |
+            ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/vansales-admin-web:latest
 
       - name: Publish image metadata
         if: github.ref == 'refs/heads/main'
         run: |
-          echo "IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY}" >> $GITHUB_ENV
+          echo "IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY}/" >> $GITHUB_ENV
           echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
