@@ -55,6 +55,8 @@ if [[ ! -f "$SCRIPT_DIR/.env" ]]; then
   exit 1
 fi
 
+python3 "$SCRIPT_DIR/../backend/scripts/check_production_env.py" --env-file "$SCRIPT_DIR/.env"
+
 existing_nginx="$(docker compose --env-file .env -f "$COMPOSE_FILE" ps -q nginx 2>/dev/null || true)"
 if [[ -z "$existing_nginx" ]]; then
   for port in 80 443; do
