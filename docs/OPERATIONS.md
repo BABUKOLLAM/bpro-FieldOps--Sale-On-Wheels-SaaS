@@ -126,7 +126,7 @@ ever from a dump you have restore-tested this way.
 | Container states | `docker compose -f docker-compose.prod.caddy-fronted.yml ps` — anything `Restarting`/`Exited` is an incident |
 | Error tracking | Sentry is fully wired (API + celery) but **dormant until `SENTRY_DSN` is set** in `infra/.env`. Creating a free Sentry project and setting that one variable turns on real alerting — the single highest-value monitoring step still open. |
 | Dependency CVEs | CI fails on new advisories (`pip-audit` in backend-ci, `npm audit --audit-level=high` in admin-web-ci) |
-| Logs | `docker compose -f docker-compose.prod.caddy-fronted.yml logs <service> --tail 100` — `backend`, `admin-web`, `celery-worker`, `nginx` |
+| Logs | `docker compose -f docker-compose.prod.yml logs <service> --tail 100` — `backend`, `admin-web`, `celery-worker`, `nginx` |
 
 ### Operational monitoring package
 
@@ -151,6 +151,11 @@ For deploy notifications, set `DEPLOY_WEBHOOK_URL` on the VPS. The generic
 deploy and rollback scripts send success/failure JSON events without exposing
 secrets. Webhook delivery is best-effort so a notification outage cannot mask
 the actual deployment result.
+
+Set `BACKUP_REMOTE` to an encrypted rclone destination for off-host copies and
+`BACKUP_WEBHOOK_URL` for backup failure alerts. Before go-live, create a blank
+restore database and run `CONFIRM_RESTORE=YES RESTORE_DB=<name>
+infra/restore.sh <backup.sql.gz>` as a scheduled recovery drill.
 
 ## Load testing
 

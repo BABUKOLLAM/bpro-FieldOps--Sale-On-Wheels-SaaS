@@ -340,7 +340,7 @@ If you want CI to automatically deploy to the VPS after passing tests and securi
 
 2. **VPS_HOST** (required for auto-deploy)
   - The IP address or hostname of your VPS
-  - Example: `76.13.187.232` or `vps.example.com`
+  - Example: `203.0.113.10` or `vps.example.com`
   - Add to: **Settings → Secrets and variables → Actions** → New repository secret named `VPS_HOST`
 
 3. **VPS_SSH_USER** (required for auto-deploy)

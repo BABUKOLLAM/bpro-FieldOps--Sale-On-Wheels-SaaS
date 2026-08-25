@@ -1,6 +1,6 @@
 # Generate Production Secrets for VPS Deployment
 
-This guide shows how to safely generate all required production secrets for the FieldOps SaaS deployment to VPS (76.13.187.232).
+This guide shows how to safely generate all required production secrets for a FieldOps SaaS deployment to a dedicated VPS.
 
 ## Quick Setup (Copy & Paste)
 
@@ -131,7 +131,7 @@ After deployment, verify production is ready:
 
 ```bash
 # 1. SSH into VPS
-ssh root@76.13.187.232
+ssh <deploy-user>@<vps-host>
 
 # 2. Check .env permissions (should be 600)
 ls -la /path/to/infra/.env
@@ -141,7 +141,7 @@ chmod 600 /path/to/infra/.env  # If needed
 docker compose -f infra/docker-compose.prod.yml ps
 
 # 4. Test backend health
-curl https://api.fieldopspro.in/health/
+curl https://api.<your-domain>/healthz/
 
 # 5. Check backend logs for SECRET_KEY validation
 docker compose -f infra/docker-compose.prod.yml logs backend | grep -i secret
@@ -179,7 +179,7 @@ curl https://fieldopspro.in/ -L
 **Recovery**:
 1. Generate new POSTGRES_PASSWORD
 2. Update .env
-3. Connect to VPS: `ssh root@76.13.187.232`
+3. Connect to VPS: `ssh <deploy-user>@<vps-host>`
 4. Update database user:
    ```bash
    docker compose -f infra/docker-compose.prod.yml exec postgres psql -U postgres -c "ALTER USER vansales WITH PASSWORD 'new-password';"

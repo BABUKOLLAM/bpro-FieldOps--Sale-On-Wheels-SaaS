@@ -37,6 +37,10 @@ fail() { printf '\nDEPLOY FAILED: %s\n' "$*" >&2; exit 1; }
 # stack down, not after.
 say "Preflight: checking $INFRA_DIR/.env secrets"
 [ -f "$INFRA_DIR/.env" ] || fail "$INFRA_DIR/.env not found."
+python3 "$INFRA_DIR/../backend/scripts/check_production_env.py" --env-file "$INFRA_DIR/.env" || fail "Production environment validation failed."
+IMAGE_TAG=$(grep -E '^IMAGE_TAG=' "$INFRA_DIR/.env" | tail -1 | cut -d= -f2- || true)
+IMAGE_REGISTRY=$(grep -E '^IMAGE_REGISTRY=' "$INFRA_DIR/.env" | tail -1 | cut -d= -f2- || true)
+export IMAGE_TAG IMAGE_REGISTRY
 for var in SECRET_KEY FIELD_ENCRYPTION_KEY POSTGRES_PASSWORD; do
     value=$(grep -E "^${var}=" "$INFRA_DIR/.env" | tail -1 | cut -d= -f2- || true)
     case "$value" in
@@ -112,17 +116,35 @@ else
 fi
 NEW_COMMIT=$(git rev-parse --short HEAD)
 echo "    $OLD_COMMIT -> $NEW_COMMIT ($(git log -1 --format=%s))"
+DEPLOY_COMMIT=$(git rev-parse HEAD)
 
 # ---- 3. Build or pull images ----
 say "Preparing backend + admin-web images"
 cd "$INFRA_DIR"
 if [ -n "${IMAGE_TAG:-}" ]; then
-    say "IMAGE_TAG is set to $IMAGE_TAG — pulling images from registry"
+    # Registry images are published under the full commit SHA. Always derive
+    # the deployment tag from the checked-out source, including rollbacks.
+    IMAGE_TAG="$DEPLOY_COMMIT"
+    export IMAGE_TAG
+    say "Pulling immutable images for commit $IMAGE_TAG"
     docker compose -f "$COMPOSE_FILE" pull backend admin-web || fail "Failed to pull images for tag $IMAGE_TAG from registry (IMAGE_REGISTRY=${IMAGE_REGISTRY:-})"
 else
     say "No IMAGE_TAG provided — building images locally"
     docker compose -f "$COMPOSE_FILE" build backend admin-web
 fi
+
+say "Starting database and cache for guarded migration"
+docker compose -f "$COMPOSE_FILE" up -d postgres redis
+docker compose -f "$COMPOSE_FILE" up -d --wait postgres redis
+
+say "Creating pre-migration database backup"
+./backup.sh
+
+say "Applying database migrations"
+docker compose -f "$COMPOSE_FILE" run --rm backend python manage.py migrate --noinput
+
+say "Collecting static files"
+docker compose -f "$COMPOSE_FILE" run --rm backend python manage.py collectstatic --noinput
 
 # ---- 4. Recreate EVERY service on the new images ----
 # No service list on purpose: celery-worker and celery-beat run the

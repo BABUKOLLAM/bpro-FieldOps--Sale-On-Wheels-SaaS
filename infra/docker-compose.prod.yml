@@ -19,7 +19,7 @@ x-logging: &default-logging
 
 services:
   postgres:
-    image: postgres:15
+    image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE must be pinned by digest}
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -38,7 +38,7 @@ services:
     # infra/backup.sh for direct access.
 
   redis:
-    image: redis:7
+    image: ${REDIS_IMAGE:?REDIS_IMAGE must be pinned by digest}
     restart: unless-stopped
     logging: *default-logging
     healthcheck:
@@ -69,15 +69,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # migrate + collectstatic on every start is safe for this app's
-    # migration history (additive, already run in sequence throughout
-    # development) and keeps a solo-operator deploy to one command. Static
-    # files land in the shared volume nginx serves directly (faster than
-    # proxying through gunicorn/whitenoise for a VPS this size).
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py collectstatic --noinput &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60"
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60
     # Probes /healthz/ (DB + Redis round-trip, see apps/core/views.py) —
     # python-based because the slim image ships no curl/wget. start_period
     # covers the migrate+collectstatic phase of the command above.
@@ -153,7 +145,7 @@ services:
     # No published port — nginx proxies to this container's 3000.
 
   nginx:
-    image: nginx:1.27-alpine
+    image: ${NGINX_IMAGE:?NGINX_IMAGE must be pinned by digest}
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -175,7 +167,7 @@ services:
   # certbot ...` commands against this for cert issuance/renewal. See
   # docs/DEPLOYMENT.md.
   certbot:
-    image: certbot/certbot
+    image: ${CERTBOT_IMAGE:?CERTBOT_IMAGE must be pinned by digest}
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-www:/var/www/certbot

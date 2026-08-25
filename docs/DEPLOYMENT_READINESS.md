@@ -104,7 +104,7 @@
 
 ## Monitoring & Observability
 
-- [x] Health check endpoint implemented (/health/)
+- [x] Health check endpoint implemented (/healthz/)
 - [x] Logging configured
 - [x] Error tracking optional (Sentry integration available)
 - [x] Audit logging for writes + IP addresses
@@ -136,7 +136,7 @@
 - [x] Recommendation: Create SECURITY.md (vulnerability disclosure policy)
 - [x] Recommendation: Create docs/INCIDENT_RESPONSE.md (playbooks)
 
-## VPS Preparation (76.13.187.232)
+## VPS Preparation
 
 ### Prerequisites
 - [ ] SSH access to VPS configured
@@ -147,9 +147,9 @@
 ### Domain Setup
 - [ ] Public domain registered (e.g., fieldopspro.in)
 - [ ] DNS A records configured:
-  - [ ] api.fieldopspro.in → VPS IP (76.13.187.232)
-  - [ ] app.fieldopspro.in → VPS IP (76.13.187.232)
-  - [ ] fieldopspro.in → VPS IP (76.13.187.232)
+  - [ ] api.<your-domain> → your VPS IP
+  - [ ] app.<your-domain> → your VPS IP
+  - [ ] <your-domain> → your VPS IP
 - [ ] DNS propagation verified (nslookup/dig)
 
 ### SSL/TLS Certificates
@@ -210,7 +210,7 @@ chmod 600 infra/.env
 
 ### 3. SSH to VPS and Prepare
 ```bash
-ssh root@76.13.187.232
+ssh <deploy-user>@<vps-host>
 # Install Docker (if not installed): https://docs.docker.com/engine/install/
 # Verify: docker --version && docker compose version
 ```
@@ -229,7 +229,7 @@ bash deploy.sh
 ### 5. Verify Deployment
 ```bash
 # Test health endpoint
-curl https://api.fieldopspro.in/health/
+curl https://api.<your-domain>/healthz/
 
 # Check logs
 docker compose -f docker-compose.prod.yml logs -f backend
@@ -251,7 +251,7 @@ docker compose -f docker-compose.prod.yml exec backend \
 
 ## Post-Deployment Verification
 
-- [ ] Health endpoint responds: https://api.fieldopspro.in/health/
+- [ ] Health endpoint responds: https://api.<your-domain>/healthz/
 - [ ] Backend logs show SECRET_KEY validation passed
 - [ ] Admin-web loads: https://app.fieldopspro.in/
 - [ ] Admin user can login: https://fieldopspro.in/admin
@@ -270,7 +270,7 @@ docker compose -f docker-compose.prod.yml exec backend \
 
 **Deployer**: ___________________________  
 **Date**: ___________________________  
-**VPS IP**: 76.13.187.232  
+**VPS IP**: to be supplied per deployment
 **Primary Domain**: ___________________________  
 
 ---

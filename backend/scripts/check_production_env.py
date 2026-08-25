@@ -45,11 +45,19 @@ def validate(env_values: dict[str, str]) -> list[str]:
         "FRONTEND_BASE_URL",
         "NEXT_PUBLIC_API_BASE_URL",
         "CORS_ALLOWED_ORIGINS",
+        "POSTGRES_IMAGE",
+        "REDIS_IMAGE",
+        "NGINX_IMAGE",
+        "CERTBOT_IMAGE",
     ]
     for key in required:
         value = env_values.get(key)
         if fails(value):
             errors.append(f"{key} must be set to a real production value and must not include localhost/example.com/default placeholders.")
+
+    for key in ("POSTGRES_IMAGE", "REDIS_IMAGE", "NGINX_IMAGE", "CERTBOT_IMAGE"):
+        if not re.search(r"@sha256:[0-9a-f]{64}$", env_values.get(key, "")):
+            errors.append(f"{key} must use an immutable @sha256 digest reference.")
 
     frontend = env_values.get("FRONTEND_BASE_URL", "")
     api = env_values.get("NEXT_PUBLIC_API_BASE_URL", "")

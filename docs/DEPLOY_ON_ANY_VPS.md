@@ -67,10 +67,14 @@ CORS_ALLOWED_ORIGINS=https://app.example.com,https://www.example.com
 FRONTEND_BASE_URL=https://app.example.com
 NEXT_PUBLIC_API_BASE_URL=https://api.example.com
 POSTGRES_DB=vansales
+POSTGRES_IMAGE=postgres:15@sha256:<verified-digest>
 POSTGRES_USER=vansales
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 REDIS_URL=redis://redis:6379/0
+REDIS_IMAGE=redis:7@sha256:<verified-digest>
+NGINX_IMAGE=nginx:1.27-alpine@sha256:<verified-digest>
+CERTBOT_IMAGE=certbot/certbot@sha256:<verified-digest>
 ```
 
 Important:
@@ -78,6 +82,8 @@ Important:
 - no `example.com` placeholders
 - no test credentials
 - use your actual production domains
+- replace every `<verified-digest>` with the digest verified from the trusted
+	image registry; mutable tags are rejected by the deployment validator
 
 ## 5. Start the app stack
 

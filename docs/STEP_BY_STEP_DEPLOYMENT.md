@@ -202,17 +202,17 @@ You now have:
 ---
 
 ## Phase 3: Connect to VPS & Prepare for Deployment
-**Time: 5 minutes | Platform: VPS 76.13.187.232**
+**Time: 5 minutes | Platform: dedicated VPS**
 
 ### Step 3.1: SSH into VPS
 
 ```bash
-ssh root@76.13.187.232
+ssh <deploy-user>@<vps-host>
 ```
 
 **You should see:**
 ```
-root@76.13.187.232's password:
+<deploy-user>@<vps-host>'s password:
 ```
 
 **Enter the VPS root password** (provided by hosting provider)
@@ -376,7 +376,7 @@ You have:
 ### Step 5.1: Check backend health endpoint
 
 ```bash
-curl -s https://api.fieldopspro.in/health/ | python3 -m json.tool
+curl -s https://api.<your-domain>/healthz/ | python3 -m json.tool
 ```
 
 **Expected output (example):**
@@ -501,7 +501,7 @@ You have verified:
 
 ## 🎉 Deployment Complete!
 
-Your bpro FieldOps SaaS platform is now live on VPS 76.13.187.232!
+Your bpro FieldOps SaaS platform is now live on the dedicated VPS!
 
 ### What's Running:
 - ✅ Backend API: https://api.fieldopspro.in
@@ -544,8 +544,8 @@ Your bpro FieldOps SaaS platform is now live on VPS 76.13.187.232!
 ### Issue: "Connection refused" (SSH)
 **Solution:** Check VPS IP and password:
 ```bash
-ssh -v root@76.13.187.232
-# Verify IP is correct: 76.13.187.232
+ssh -v <deploy-user>@<vps-host>
+# Verify the host and IP match this deployment's DNS records
 # Verify password is correct
 # Check firewall allows SSH port 22
 ```
@@ -601,7 +601,7 @@ docker compose logs nginx --tail 50
 
 # Verify DNS points to VPS IP
 nslookup api.fieldopspro.in
-# Should show: 76.13.187.232 (or your VPS IP)
+# Should show the VPS IP configured for this deployment
 ```
 
 ---
