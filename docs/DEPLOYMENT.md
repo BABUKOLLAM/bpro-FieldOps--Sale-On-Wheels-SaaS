@@ -55,17 +55,57 @@ wildcard record needed for this model — just these four.
 
 ## 2. Configure secrets
 
+This project supports two patterns for providing production secrets:
+
+A) Traditional file-backed env (simple)
+
 ```bash
 cd vansales-saas/infra
 cp ../.env.production.example .env
+# edit infra/.env with real values for SECRET_KEY, POSTGRES_PASSWORD, FIELD_ENCRYPTION_KEY, CONNECTOR_API_KEY, etc.
 ```
 
-Edit `infra/.env`: the domain values (`app.`/`api.fieldopspro.in`) are
-already filled in; generate real values for `SECRET_KEY`, `POSTGRES_PASSWORD`,
-`FIELD_ENCRYPTION_KEY`, and `CONNECTOR_API_KEY` (commands are inline as
-comments in the file). Leave the email/FCM/SMS/Sentry vars blank for now
-— every one of them safely falls back to console-logging instead of
-faking success (see each var's comment).
+B) Recommended: use HashiCorp Vault (preferred for SaaS)
+
+When delivering this as a SaaS offering for multiple clients, storing
+production secrets in a managed secret store is strongly recommended.
+This repo supports optional runtime lookup of secrets from Vault. To use
+Vault in production:
+
+1. Configure a KV secrets engine (KV v2 recommended) at `secret/`.
+2. Store secrets under paths such as `secret/data/SECRET_KEY` with the
+   secret stored as a map. Example (KV v2):
+
+```bash
+vault kv put secret/SECRET_KEY value="$SECRET_KEY_VALUE"
+vault kv put secret/POSTGRES_PASSWORD value="$POSTGRES_PASSWORD"
+vault kv put secret/FIELD_ENCRYPTION_KEY value="$FIELD_ENCRYPTION_KEY"
+vault kv put secret/CONNECTOR_API_KEY value="$CONNECTOR_API_KEY"
+```
+
+3. On the host or orchestrator, set the following environment variables
+   in the process that runs the Django container (do not check them into
+   source control):
+
+- `VAULT_ADDR` (e.g. "https://vault.company.internal:8200")
+- `VAULT_TOKEN` (or use AppRole/short-lived token injection for
+  production; do not store long-lived root tokens on disk)
+- Optionally: `VAULT_KV_V2=0` if your Vault uses KV v1
+
+4. The Django settings module will attempt to read secrets from Vault
+   at startup and will fall back to env variables when Vault is not
+   configured. If Vault is configured but a critical secret is missing
+   or Vault is unreachable, the production settings will fail fast and
+   stop the container from starting — this is intentional.
+
+Operational notes:
+
+- Prefer AppRole or autoinjectors (Kubernetes Vault Agent) to long-lived
+  tokens in the environment.
+- Rotate Vault tokens and secrets regularly.
+- For on-prem deployments without Vault, continue using the infra/.env
+  file, but ensure it is stored only in the host's secure store and not
+  in version control.
 
 All commands from here on assume you're inside `infra/`.
 

@@ -33,6 +33,22 @@ except (ValueError, TypeError) as exc:
         "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
     ) from exc
 
+# If Vault is configured in the environment, ensure we can read at least
+# one critical secret to fail fast during container start if Vault is
+# unreachable/misconfigured. This helps avoid containers that boot but
+# immediately fail when the secret is accessed later.
+import os as _os
+if _os.environ.get("VAULT_ADDR") and _os.environ.get("VAULT_TOKEN"):
+    try:
+        from .vault_client import get_secret as _get_secret_v  # type: ignore
+        _sv = _get_secret_v("SECRET_KEY")
+        if not _sv:
+            raise ImproperlyConfigured("Vault configured but SECRET_KEY not found in Vault.")
+    except ImproperlyConfigured:
+        raise
+    except Exception as _exc:  # pragma: no cover - defensive
+        raise ImproperlyConfigured(f"Vault is configured but not reachable: {_exc}")
+
 SECURE_SSL_REDIRECT = True
 # Container-internal healthchecks (docker-compose healthcheck, nginx
 # upstream probes) hit plain http://localhost:8000/healthz/ — without

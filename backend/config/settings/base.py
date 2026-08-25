@@ -16,7 +16,30 @@ env_file = BASE_DIR.parent / ".env"
 if env_file.exists():
     environ.Env.read_env(str(env_file))
 
-SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-only-change-me")
+# Optional: fetch critical secrets from HashiCorp Vault when VAULT_ADDR
+# and VAULT_TOKEN are provided in the environment. This keeps production
+# secrets out of disk-backed env files. Falls back to the existing env
+# behavior when Vault is not configured.
+try:
+    from .vault_client import get_secret as _get_secret_from_vault  # type: ignore
+except Exception:
+    _get_secret_from_vault = None
+
+
+def _fetch_secret(name, default=None):
+    # Try Vault first if available
+    try:
+        if _get_secret_from_vault:
+            v = _get_secret_from_vault(name, default=None)
+            if v:
+                return v
+    except Exception:
+        # Fail gracefully to env fallback
+        pass
+    return env(name, default=default)
+
+
+SECRET_KEY = _fetch_secret("SECRET_KEY", default="django-insecure-dev-only-change-me")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
@@ -110,11 +133,11 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", default="vansales"),
-        "USER": env("POSTGRES_USER", default="vansales"),
-        "PASSWORD": env("POSTGRES_PASSWORD", default="vansales"),
-        "HOST": env("POSTGRES_HOST", default="localhost"),
-        "PORT": env("POSTGRES_PORT", default="5432"),
+        "NAME": _fetch_secret("POSTGRES_DB", default=env("POSTGRES_DB", default="vansales")),
+        "USER": _fetch_secret("POSTGRES_USER", default=env("POSTGRES_USER", default="vansales")),
+        "PASSWORD": _fetch_secret("POSTGRES_PASSWORD", default=env("POSTGRES_PASSWORD", default="vansales")),
+        "HOST": _fetch_secret("POSTGRES_HOST", default=env("POSTGRES_HOST", default="localhost")),
+        "PORT": _fetch_secret("POSTGRES_PORT", default=env("POSTGRES_PORT", default="5432")),
     }
 }
 
