@@ -143,8 +143,7 @@ jobs:
       - name: Generate SBOM for backend image
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }} -o cyclonedx-json=/tmp/sbom-backend.json || true
-          cp /tmp/sbom-backend.json sbom-backend.json || true
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }} -o cyclonedx-json > sbom-backend.json || true
 
       - name: Upload backend SBOM
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
@@ -156,8 +155,7 @@ jobs:
       - name: Generate SBOM for admin-web image
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} -o cyclonedx-json=/tmp/sbom-admin.json || true
-          cp /tmp/sbom-admin.json sbom-admin.json || true
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} -o cyclonedx-json > sbom-admin.json || true
 
       - name: Upload admin-web SBOM
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
@@ -168,35 +166,23 @@ jobs:
 
       - name: Install cosign
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        uses: sigstore/cosign-installer@v2
+        uses: sigstore/cosign-installer@v3
 
-      - name: Prepare cosign key
+      - name: Sign backend images with cosign (keyless OIDC)
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_EXPERIMENTAL: 1
         run: |
-          if echo "$COSIGN_PRIVATE_KEY" | grep -q "BEGIN"; then
-            printf '%s' "$COSIGN_PRIVATE_KEY" > cosign.key
-          else
-            echo "$COSIGN_PRIVATE_KEY" | base64 -d > cosign.key
-          fi
-          chmod 600 cosign.key
+          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
+          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-backend:latest
 
-      - name: Sign backend image with cosign
+      - name: Sign admin-web images with cosign (keyless OIDC)
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD || '' }}
+          COSIGN_EXPERIMENTAL: 1
         run: |
-          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
-          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-backend:latest
-
-      - name: Sign admin-web image with cosign
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD || '' }}
-        run: |
-          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
-          ./cosign sign --key cosign.key ghcr.io/${{ github.repository }}/vansales-admin-web:latest
+          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
+          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-admin-web:latest
 
       - name: Login to registry
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
@@ -231,6 +217,57 @@ jobs:
           docker push ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
           docker tag ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
           docker push ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+          # Sign the release-tagged images as well
+          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
+          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+        env:
+          COSIGN_EXPERIMENTAL: 1
+
+      - name: Create GitHub Release with SBOMs (tagged refs)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            **Release**: ${{ github.ref_name }}
+            **Commit**: ${{ github.sha }}
+            **Images**:
+            - `ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}`
+            - `ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}`
+            
+            All images are signed with Sigstore cosign. Verify with:
+            ```bash
+            cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
+            cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+            ```
+            
+            SBOMs (Software Bill of Materials) are attached to this release for compliance and vulnerability scanning.
+          draft: false
+          prerelease: false
+
+      - name: Download SBOM artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/download-artifact@v4
+        with:
+          path: sboms
+
+      - name: Attach SBOMs to release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd sboms
+          for file in */sbom-*.json; do
+            # Handle nested directory structure from download-artifact
+            if [ -f "$file" ]; then
+              echo "Attaching SBOM: $file"
+              gh release upload ${{ github.ref_name }} "$file" --clobber
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # End of test job steps
 

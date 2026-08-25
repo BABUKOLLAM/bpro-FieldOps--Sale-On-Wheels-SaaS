@@ -318,3 +318,107 @@ checks, and the stack's known failure modes — live in
   A mirror of `mobile-android-ci.yml` could automate steps 2–3 once the
   signing key is generated once and stored as a repo secret — not set up
   yet since it needs that one-time interactive key generation first.
+
+## GitHub Actions CI/CD Configuration
+
+The repository includes automated CI/CD with image building, security scanning, signing, and optional automated deployment to the VPS. To enable the full CI/CD pipeline, configure the following secrets and environments in your GitHub repository settings.
+
+### Required Secrets for Image Push & Security
+
+1. **GITHUB_TOKEN** (automatic, provided by GitHub)
+  - Required: Package write permission for pushing to GitHub Container Registry (GHCR)
+  - Configure in: **Settings → Actions → General → Workflow permissions** → Enable **Read and write permissions**
+
+### Optional Secrets for Automated VPS Deployment
+
+If you want CI to automatically deploy to the VPS after passing tests and security scans, configure these secrets:
+
+1. **VPS_SSH_PRIVATE_KEY** (required for auto-deploy)
+  - A private SSH key that can authenticate to the VPS
+  - Format: Copy the full PEM private key (including `-----BEGIN OPENSSH PRIVATE KEY-----` header)
+  - Add to: **Settings → Secrets and variables → Actions** → New repository secret named `VPS_SSH_PRIVATE_KEY`
+
+2. **VPS_HOST** (required for auto-deploy)
+  - The IP address or hostname of your VPS
+  - Example: `76.13.187.232` or `vps.example.com`
+  - Add to: **Settings → Secrets and variables → Actions** → New repository secret named `VPS_HOST`
+
+3. **VPS_SSH_USER** (required for auto-deploy)
+  - The SSH user account on the VPS (usually `ubuntu`, `root`, or `deploy`)
+  - Add to: **Settings → Secrets and variables → Actions** → New repository secret named `VPS_SSH_USER`
+
+4. **VPS_SSH_PORT** (optional, defaults to 22)
+  - Non-standard SSH port if your VPS doesn't use the default
+  - Add to: **Settings → Secrets and variables → Actions** → New repository secret named `VPS_SSH_PORT`
+
+5. **VPS_REPO_PATH** (required for auto-deploy)
+  - Absolute path to this repository on the VPS
+  - Example: `/home/deploy/bpro-fieldops` or `/opt/vansales-saas`
+  - Add to: **Settings → Secrets and variables → Actions** → New repository secret named `VPS_REPO_PATH`
+
+### Protected Deployment Environment (Manual Approval)
+
+To require manual approval before deploying to production:
+
+1. Go to **Settings → Environments**
+2. Click **New environment** and name it `production`
+3. Under **Deployment branches**, select **All branches**
+4. Check **Require reviewers** and add team members who can approve deployments
+5. (Optional) **Restrict deployments** to a specific branch (e.g., `main`)
+
+Once configured, any deployment triggered by the CI workflow will pause and wait for a reviewer to approve before proceeding to the VPS.
+
+### Image Signing with Keyless OIDC (Production Recommended)
+
+The CI workflow uses keyless signing via Sigstore/cosign and OIDC integration. This approach does not require storing long-lived signing keys in secrets:
+
+- **No additional secrets required** — OIDC tokens are minted by GitHub per workflow run
+- **Automatic verification** — users can verify images with: `cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/<owner>/<repo>/vansales-backend:latest`
+- **Best practice** — recommended for production CI/CD pipelines
+
+No configuration needed — the workflow automatically uses the GitHub OIDC issuer and Sigstore public trust root.
+
+### SBOM (Software Bill of Materials) & Compliance
+
+The CI workflow automatically generates CycloneDX SBOMs (via Anchore Syft) for every image build:
+
+- **On every main branch push**: SBOMs are uploaded as workflow artifacts (e.g., sbom-backend-<sha>.json)
+- **On every Git tag/release**: SBOMs are automatically attached to the GitHub Release for compliance and auditing
+
+Access SBOMs:
+- **Build artifacts**: Go to **Actions** → Select the workflow run → **Artifacts** section
+- **Release assets**: Go to **Releases** → Select the release → SBOMs are attached as downloadable files
+
+### Security Scanning (Trivy)
+
+The CI workflow scans all built images with Trivy for vulnerabilities:
+
+- **Severity level**: HIGH and above (CRITICAL)
+- **Behavior**: Build fails and images are NOT pushed if HIGH/CRITICAL vulnerabilities are found
+- **Remediation**: Update dependencies (especially base OS and Python packages) and push again
+
+To monitor findings or adjust sensitivity:
+- Review the workflow run output in **Actions** → Workflow name → Latest run
+- Trivy report is printed in the logs
+- To allowlist known acceptable findings, edit `.github/workflows/backend-ci.yml` and add `--skip-db-update --severity HIGH` flags with a custom policy file
+
+### Building Images Locally (Without CI)
+
+If you want to build and push images manually:
+
+```bash
+cd infra
+docker compose -f docker-compose.prod.yml build backend admin-web
+
+# Tag and push manually (requires docker login to ghcr.io first)
+docker tag <image-id> ghcr.io/<owner>/<repo>/vansales-backend:manual-build
+docker push ghcr.io/<owner>/<repo>/vansales-backend:manual-build
+```
+
+Or use the tag-based deploy flow:
+
+```bash
+export IMAGE_REGISTRY=ghcr.io/<owner>/<repo>/
+export IMAGE_TAG=manual-build
+./deploy.sh  # pulls images from the registry instead of building locally
+```
