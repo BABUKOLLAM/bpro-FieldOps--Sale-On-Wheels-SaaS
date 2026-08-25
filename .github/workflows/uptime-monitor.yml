@@ -1,0 +1,31 @@
+name: uptime-monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public API and console
+        env:
+          APP_URL: ${{ vars.PRODUCTION_APP_URL }}
+          API_URL: ${{ vars.PRODUCTION_API_HEALTH_URL }}
+        run: |
+          test -n "$APP_URL" || { echo "Missing repository variable PRODUCTION_APP_URL" >&2; exit 1; }
+          test -n "$API_URL" || { echo "Missing repository variable PRODUCTION_API_HEALTH_URL" >&2; exit 1; }
+          curl --fail --silent --show-error --location --max-time 20 "$APP_URL" >/dev/null
+          curl --fail --silent --show-error --location --max-time 20 "$API_URL" >/dev/null
+
+      - name: Notify outage
+        if: failure()
+        env:
+          UPTIME_WEBHOOK_URL: ${{ secrets.UPTIME_WEBHOOK_URL }}
+        run: |
+          test -n "$UPTIME_WEBHOOK_URL" || { echo "UPTIME_WEBHOOK_URL is not configured; outage recorded by Actions."; exit 0; }
+          curl --fail --silent --show-error --max-time 10 \
+            -X POST "$UPTIME_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            --data '{"status":"unhealthy","source":"github-actions","workflow":"uptime-monitor"}'

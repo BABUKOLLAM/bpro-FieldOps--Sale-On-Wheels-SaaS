@@ -23,10 +23,17 @@
 #   docker compose -f infra/docker-compose.prod.caddy-fronted.yml build
 #   docker compose -f infra/docker-compose.prod.caddy-fronted.yml up -d
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   postgres:
     image: postgres:15
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -45,6 +52,7 @@ services:
   redis:
     image: redis:7
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -56,6 +64,7 @@ services:
     build:
       context: ../backend
     restart: unless-stopped
+    logging: *default-logging
     env_file:
       - .env
     environment:
@@ -96,6 +105,7 @@ services:
     build:
       context: ../backend
     restart: unless-stopped
+    logging: *default-logging
     env_file:
       - .env
     environment:
@@ -114,6 +124,7 @@ services:
     build:
       context: ../backend
     restart: unless-stopped
+    logging: *default-logging
     env_file:
       - .env
     environment:
@@ -135,6 +146,7 @@ services:
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
     restart: unless-stopped
+    logging: *default-logging
     environment:
       # Browser-facing API calls that don't go through admin-web's own
       # proxy route hit this URL directly — must be the public API domain.
@@ -163,6 +175,7 @@ services:
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./nginx/vansales.conf:/etc/nginx/conf.d/default.conf:ro
       - static-files:/var/www/static:ro

@@ -128,6 +128,30 @@ ever from a dump you have restore-tested this way.
 | Dependency CVEs | CI fails on new advisories (`pip-audit` in backend-ci, `npm audit --audit-level=high` in admin-web-ci) |
 | Logs | `docker compose -f docker-compose.prod.caddy-fronted.yml logs <service> --tail 100` — `backend`, `admin-web`, `celery-worker`, `nginx` |
 
+### Operational monitoring package
+
+Production Compose files cap each container's local JSON logs at 5 files of
+10 MiB. This prevents an unhealthy service from consuming the VPS disk; ship
+logs to an external provider before the retention window becomes a compliance
+requirement.
+
+Run the provider-neutral probe from a monitoring host or cron job with real
+URLs:
+
+```bash
+APP_URL=https://your-console.example API_URL=https://your-api.example/healthz/ \
+  infra/healthcheck.sh
+```
+
+The `uptime-monitor` workflow probes both URLs every 15 minutes. Configure the
+repository variables `PRODUCTION_APP_URL` and `PRODUCTION_API_HEALTH_URL`,
+plus the optional `UPTIME_WEBHOOK_URL` secret for outage notifications.
+
+For deploy notifications, set `DEPLOY_WEBHOOK_URL` on the VPS. The generic
+deploy and rollback scripts send success/failure JSON events without exposing
+secrets. Webhook delivery is best-effort so a notification outage cannot mask
+the actual deployment result.
+
 ## Load testing
 
 `infra/loadtest/k6-baseline.js` — a repeatable baseline with pass/fail

@@ -35,6 +35,9 @@ def test_boots_cleanly_with_real_secrets():
     code, stderr = _boot_production_settings({
         "SECRET_KEY": "a-real-production-secret-key-value",
         "FIELD_ENCRYPTION_KEY": VALID_FERNET_KEY,
+        "FRONTEND_BASE_URL": "https://app.company.com",
+        "ALLOWED_HOSTS": "app.company.com,api.company.com",
+        "CORS_ALLOWED_ORIGINS": "https://app.company.com",
     })
     assert code == 0, stderr
 
@@ -64,3 +67,26 @@ def test_refuses_invalid_encryption_key():
     })
     assert code != 0
     assert "FIELD_ENCRYPTION_KEY" in stderr
+
+
+def test_refuses_localhost_frontend_in_production():
+    code, stderr = _boot_production_settings({
+        "SECRET_KEY": "a-real-production-secret-key-value",
+        "FIELD_ENCRYPTION_KEY": VALID_FERNET_KEY,
+        "FRONTEND_BASE_URL": "http://localhost:3000",
+        "ALLOWED_HOSTS": "localhost,127.0.0.1",
+    })
+    assert code != 0
+    assert "FRONTEND_BASE_URL" in stderr or "ALLOWED_HOSTS" in stderr or "localhost" in stderr.lower()
+
+
+def test_refuses_default_example_domain_in_production():
+    code, stderr = _boot_production_settings({
+        "SECRET_KEY": "a-real-production-secret-key-value",
+        "FIELD_ENCRYPTION_KEY": VALID_FERNET_KEY,
+        "FRONTEND_BASE_URL": "https://example.com",
+        "CORS_ALLOWED_ORIGINS": "https://example.com",
+        "ALLOWED_HOSTS": "example.com,api.example.com",
+    })
+    assert code != 0
+    assert "example.com" in stderr.lower() or "production" in stderr.lower()

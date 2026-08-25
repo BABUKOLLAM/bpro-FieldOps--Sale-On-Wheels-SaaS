@@ -49,6 +49,34 @@ if _os.environ.get("VAULT_ADDR") and _os.environ.get("VAULT_TOKEN"):
     except Exception as _exc:  # pragma: no cover - defensive
         raise ImproperlyConfigured(f"Vault is configured but not reachable: {_exc}")
 
+# Independent single-host production deployments must never silently run on
+# localhost or a generic example domain. This project is designed for a
+# dedicated Hostinger VPS with a specific application domain and API subdomain,
+# so a live prod startup must see a real domain in both host validation and the
+# frontend URL. This protects accidental server misconfiguration during scale-up.
+for _value, _name in ((FRONTEND_BASE_URL, "FRONTEND_BASE_URL"),):  # noqa: F405
+    if not _value:
+        raise ImproperlyConfigured(f"{_name} must be set in production to the public app domain.")
+    lowered = _value.lower()
+    if "localhost" in lowered or "127.0.0.1" in lowered or "example.com" in lowered:
+        raise ImproperlyConfigured(
+            f"{_name} must not use localhost or example.com in production; set the real app domain."
+        )
+
+for _host in ALLOWED_HOSTS:  # noqa: F405
+    lowered = str(_host).lower()
+    if "localhost" in lowered or "127.0.0.1" in lowered or "example.com" in lowered:
+        raise ImproperlyConfigured(
+            "ALLOWED_HOSTS must not include localhost or example.com in production; use the real VPS hostnames only."
+        )
+
+for _origin in CORS_ALLOWED_ORIGINS:  # noqa: F405
+    lowered = str(_origin).lower()
+    if "localhost" in lowered or "127.0.0.1" in lowered or "example.com" in lowered:
+        raise ImproperlyConfigured(
+            "CORS_ALLOWED_ORIGINS must not include localhost or example.com in production; use the real app domain only."
+        )
+
 SECURE_SSL_REDIRECT = True
 # Container-internal healthchecks (docker-compose healthcheck, nginx
 # upstream probes) hit plain http://localhost:8000/healthz/ — without
