@@ -47,6 +47,21 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements/dev.txt
 
+      - name: Start Vault (dev) for settings smoke test
+        # Runs a local Vault dev server and injects small example secrets
+        run: |
+          docker run -d --rm --name vault -e 'VAULT_DEV_ROOT_TOKEN_ID=root' -p 8200:8200 vault:1.14.0 server -dev -dev-root-token-id=root || true
+          # wait for vault to be reachable
+          for i in $(seq 1 15); do
+            if curl -sS http://localhost:8200/v1/sys/health >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          echo "VAULT_ADDR=http://localhost:8200" >> $GITHUB_ENV
+          echo "VAULT_TOKEN=root" >> $GITHUB_ENV
+          # populate minimal secrets for settings to read
+          curl -s -X POST -H "X-Vault-Token: root" -d '{"data":{"value":"dummy-secret"}}' http://localhost:8200/v1/secret/data/SECRET_KEY || true
+          curl -s -X POST -H "X-Vault-Token: root" -d '{"data":{"value":"b142MqNTXKs46wWNs1s02ZIpPmFWhoAAy6P1Hy4AMxU="}}' http://localhost:8200/v1/secret/data/FIELD_ENCRYPTION_KEY || true
+
       - name: Django system check
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test

@@ -45,6 +45,26 @@ for var in SECRET_KEY FIELD_ENCRYPTION_KEY POSTGRES_PASSWORD; do
 done
 echo "    secrets look real."
 
+# ---- 1b. Vault preflight: if Vault is configured, ensure it's reachable and usable
+if [ -n "${VAULT_ADDR:-}" ]; then
+    say "Preflight: Vault detected at $VAULT_ADDR — validating token and connectivity"
+    if [ -z "${VAULT_TOKEN:-}" ]; then
+        fail "VAULT_ADDR is set but VAULT_TOKEN is not provided in the environment. Provide a short-lived token or use Vault Agent/AppRole injection."
+    fi
+
+    # Attempt a lightweight GET for a critical secret path (KV v2 default)
+    VAULT_SECRET_PATH="/v1/secret/data/SECRET_KEY"
+    status=$(curl -s -o /dev/null -w '%{http_code}' -H "X-Vault-Token: $VAULT_TOKEN" "$VAULT_ADDR$VAULT_SECRET_PATH" || echo 000)
+    case "$status" in
+        200|404)
+            echo "    Vault reachable (status $status)."
+            ;;
+        *)
+            fail "Vault did not respond as expected (HTTP $status). Check VAULT_ADDR/VAULT_TOKEN and Vault health."
+            ;;
+    esac
+fi
+
 # ---- 2. Check out the requested code ----
 say "Fetching and checking out $REF"
 git fetch origin
