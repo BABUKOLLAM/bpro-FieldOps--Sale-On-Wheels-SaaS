@@ -33,17 +33,11 @@ notify_backup() {
 
 trap 'backup_exit_code=$?; if [[ $backup_exit_code -ne 0 ]]; then notify_backup failure; fi; exit "$backup_exit_code"' EXIT
 
-# Reads POSTGRES_USER/POSTGRES_DB from .env (lives next to
-# docker-compose.prod.yml in production — see docs/DEPLOYMENT.md).
-set -a
-source .env
-set +a
-
 mkdir -p "$BACKUP_DIR"
 
 BACKUP_FILE="$BACKUP_DIR/vansales-$STAMP.sql.gz"
 docker compose -f "$COMPOSE_FILE" exec -T postgres \
-  pg_dump -U "${POSTGRES_USER}" "${POSTGRES_DB}" \
+  sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   | gzip > "$BACKUP_FILE"
 
 gzip -t "$BACKUP_FILE"
