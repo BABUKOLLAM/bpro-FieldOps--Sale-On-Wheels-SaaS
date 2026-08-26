@@ -6,7 +6,7 @@
 # Docker Compose service name:
 #
 #   www.fieldopspro.in, api.fieldopspro.in {
-#       reverse_proxy nginx:80
+#       reverse_proxy fieldopspro-nginx:80
 #   }
 #
 # One Caddy block for all four hostnames is enough — nginx below does its
@@ -21,10 +21,10 @@
 # to keep one — this is why this is a separate file from
 # vansales.conf.example rather than a small variant of it.
 #
-# Also requires infra/docker-compose.caddy-override.yml (drops nginx's
-# host port publish — Caddy reaches it over the internal Docker network
-# only, and trying to also bind the host's 80/443 directly conflicts
-# with Caddy already holding them). See docs/DEPLOYMENT.md's
+# Also requires the active Caddy network to be declared as an external
+# network in the deployment Compose file. Caddy reaches this project over
+# the internal Docker network only; this project does not bind host ports.
+# See docs/DEPLOYMENT.md's
 # "Shared VPS behind an existing Caddy" section.
 
 server {

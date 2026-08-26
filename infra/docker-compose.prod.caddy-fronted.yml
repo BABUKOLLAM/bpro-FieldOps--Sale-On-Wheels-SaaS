@@ -180,3 +180,8 @@ volumes:
   postgres-data:
   static-files:
   media-files:
+
+networks:
+  default:
+    name: ${COMPOSE_NETWORK_NAME:-fieldops-prod-network}
+    internal: true

@@ -13,10 +13,10 @@ services:
     ports: !reset []
     networks:
       default: {}
-      deploy_default:
+      bpro_hcm_hrms_default:
         aliases:
-          - nginx
+          - fieldopspro-nginx
 
 networks:
-  deploy_default:
+  bpro_hcm_hrms_default:
     external: true
