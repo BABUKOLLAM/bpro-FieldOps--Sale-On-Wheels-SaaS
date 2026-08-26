@@ -3,9 +3,9 @@
 # locally. Add to the host's crontab, e.g.:
 #   0 2 * * * /path/to/vansales-saas/infra/backup.sh >> /var/log/vansales-backup.log 2>&1
 #
-# For off-box backups (recommended once the client has real data), pipe
-# the same dump to an S3-compatible bucket (e.g. Cloudflare R2) with
-# rclone or `aws s3 cp` — see the commented example at the bottom.
+# For off-box backups, set BACKUP_REMOTE to an rclone `crypt` remote. The
+# crypt remote encrypts filenames and file contents before Google Drive sees
+# them; never upload the plain BACKUP_DIR directly to cloud storage.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -58,6 +58,5 @@ find "$BACKUP_DIR" -name "vansales-*.sql.gz" -mtime "+$RETENTION_DAYS" -delete
 echo "Backup complete: $BACKUP_FILE"
 notify_backup success
 
-# Off-box copy example (uncomment and configure once you have an R2/S3
-# bucket + credentials):
-# rclone copy "$BACKUP_DIR/vansales-$STAMP.sql.gz" r2:vansales-backups/
+# Example after configuring a crypt remote:
+# BACKUP_REMOTE=gdrive-fieldops: rclone copy "$BACKUP_FILE" gdrive-fieldops:

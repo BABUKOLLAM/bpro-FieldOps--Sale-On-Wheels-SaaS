@@ -152,10 +152,27 @@ deploy and rollback scripts send success/failure JSON events without exposing
 secrets. Webhook delivery is best-effort so a notification outage cannot mask
 the actual deployment result.
 
-Set `BACKUP_REMOTE` to an encrypted rclone destination for off-host copies and
-`BACKUP_WEBHOOK_URL` for backup failure alerts. Before go-live, create a blank
-restore database and run `CONFIRM_RESTORE=YES RESTORE_DB=<name>
-infra/restore.sh <backup.sql.gz>` as a scheduled recovery drill.
+Set `BACKUP_REMOTE` to an encrypted rclone `crypt` destination for off-host
+copies and `BACKUP_WEBHOOK_URL` for backup failure alerts. For Google Drive,
+configure the base remote and then a separate encrypted wrapper on the VPS:
+
+```bash
+rclone config reconnect gdrive:
+rclone config create gdrive-fieldops crypt remote=gdrive:fieldops-backups \
+  filename_encryption=standard directory_name_encryption=true
+rclone lsd gdrive-fieldops:
+```
+
+The `crypt` password and salt must be stored in the VPS secret store or rclone
+config, never in Git. Run the backup daily after authorization:
+
+```cron
+30 2 * * * cd /root/fieldOpsPro/infra && BACKUP_REMOTE=gdrive-fieldops: ./backup.sh >> /var/log/fieldops-backup.log 2>&1
+```
+
+Before go-live, create a blank restore database and run
+`CONFIRM_RESTORE=YES RESTORE_DB=<name> infra/restore.sh <backup.sql.gz>` as a
+scheduled recovery drill.
 
 ## Load testing
 
