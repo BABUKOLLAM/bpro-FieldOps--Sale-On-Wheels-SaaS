@@ -62,7 +62,7 @@ jobs:
             exit 1
           fi
           mkdir -p artifacts
-          cp "$APK_PATH" artifacts/bpro-fieldops-debug.apk
+          cp "$APK_PATH" artifacts/fieldOpsPro-debug.apk
 
       # ---------- Boot, install, launch, screenshot ----------
       # ubuntu-latest GitHub-hosted runners have /dev/kvm available, so the
@@ -117,7 +117,7 @@ jobs:
           # with "Syntax error: end of file unexpected" because the
           # `done` never reaches the same shell as its `for`. Delegating
           # to a real script file sidesteps that entirely.
-          script: bash mobile/scripts/android-ci-verify-launch.sh ${{ env.APP_ID }} mobile/artifacts/bpro-fieldops-debug.apk mobile/artifacts
+          script: bash mobile/scripts/android-ci-verify-launch.sh ${{ env.APP_ID }} mobile/artifacts/fieldOpsPro-debug.apk mobile/artifacts
 
       - name: Logs (diagnostic, always)
         if: always()
@@ -187,6 +187,6 @@ jobs:
         if: steps.keystore.outputs.present == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: bpro-fieldops-release-apk
+          name: fieldOpsPro-release-apk
           path: mobile/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error

@@ -93,7 +93,7 @@ profile) and the Android `build` job's APK is debug-signed — neither is
 what you'd distribute to real users. The Android workflow's separate
 `release` job is: it builds a production APK signed with the real
 release keystore (held in GitHub secrets, never in the repo) and
-publishes it as the `bpro-fieldops-release-apk` artifact on every push
+publishes it as the `fieldOpsPro-release-apk` artifact on every push
 to `main`, with `API_BASE_URL` pointed at production. See
 [`docs/DEVICE_TESTING.md`](docs/DEVICE_TESTING.md) for what physical
 device testing still needs and why it's a separate, currently-unverified

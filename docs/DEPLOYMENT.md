@@ -347,7 +347,7 @@ If you want CI to automatically deploy to the VPS after passing tests and securi
 
 5. **VPS_REPO_PATH** (required for auto-deploy)
   - Absolute path to this repository on the VPS
-  - Example: `/home/deploy/bpro-fieldops` or `/opt/vansales-saas`
+  - Example: `/home/deploy/fieldOpsPro` or `/opt/vansales-saas`
   - Add to: **Settings → Secrets and variables → Actions** → New repository secret named `VPS_REPO_PATH`
 
 ### Protected Deployment Environment (Manual Approval)

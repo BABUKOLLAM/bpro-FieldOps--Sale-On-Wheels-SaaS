@@ -39,7 +39,7 @@ To automatically deploy to your VPS after tests pass (with manual approval):
    VPS_SSH_PRIVATE_KEY   ← Your VPS SSH private key (full PEM)
    VPS_HOST              ← deployment VPS IP or hostname
    VPS_SSH_USER          ← SSH username (usually ubuntu or root)
-   VPS_REPO_PATH         ← Repo path on VPS (e.g., /home/deploy/bpro-fieldops)
+   VPS_REPO_PATH         ← Repo path on VPS (e.g., /home/deploy/fieldOpsPro)
    VPS_SSH_PORT          ← Optional, defaults to 22
    ```
 

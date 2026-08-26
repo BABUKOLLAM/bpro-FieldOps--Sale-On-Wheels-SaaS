@@ -3,7 +3,7 @@
 # Drops nginx's host port publishing — Caddy already owns 80/443 and
 # reverse-proxies to this container over the shared Docker network — and
 # joins nginx to the Caddy project's network under the name the shared
-# Caddyfile expects ("nginx"). Same pattern as bpro-hrms-hcm's
+# Caddyfile expects ("nginx"). Same pattern as bpro_HCM_HRMS's
 # docker-compose.shared-caddy.yml on this host.
 #
 # Usage:

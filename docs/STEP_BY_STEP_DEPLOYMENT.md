@@ -245,10 +245,10 @@ Docker Compose version 2.x or higher
 
 ### Step 3.3: Navigate to application directory
 
-Assuming application is at `/root/bpro-fieldops`:
+Assuming application is at `/root/fieldOpsPro`:
 
 ```bash
-cd /root/bpro-fieldops
+cd /root/fieldOpsPro
 ls -la
 ```
 
@@ -292,13 +292,13 @@ You have:
 ### Step 4.1: Navigate to infra directory
 
 ```bash
-cd /root/bpro-fieldops/infra
+cd /root/fieldOpsPro/infra
 pwd
 ```
 
 **Should show:**
 ```
-/root/bpro-fieldops/infra
+/root/fieldOpsPro/infra
 ```
 
 ---
@@ -311,7 +311,7 @@ bash deploy.sh
 
 **You should see output similar to:**
 ```
-==> Preflight: checking /root/bpro-fieldops/infra/.env secrets
+==> Preflight: checking /root/fieldOpsPro/infra/.env secrets
 ==> ✓ SECRET_KEY is set
 ==> ✓ FIELD_ENCRYPTION_KEY is set
 ==> ✓ CONNECTOR_API_KEY is set
