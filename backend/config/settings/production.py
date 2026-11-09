@@ -40,7 +40,7 @@ except (ValueError, TypeError) as exc:
 import os as _os
 if _os.environ.get("VAULT_ADDR") and _os.environ.get("VAULT_TOKEN"):
     try:
-        from .vault_client import get_secret as _get_secret_v  # type: ignore
+        from config.vault_client import get_secret as _get_secret_v  # type: ignore
         _sv = _get_secret_v("SECRET_KEY")
         if not _sv:
             raise ImproperlyConfigured("Vault configured but SECRET_KEY not found in Vault.")

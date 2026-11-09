@@ -20,8 +20,14 @@ if env_file.exists():
 # and VAULT_TOKEN are provided in the environment. This keeps production
 # secrets out of disk-backed env files. Falls back to the existing env
 # behavior when Vault is not configured.
+#
+# The helper lives at config/vault_client.py — one package up from these
+# settings modules. It was imported as `.vault_client` (i.e.
+# config.settings.vault_client), which never existed, so the ImportError
+# below silently disabled Vault reads entirely; CI's acceptance test is
+# what exposes that.
 try:
-    from .vault_client import get_secret as _get_secret_from_vault  # type: ignore
+    from config.vault_client import get_secret as _get_secret_from_vault  # type: ignore
 except Exception:
     _get_secret_from_vault = None
 

@@ -6,6 +6,15 @@ minimal Django startup and asserts SECRET_KEY equals the expected CI value.
 """
 import os
 import sys
+from pathlib import Path
+
+# Run as `python scripts/ci_vault_acceptance.py` (the CI step's working
+# directory is backend/), Python puts scripts/ on sys.path, not backend/,
+# so `config.settings` was unimportable ("No module named 'config'") and
+# this check failed on every push. Put the Django project root first,
+# whatever the caller's working directory.
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BACKEND_DIR))
 
 # Expected value set by the CI step that populates Vault in the workflow
 EXPECTED_SECRET = os.environ.get("CI_EXPECTED_SECRET", "dummy-secret")
@@ -25,7 +34,8 @@ try:
     if not secret:
         print("ERROR: SECRET_KEY is empty or missing in settings")
         sys.exit(3)
-    print("SECRET_KEY loaded from settings: ", secret)
+    # Never echo the secret itself into CI logs — only whether it matched.
+    print(f"SECRET_KEY loaded from settings ({len(secret)} chars).")
     if secret != EXPECTED_SECRET:
         print(f"ERROR: SECRET_KEY does not match expected CI value ('{EXPECTED_SECRET}')")
         sys.exit(4)
