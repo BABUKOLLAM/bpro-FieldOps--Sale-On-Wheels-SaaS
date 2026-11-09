@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
+import type { DateRange } from "@/lib/dateRange";
 
-export default function EmailReportRow({ reportKey }: { reportKey: string }) {
+export default function EmailReportRow({ reportKey, period }: { reportKey: string; period?: DateRange }) {
   const [to, setTo] = useState("");
   const [format, setFormat] = useState<"xlsx" | "pdf">("xlsx");
   const [sending, setSending] = useState(false);
@@ -16,7 +17,12 @@ export default function EmailReportRow({ reportKey }: { reportKey: string }) {
     try {
       const response = await fetch(`/api/proxy/reporting/export/${reportKey}/email`, {
         method: "POST",
-        body: JSON.stringify({ to, filetype: format }),
+        body: JSON.stringify({
+          to,
+          filetype: format,
+          ...(period?.from ? { period_start: period.from } : {}),
+          ...(period?.to ? { period_end: period.to } : {}),
+        }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.detail || "Failed to send.");

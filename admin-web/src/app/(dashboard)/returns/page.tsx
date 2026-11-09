@@ -1,9 +1,10 @@
-import { apiGet } from "@/lib/api";
+import DateRangeFilter from "@/components/DateRangeFilter";
+import Pager from "@/components/Pager";
+import { fetchDatedList, readListParams } from "@/lib/listPage";
+import { rangedFilename } from "@/lib/dateRange";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import ExportCsvButton from "@/components/ExportCsvButton";
-
-type Paginated<T> = { count: number; results: T[] };
 
 type CreditNoteLine = { id: string; qty: string; condition: "sellable" | "damaged" | "expired" };
 
@@ -44,8 +45,9 @@ function conditionSummary(note: CreditNote) {
  * logistics stock posting server-side (FM-11) — this surfaces that same
  * breakdown so the back office can see it without querying the ledger
  * directly. */
-export default async function ReturnsPage() {
-  const data = await apiGet<Paginated<CreditNote>>("/api/sales/credit-notes/");
+export default async function ReturnsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { range, error, page: requestedPage, context, query } = await readListParams(searchParams);
+  const { data, page } = await fetchDatedList<CreditNote>("/api/sales/credit-notes/", range, requestedPage);
   const totalValue = data.results.reduce((sum, n) => sum + Number(n.grand_total), 0);
 
   return (
@@ -73,14 +75,16 @@ export default async function ReturnsPage() {
             value: n.grand_total,
             sync_status: n.sync_status,
           }))}
-          filename="returns.csv"
+          filename={rangedFilename("returns.csv", range)}
         />
       </div>
+
+      <DateRangeFilter value={range} context={context} query={query} error={error} label="Return date" />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className={`${CARD_CLASS} p-4`}>
           <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Total value
+            Total value{data.count > data.results.length ? " (this page)" : ""}
           </p>
           <p className="mt-1 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
             ₹{totalValue.toLocaleString("en-IN")}
@@ -154,13 +158,14 @@ export default async function ReturnsPage() {
                   colSpan={8}
                   className="px-4 py-8 text-center text-neutral-500 dark:text-neutral-400"
                 >
-                  No returns recorded yet.
+                  {range.from || range.to ? "No returns in this date range." : "No returns recorded yet."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <Pager pathname="/returns" query={query} page={page} count={data.count} />
     </div>
   );
 }

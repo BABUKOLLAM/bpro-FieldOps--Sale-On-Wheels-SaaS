@@ -1,9 +1,10 @@
-import { apiGet } from "@/lib/api";
+import DateRangeFilter from "@/components/DateRangeFilter";
+import Pager from "@/components/Pager";
+import { fetchDatedList, readListParams } from "@/lib/listPage";
+import { rangedFilename } from "@/lib/dateRange";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import ExportCsvButton from "@/components/ExportCsvButton";
-
-type Paginated<T> = { count: number; results: T[] };
 
 type OrderLine = { id: string; qty: string; rate: string };
 
@@ -32,8 +33,9 @@ function orderTotal(order: SalesOrder) {
  * deliver later — the Pre-Sales / Order Booker flow). The mobile Order
  * screen and this app's push protocol already exist; this closes the
  * loop so the back office can see and fulfil what's been booked. */
-export default async function OrdersPage() {
-  const data = await apiGet<Paginated<SalesOrder>>("/api/sales/orders/");
+export default async function OrdersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { range, error, page: requestedPage, context, query } = await readListParams(searchParams);
+  const { data, page } = await fetchDatedList<SalesOrder>("/api/sales/orders/", range, requestedPage);
   const openCount = data.results.filter((o) => o.status === "open").length;
 
   return (
@@ -59,14 +61,16 @@ export default async function OrdersPage() {
             estimated_total: orderTotal(o).toFixed(2),
             notes: o.notes,
           }))}
-          filename="orders.csv"
+          filename={rangedFilename("orders.csv", range)}
         />
       </div>
+
+      <DateRangeFilter value={range} context={context} query={query} error={error} label="Order date" />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className={`${CARD_CLASS} p-4`}>
           <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Open orders
+            Open orders{data.count > data.results.length ? " (this page)" : ""}
           </p>
           <p className="mt-1 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
             {openCount}
@@ -131,13 +135,14 @@ export default async function OrdersPage() {
                   colSpan={8}
                   className="px-4 py-8 text-center text-neutral-500 dark:text-neutral-400"
                 >
-                  No orders recorded yet.
+                  {range.from || range.to ? "No orders in this date range." : "No orders recorded yet."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <Pager pathname="/orders" query={query} page={page} count={data.count} />
     </div>
   );
 }

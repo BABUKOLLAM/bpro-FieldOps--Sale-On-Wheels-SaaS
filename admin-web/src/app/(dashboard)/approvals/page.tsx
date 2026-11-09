@@ -1,4 +1,7 @@
 import { apiGet } from "@/lib/api";
+import DateRangeFilter from "@/components/DateRangeFilter";
+import { apiRangeQuery } from "@/lib/dateRange";
+import { readListParams } from "@/lib/listPage";
 import ApproveCreditButton from "./ApproveCreditButton";
 import ExpenseApproveButton from "./ExpenseApproveButton";
 import ExpenseRejectButton from "./ExpenseRejectButton";
@@ -35,11 +38,21 @@ type PendingExpense = {
   expense_date: string;
 };
 
-export default async function ApprovalsPage() {
+/** One From–To range narrows all three queues by the date each item
+ * was raised: the invoice date for a credit block (the check runs when
+ * the invoice is issued), the expense date for a claim, and the logged
+ * date for a sync attempt. */
+export default async function ApprovalsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { range, error, context, query } = await readListParams(searchParams);
+  const rq = apiRangeQuery(range);
   const [pendingInvoices, syncLog, pendingExpenses] = await Promise.all([
-    apiGet<Paginated<PendingInvoice>>("/api/sales/invoices/?credit_check_status=pending_review"),
-    apiGet<Paginated<SyncLogEntry>>("/api/integrations/sync-log/"),
-    apiGet<Paginated<PendingExpense>>("/api/expenses/?status=submitted"),
+    apiGet<Paginated<PendingInvoice>>(`/api/sales/invoices/?credit_check_status=pending_review${rq}`),
+    apiGet<Paginated<SyncLogEntry>>(`/api/integrations/sync-log/?${rq.slice(1)}`),
+    apiGet<Paginated<PendingExpense>>(`/api/expenses/?status=submitted${rq}`),
   ]);
 
   return (
@@ -50,6 +63,8 @@ export default async function ApprovalsPage() {
           Credit-blocked invoices and field expenses awaiting supervisor approval, and the Tally sync health of every transaction.
         </p>
       </div>
+
+      <DateRangeFilter value={range} context={context} query={query} error={error} label="Requested date" />
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">

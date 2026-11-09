@@ -29,6 +29,10 @@ jobs:
         working-directory: admin-web
         run: npm run lint
 
+      - name: Unit tests
+        working-directory: admin-web
+        run: npm test
+
       # Build BEFORE typecheck: Next generates route/layout helper types
       # (e.g. LayoutProps) into .next/types during the build, and
       # tsconfig includes them — on a fresh checkout tsc fails with

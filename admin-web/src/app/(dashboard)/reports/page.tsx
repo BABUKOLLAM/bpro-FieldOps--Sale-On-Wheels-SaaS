@@ -1,8 +1,12 @@
 import { apiGet } from "@/lib/api";
 import EmailReportRow from "./EmailReportRow";
 import { CARD_CLASS } from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
+import DateRangeFilter from "@/components/DateRangeFilter";
+import { apiRangeQuery } from "@/lib/dateRange";
+import { readListParams } from "@/lib/listPage";
 
-type ReportEntry = { key: string; label: string };
+type ReportEntry = { key: string; label: string; supports_period?: boolean };
 
 const DESCRIPTIONS: Record<string, string> = {
   sales: "Every invoice — date, customer, agent, amount, credit and sync status.",
@@ -25,8 +29,18 @@ const DESCRIPTIONS: Record<string, string> = {
   inventory_velocity: "Fast/slow-moving SKUs, stock-outs, and overstock across van stock — last 30 days.",
 };
 
-export default async function ReportsPage() {
-  const reports = await apiGet<ReportEntry[]>("/api/reporting/reports/");
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [reports, { range, error, context, query }] = await Promise.all([
+    apiGet<ReportEntry[]>("/api/reporting/reports/"),
+    readListParams(searchParams),
+  ]);
+  const hasRange = Boolean(range.from || range.to);
+  // Report exports take period_start/period_end (backend apps/reporting/views.py).
+  const periodQuery = apiRangeQuery(range, ["period_start", "period_end"]);
 
   return (
     <div className="space-y-6">
@@ -34,32 +48,38 @@ export default async function ReportsPage() {
         <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Reports</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Every report below exports to Excel or PDF, or can be emailed directly (AR-02, FM-13).
+          The period applies to dated reports; snapshot and fixed-window reports are marked.
         </p>
       </div>
+
+      <DateRangeFilter value={range} context={context} query={query} error={error} label="Report period" />
 
       <div className={`${CARD_CLASS} divide-y divide-neutral-100 dark:divide-neutral-800`}>
         {reports.map((r) => (
           <div key={r.key} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{r.label}</h3>
+              <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+                {r.label}
+                {hasRange && !r.supports_period && <Badge tone="neutral">ignores period</Badge>}
+              </h3>
               <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{DESCRIPTIONS[r.key] || ""}</p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex gap-2">
                 <a
-                  href={`/api/proxy/reporting/export/${r.key}?filetype=xlsx`}
+                  href={`/api/proxy/reporting/export/${r.key}?filetype=xlsx${r.supports_period ? periodQuery : ""}`}
                   className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   Excel
                 </a>
                 <a
-                  href={`/api/proxy/reporting/export/${r.key}?filetype=pdf`}
+                  href={`/api/proxy/reporting/export/${r.key}?filetype=pdf${r.supports_period ? periodQuery : ""}`}
                   className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   PDF
                 </a>
               </div>
-              <EmailReportRow reportKey={r.key} />
+              <EmailReportRow reportKey={r.key} period={r.supports_period ? range : undefined} />
             </div>
           </div>
         ))}

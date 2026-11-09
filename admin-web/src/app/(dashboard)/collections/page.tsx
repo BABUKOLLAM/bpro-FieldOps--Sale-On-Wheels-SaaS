@@ -1,9 +1,10 @@
-import { apiGet } from "@/lib/api";
+import DateRangeFilter from "@/components/DateRangeFilter";
+import Pager from "@/components/Pager";
+import { fetchDatedList, readListParams } from "@/lib/listPage";
+import { rangedFilename } from "@/lib/dateRange";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import ExportCsvButton from "@/components/ExportCsvButton";
-
-type Paginated<T> = { count: number; results: T[] };
 
 type Receipt = {
   id: string;
@@ -28,8 +29,9 @@ const SYNC_TONE: Record<Receipt["sync_status"], BadgeTone> = {
  * existed since the same slice; this is the other half, so a
  * ₹50,000 cash collection isn't only visible by querying the database
  * directly. */
-export default async function CollectionsPage() {
-  const data = await apiGet<Paginated<Receipt>>("/api/sales/receipts/");
+export default async function CollectionsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { range, error, page: requestedPage, context, query } = await readListParams(searchParams);
+  const { data, page } = await fetchDatedList<Receipt>("/api/sales/receipts/", range, requestedPage);
   const totalAmount = data.results.reduce((sum, r) => sum + Number(r.amount), 0);
 
   return (
@@ -56,14 +58,16 @@ export default async function CollectionsPage() {
             received_at: r.received_at,
             sync_status: r.sync_status,
           }))}
-          filename="collections.csv"
+          filename={rangedFilename("collections.csv", range)}
         />
       </div>
+
+      <DateRangeFilter value={range} context={context} query={query} error={error} label="Received date" />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className={`${CARD_CLASS} p-4`}>
           <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Total collected
+            Total collected{data.count > data.results.length ? " (this page)" : ""}
           </p>
           <p className="mt-1 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
             ₹{totalAmount.toLocaleString("en-IN")}
@@ -128,13 +132,14 @@ export default async function CollectionsPage() {
                   colSpan={8}
                   className="px-4 py-8 text-center text-neutral-500 dark:text-neutral-400"
                 >
-                  No collections recorded yet.
+                  {range.from || range.to ? "No collections in this date range." : "No collections recorded yet."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <Pager pathname="/collections" query={query} page={page} count={data.count} />
     </div>
   );
 }
