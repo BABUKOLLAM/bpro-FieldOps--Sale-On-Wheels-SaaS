@@ -37,6 +37,11 @@ class SalesOrder(BaseModel):
     def __str__(self):
         return self.order_no or str(self.id)
 
+    class Meta(BaseModel.Meta):
+        # Agent-scoped From–To lists (apps/core/date_range.py); built
+        # CONCURRENTLY by the migration, see its docstring.
+        indexes = [models.Index(fields=["agent", "order_date"], name="sales_order_agent_date_idx")]
+
 
 class SalesOrderLine(BaseModel):
     order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name="lines")
@@ -115,6 +120,11 @@ class Invoice(BaseModel):
 
     def __str__(self):
         return self.invoice_no or str(self.id)
+
+    class Meta(BaseModel.Meta):
+        # Agent-scoped From–To lists (apps/core/date_range.py); built
+        # CONCURRENTLY by the migration, see its docstring.
+        indexes = [models.Index(fields=["agent", "invoice_date"], name="sales_invoice_agent_date_idx")]
 
 
 class InvoiceDeliveryOTP(BaseModel):
@@ -243,6 +253,11 @@ class Receipt(BaseModel):
     def __str__(self):
         return self.receipt_no or str(self.id)
 
+    class Meta(BaseModel.Meta):
+        # Agent-scoped From–To lists (apps/core/date_range.py); built
+        # CONCURRENTLY by the migration, see its docstring.
+        indexes = [models.Index(fields=["agent", "received_at"], name="sales_receipt_agent_recv_idx")]
+
 
 class PaymentAllocation(BaseModel):
     """How a Receipt's amount is allocated across one or more invoices."""
@@ -278,6 +293,11 @@ class CreditNote(BaseModel):
 
     def __str__(self):
         return self.credit_note_no or str(self.id)
+
+    class Meta(BaseModel.Meta):
+        # Agent-scoped From–To lists (apps/core/date_range.py); built
+        # CONCURRENTLY by the migration, see its docstring.
+        indexes = [models.Index(fields=["agent", "note_date"], name="sales_cnote_agent_date_idx")]
 
 
 class CreditNoteLine(BaseModel):

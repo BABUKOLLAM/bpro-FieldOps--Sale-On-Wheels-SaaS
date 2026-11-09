@@ -16,12 +16,25 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
+def is_truncated(title: str) -> bool:
+    from .report_builders import TRUNCATION_NOTE
+
+    return TRUNCATION_NOTE in title
+
+
 def build_xlsx_bytes(title: str, headers: list[str], rows: list[list]) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = title[:31] or "Report"
+    header_row = 1
+    if is_truncated(title):
+        # The sheet name is capped at 31 chars, so a capped export also
+        # gets the full title (with the cap notice) as a banner row.
+        ws.append([title])
+        ws["A1"].font = Font(bold=True, color="B45309")
+        header_row = 2
     ws.append(headers)
-    for cell in ws[1]:
+    for cell in ws[header_row]:
         cell.font = Font(bold=True)
     for row in rows:
         ws.append([str(v) if v is not None else "" for v in row])
@@ -87,6 +100,12 @@ def email_report(to_email: str, fmt: str, filename: str, title: str, headers: li
         content = build_xlsx_bytes(title, headers, rows)
         mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ext = "xlsx"
-    email = EmailMessage(subject=f"bpro FieldOps — {title}", body=f"Attached: {title}.", to=[to_email])
+    body = f"Attached: {title}."
+    if is_truncated(title):
+        body += (
+            "\n\nThis export hit the row limit and contains only the most recent rows. "
+            "Choose a shorter period on the Reports page to get every row."
+        )
+    email = EmailMessage(subject=f"bpro FieldOps — {title}", body=body, to=[to_email])
     email.attach(f"{filename}.{ext}", content, mime)
     email.send(fail_silently=False)

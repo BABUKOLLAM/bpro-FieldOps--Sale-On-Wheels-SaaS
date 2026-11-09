@@ -31,6 +31,8 @@ class Attendance(BaseModel):
 
     class Meta:
         ordering = ["-check_in_at"]
+        # Agent-scoped From–To lists; built CONCURRENTLY by the migration.
+        indexes = [models.Index(fields=["agent", "check_in_at"], name="attendance_agent_checkin_idx")]
 
     def duration_minutes(self):
         if not self.check_out_at:

@@ -75,7 +75,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
             value: n.grand_total,
             sync_status: n.sync_status,
           }))}
-          filename={rangedFilename("returns.csv", range)}
+          filename={rangedFilename("returns.csv", range, { thisPage: data.count > data.results.length })}
         />
       </div>
 

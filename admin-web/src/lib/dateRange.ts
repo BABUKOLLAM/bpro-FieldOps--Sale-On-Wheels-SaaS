@@ -170,12 +170,16 @@ export function describeRange(range: DateRange): string {
   return "All dates";
 }
 
-/** "orders.csv" -> "orders_2026-11-01_to_2026-11-09.csv" when a range is set. */
-export function rangedFilename(filename: string, range: DateRange): string {
-  if (!range.from && !range.to) return filename;
+/** "orders.csv" -> "orders_2026-11-01_to_2026-11-09.csv" when a range is
+ * set, plus "_this-page" when the list has more pages than the one being
+ * exported — so the file name never claims the whole period. */
+export function rangedFilename(filename: string, range: DateRange, opts: { thisPage?: boolean } = {}): string {
   const dot = filename.lastIndexOf(".");
-  const [base, ext] = dot > 0 ? [filename.slice(0, dot), filename.slice(dot)] : [filename, ""];
-  return `${base}_${range.from ?? "start"}_to_${range.to ?? "now"}${ext}`;
+  const ext = dot > 0 ? filename.slice(dot) : "";
+  let base = dot > 0 ? filename.slice(0, dot) : filename;
+  if (range.from || range.to) base = `${base}_${range.from ?? "start"}_to_${range.to ?? "now"}`;
+  if (opts.thisPage) base = `${base}_this-page`;
+  return `${base}${ext}`;
 }
 
 /** Tenant-local "today" fallback when the backend's date context is

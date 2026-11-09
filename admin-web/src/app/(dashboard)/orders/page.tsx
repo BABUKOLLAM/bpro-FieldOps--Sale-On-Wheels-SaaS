@@ -61,7 +61,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             estimated_total: orderTotal(o).toFixed(2),
             notes: o.notes,
           }))}
-          filename={rangedFilename("orders.csv", range)}
+          filename={rangedFilename("orders.csv", range, { thisPage: data.count > data.results.length })}
         />
       </div>
 

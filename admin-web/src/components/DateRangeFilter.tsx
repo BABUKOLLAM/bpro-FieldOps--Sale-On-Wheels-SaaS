@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  buildPresets, describeRange, matchPreset, validateRange,
-  type DateContext, type DateRange,
+  buildPresets,
+  describeRange,
+  matchPreset,
+  validateRange,
+  type DateContext,
+  type DateRange,
 } from "@/lib/dateRange";
 
 /**
@@ -15,14 +19,11 @@ import {
  *
  * Presets are computed from the backend's tenant-local "today" and FY
  * start month (see lib/dateContext.ts), never the browser clock.
+ *
+ * Keyed on the applied range so browser back/forward (which changes the
+ * URL, and so `value`, without remounting the page) resets the inputs.
  */
-export default function DateRangeFilter({
-  value,
-  context,
-  query = {},
-  error,
-  label = "Date",
-}: {
+type Props = {
   /** The range currently applied (already validated server-side). */
   value: DateRange;
   context: DateContext;
@@ -32,7 +33,13 @@ export default function DateRangeFilter({
   error?: string | null;
   /** What the range filters on, e.g. "Order date". */
   label?: string;
-}) {
+};
+
+export default function DateRangeFilter(props: Props) {
+  return <DateRangeFilterInner key={`${props.value.from ?? ""}|${props.value.to ?? ""}`} {...props} />;
+}
+
+function DateRangeFilterInner({ value, context, query = {}, error, label = "Date" }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
@@ -42,7 +49,9 @@ export default function DateRangeFilter({
   const [localError, setLocalError] = useState<string | null>(null);
 
   const active = matchPreset(value, presets);
-  const selectValue = active ? active.key : value.from || value.to ? "custom" : "all";
+  const [mode, setMode] = useState(active ? active.key : value.from || value.to ? "custom" : "all");
+  const fromRef = useRef<HTMLInputElement>(null);
+  const showInputs = mode === "custom";
 
   function navigate(next: DateRange) {
     const params = new URLSearchParams();
@@ -57,6 +66,12 @@ export default function DateRangeFilter({
 
   function onPreset(key: string) {
     setLocalError(null);
+    setMode(key);
+    if (key === "custom") {
+      // Reveal the From/To inputs, prefilled with the current range.
+      setTimeout(() => fromRef.current?.focus(), 0);
+      return;
+    }
     if (key === "all") {
       setFrom("");
       setTo("");
@@ -64,7 +79,7 @@ export default function DateRangeFilter({
       return;
     }
     const preset = presets.find((p) => p.key === key);
-    if (!preset) return; // "custom": just edit the inputs
+    if (!preset) return;
     setFrom(preset.from);
     setTo(preset.to);
     navigate({ from: preset.from, to: preset.to });
@@ -90,11 +105,7 @@ export default function DateRangeFilter({
     >
       <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
         {label}
-        <select
-          value={selectValue}
-          onChange={(e) => onPreset(e.target.value)}
-          className={`${inputClass} sm:w-48`}
-        >
+        <select value={mode} onChange={(e) => onPreset(e.target.value)} className={`${inputClass} sm:w-48`}>
           <option value="all">All dates</option>
           {presets.map((p) => (
             <option key={p.key} value={p.key}>
@@ -104,36 +115,44 @@ export default function DateRangeFilter({
           <option value="custom">Custom range</option>
         </select>
       </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-        From
-        <input
-          type="date"
-          name="from"
-          value={from}
-          max={to || undefined}
-          onChange={(e) => setFrom(e.target.value)}
-          className={inputClass}
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-        To
-        <input
-          type="date"
-          name="to"
-          value={to}
-          min={from || undefined}
-          onChange={(e) => setTo(e.target.value)}
-          className={inputClass}
-        />
-      </label>
+      {showInputs && (
+        <>
+          <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+            From
+            <input
+              type="date"
+              name="from"
+              ref={fromRef}
+              required={!to}
+              value={from}
+              max={to || undefined}
+              onChange={(e) => setFrom(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+            To
+            <input
+              type="date"
+              name="to"
+              value={to}
+              min={from || undefined}
+              onChange={(e) => setTo(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+        </>
+      )}
       <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
-        >
-          Apply
-        </button>
+        {showInputs && (
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-neutral-950 hover:bg-amber-500 disabled:opacity-60"
+          >
+            Apply
+          </button>
+        )}
         {(value.from || value.to) && (
           <button
             type="button"

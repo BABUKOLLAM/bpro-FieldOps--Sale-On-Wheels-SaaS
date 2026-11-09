@@ -46,3 +46,8 @@ class Expense(BaseModel):
 
     def __str__(self):
         return f"{self.get_category_display()} ₹{self.amount} — {self.agent}"
+
+    class Meta(BaseModel.Meta):
+        # Agent-scoped From–To lists (apps/core/date_range.py); built
+        # CONCURRENTLY by the migration, see its docstring.
+        indexes = [models.Index(fields=["agent", "expense_date"], name="expense_agent_date_idx")]

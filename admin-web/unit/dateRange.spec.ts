@@ -92,6 +92,10 @@ test("API query and labels", () => {
   expect(describeRange({})).toBe("All dates");
   expect(rangedFilename("orders.csv", { from: "2026-11-01", to: "2026-11-09" })).toBe("orders_2026-11-01_to_2026-11-09.csv");
   expect(rangedFilename("orders.csv", {})).toBe("orders.csv");
+  expect(rangedFilename("orders.csv", { from: "2026-11-01", to: "2026-11-09" }, { thisPage: true })).toBe(
+    "orders_2026-11-01_to_2026-11-09_this-page.csv",
+  );
+  expect(rangedFilename("orders.csv", {}, { thisPage: true })).toBe("orders_this-page.csv");
   const presets = buildPresets("2026-11-09");
   expect(matchPreset({ from: "2026-11-01", to: "2026-11-09" }, presets)?.key).toBe("mtd");
 });

@@ -5,7 +5,8 @@ attendance, sync log, change requests) and for the report exports.
 One contract everywhere:
 
 - Query params ``date_from`` / ``date_to`` (report exports also accept
-  ``period_start`` / ``period_end``), each strictly ``YYYY-MM-DD``.
+  ``period_start`` / ``period_end``), each strictly ``YYYY-MM-DD`` with a
+  year in 2000–2100.
 - Both bounds are inclusive calendar days.
 - A ``DateTimeField`` is compared against the tenant's local day, not UTC:
   ``date_to=2026-11-09`` keeps a receipt at 23:59 IST on the 9th and drops
@@ -37,6 +38,8 @@ from rest_framework.filters import BaseFilterBackend
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 DEFAULT_MAX_SPAN_DAYS = 366
+MIN_YEAR = 2000
+MAX_YEAR = 2100
 
 
 def max_span_days() -> int:
@@ -60,9 +63,14 @@ def parse_iso_date(value: str, param: str) -> date:
     if not _ISO_DATE.match(value or ""):
         raise ValidationError({param: "Use YYYY-MM-DD."})
     try:
-        return date.fromisoformat(value)
+        parsed = date.fromisoformat(value)
     except ValueError:
         raise ValidationError({param: "Not a real calendar date."}) from None
+    # Bounded so the +1 day / timezone arithmetic in apply_date_range can
+    # never overflow (9999-12-31 + 1 day raises OverflowError → 500).
+    if not (MIN_YEAR <= parsed.year <= MAX_YEAR):
+        raise ValidationError({param: f"Year must be between {MIN_YEAR} and {MAX_YEAR}."})
+    return parsed
 
 
 @dataclass(frozen=True)

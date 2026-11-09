@@ -58,7 +58,7 @@ export default async function CollectionsPage({ searchParams }: { searchParams: 
             received_at: r.received_at,
             sync_status: r.sync_status,
           }))}
-          filename={rangedFilename("collections.csv", range)}
+          filename={rangedFilename("collections.csv", range, { thisPage: data.count > data.results.length })}
         />
       </div>
 

@@ -13,26 +13,41 @@ from apps.core.date_range import DateRange, apply_date_range
 
 NO_PERIOD = DateRange(None, None)
 
+# Row-level reports export at most ROW_CAP rows. Builders fetch one extra
+# row so a capped export can say so (title → PDF heading, Excel banner
+# row, email body — see exports.py) instead of silently truncating.
+ROW_CAP = 1000
+TRUNCATION_NOTE = f"first {ROW_CAP:,} rows only — narrow the period"
 
-def _titled(title: str, period: DateRange) -> str:
-    return f"{title} — {period.label()}" if period.is_set else title
+
+def _titled(title: str, period: DateRange, truncated: bool = False) -> str:
+    if period.is_set:
+        title = f"{title} — {period.label()}"
+    return f"{title} — {TRUNCATION_NOTE}" if truncated else title
+
+
+def _capped(queryset):
+    """(rows, truncated) — at most ROW_CAP objects from ``queryset``."""
+    objs = list(queryset[: ROW_CAP + 1])
+    return objs[:ROW_CAP], len(objs) > ROW_CAP
 
 
 def sales_report(period: DateRange = NO_PERIOD):
     from apps.sales.models import Invoice
 
+    objs, truncated = _capped(apply_date_range(
+        Invoice.objects.select_related("customer", "agent"), "invoice_date", period,
+    ).order_by("-invoice_date"))
     rows = [
         [
             inv.invoice_date, inv.invoice_no or str(inv.id)[:8], inv.customer.name,
             inv.agent.get_full_name() or inv.agent.username, float(inv.grand_total),
             inv.credit_check_status, inv.sync_status,
         ]
-        for inv in apply_date_range(
-            Invoice.objects.select_related("customer", "agent"), "invoice_date", period,
-        ).order_by("-invoice_date")[:1000]
+        for inv in objs
     ]
     return (
-        _titled("Sales Report", period),
+        _titled("Sales Report", period, truncated),
         ["Date", "Invoice No", "Customer", "Agent", "Amount", "Credit Status", "Sync Status"],
         rows,
     )
@@ -41,17 +56,18 @@ def sales_report(period: DateRange = NO_PERIOD):
 def collections_report(period: DateRange = NO_PERIOD):
     from apps.sales.models import Receipt
 
+    objs, truncated = _capped(apply_date_range(
+        Receipt.objects.select_related("customer", "agent"), "received_at", period,
+    ).order_by("-received_at"))
     rows = [
         [
             timezone.localtime(r.received_at).date(), r.receipt_no or str(r.id)[:8], r.customer.name,
             r.agent.get_full_name() or r.agent.username, r.get_mode_display(), float(r.amount), r.reference_no,
         ]
-        for r in apply_date_range(
-            Receipt.objects.select_related("customer", "agent"), "received_at", period,
-        ).order_by("-received_at")[:1000]
+        for r in objs
     ]
     return (
-        _titled("Collections Report", period),
+        _titled("Collections Report", period, truncated),
         ["Date", "Receipt No", "Customer", "Agent", "Mode", "Amount", "Reference"],
         rows,
     )
@@ -77,17 +93,18 @@ def outstanding_report():
 def returns_report(period: DateRange = NO_PERIOD):
     from apps.sales.models import CreditNote
 
+    objs, truncated = _capped(apply_date_range(
+        CreditNote.objects.select_related("customer", "agent"), "note_date", period,
+    ).order_by("-note_date"))
     rows = [
         [
             cn.note_date, cn.credit_note_no or str(cn.id)[:8], cn.customer.name,
             cn.agent.get_full_name() or cn.agent.username, cn.reason_code, float(cn.grand_total), cn.sync_status,
         ]
-        for cn in apply_date_range(
-            CreditNote.objects.select_related("customer", "agent"), "note_date", period,
-        ).order_by("-note_date")[:1000]
+        for cn in objs
     ]
     return (
-        _titled("Returns & Replacements Report", period),
+        _titled("Returns & Replacements Report", period, truncated),
         ["Date", "Credit Note No", "Customer", "Agent", "Reason", "Amount", "Sync Status"],
         rows,
     )
@@ -96,17 +113,18 @@ def returns_report(period: DateRange = NO_PERIOD):
 def expenses_report(period: DateRange = NO_PERIOD):
     from apps.expenses.models import Expense
 
+    objs, truncated = _capped(apply_date_range(
+        Expense.objects.select_related("agent"), "expense_date", period,
+    ).order_by("-expense_date"))
     rows = [
         [
             e.expense_date, e.agent.get_full_name() or e.agent.username, e.get_category_display(),
             float(e.amount), e.description, e.status,
         ]
-        for e in apply_date_range(
-            Expense.objects.select_related("agent"), "expense_date", period,
-        ).order_by("-expense_date")[:1000]
+        for e in objs
     ]
     return (
-        _titled("Expense Report", period),
+        _titled("Expense Report", period, truncated),
         ["Date", "Agent", "Category", "Amount", "Description", "Status"],
         rows,
     )
@@ -115,10 +133,11 @@ def expenses_report(period: DateRange = NO_PERIOD):
 def attendance_report(period: DateRange = NO_PERIOD):
     from apps.attendance.models import Attendance
 
-    rows = []
-    for a in apply_date_range(
+    objs, truncated = _capped(apply_date_range(
         Attendance.objects.select_related("agent"), "check_in_at", period,
-    ).order_by("-check_in_at")[:1000]:
+    ).order_by("-check_in_at"))
+    rows = []
+    for a in objs:
         duration = a.duration_minutes()
         check_in = timezone.localtime(a.check_in_at)
         check_out = timezone.localtime(a.check_out_at) if a.check_out_at else None
@@ -129,7 +148,7 @@ def attendance_report(period: DateRange = NO_PERIOD):
             "Yes" if a.check_in_latitude is not None else "No",
         ])
     return (
-        _titled("Attendance Report", period),
+        _titled("Attendance Report", period, truncated),
         ["Date", "Agent", "Check-In", "Check-Out", "Duration", "Geo-Tagged"],
         rows,
     )
@@ -138,17 +157,18 @@ def attendance_report(period: DateRange = NO_PERIOD):
 def stock_movement_report(period: DateRange = NO_PERIOD):
     from apps.inventory.models import StockLedgerEntry
 
+    objs, truncated = _capped(apply_date_range(
+        StockLedgerEntry.objects.select_related("godown", "item"), "created_at", period,
+    ).order_by("-created_at"))
     rows = [
         [
             timezone.localtime(e.created_at).date(), e.godown.name, e.item.name, e.get_txn_type_display(),
             float(e.qty), float(e.balance_after),
         ]
-        for e in apply_date_range(
-            StockLedgerEntry.objects.select_related("godown", "item"), "created_at", period,
-        ).order_by("-created_at")[:1000]
+        for e in objs
     ]
     return (
-        _titled("Stock Movement Report", period),
+        _titled("Stock Movement Report", period, truncated),
         ["Date", "Godown", "Item", "Transaction", "Qty", "Balance After"],
         rows,
     )
@@ -217,17 +237,18 @@ def fleet_maintenance_report():
 def fleet_odometer_report(period: DateRange = NO_PERIOD):
     from apps.fleet.models import OdometerLog
 
+    objs, truncated = _capped(apply_date_range(
+        OdometerLog.objects.select_related("vehicle"), "recorded_at", period,
+    ).order_by("-recorded_at"))
     rows = [
         [
             timezone.localtime(log.recorded_at).date(), log.vehicle.reg_no, log.get_reading_type_display(), float(log.reading),
             log.trip_id or "—",
         ]
-        for log in apply_date_range(
-            OdometerLog.objects.select_related("vehicle"), "recorded_at", period,
-        ).order_by("-recorded_at")[:1000]
+        for log in objs
     ]
     return (
-        _titled("Fleet Odometer Log", period),
+        _titled("Fleet Odometer Log", period, truncated),
         ["Date", "Vehicle", "Reading Type", "Reading (km)", "Trip"],
         rows,
     )

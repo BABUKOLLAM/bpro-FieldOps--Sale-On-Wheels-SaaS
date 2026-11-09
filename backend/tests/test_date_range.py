@@ -450,3 +450,93 @@ def test_label_variants():
     assert DateRange(date(2026, 4, 1), None).label() == "from 2026-04-01"
     assert DateRange(None, date(2026, 4, 1)).label() == "up to 2026-04-01"
     assert DateRange(date(2026, 4, 1), date(2026, 4, 1) + timedelta(days=1)).label() == "2026-04-01 to 2026-04-02"
+
+
+# ------------------------------------------------- review follow-ups
+
+
+@pytest.mark.parametrize("value", ["9999-12-31", "0001-01-01", "1999-12-31", "2101-01-01"])
+def test_parse_rejects_years_outside_2000_2100(value):
+    from rest_framework.exceptions import ValidationError
+
+    with pytest.raises(ValidationError):
+        parse_date_range({"date_to": value})
+
+
+def test_parse_accepts_year_bounds():
+    assert parse_date_range({"date_from": "2000-01-01"}).start == date(2000, 1, 1)
+    assert parse_date_range({"date_to": "2100-12-31"}).end == date(2100, 12, 31)
+
+
+@pytest.mark.django_db
+def test_far_future_date_is_400_not_500_on_timestamp_endpoint_and_export(superuser, admin):
+    # 9999-12-31 + 1 day overflowed in the DateTimeField bound before.
+    assert client_for(superuser).get("/api/sales/receipts/", {"date_to": "9999-12-31"}).status_code == 400
+    assert client_for(superuser).get("/api/attendance/", {"date_from": "9999-12-31"}).status_code == 400
+    export = client_for(admin).get("/api/reporting/export/collections/", {"period_end": "9999-12-31"})
+    assert export.status_code == 400
+
+
+@pytest.mark.django_db
+def test_capped_export_says_so_in_title_excel_and_email(admin, agent, customer, settings):
+    from django.core import mail
+
+    from apps.reporting import report_builders
+
+    settings.DATE_RANGE_MAX_SPAN_DAYS = 366
+    original = report_builders.ROW_CAP
+    report_builders.ROW_CAP = 3
+    report_builders.TRUNCATION_NOTE = "first 3 rows only — narrow the period"
+    try:
+        for i in range(4):
+            Receipt.objects.create(
+                customer=customer, agent=agent, mode="cash", amount=Decimal("1"),
+                received_at=ist(2026, 11, 1 + i), receipt_no=f"R-CAP-{i}",
+            )
+        title, _, rows = report_builders.collections_report()
+        assert len(rows) == 3 and title.endswith("first 3 rows only — narrow the period")
+
+        sheet = _xlsx_rows(client_for(admin).get("/api/reporting/export/collections/"))
+        assert "first 3 rows only" in str(sheet[0][0])  # banner row
+        assert sheet[1][0] == "Date"  # headers moved to row 2
+        assert len(sheet) == 2 + 3
+
+        response = client_for(admin).post(
+            "/api/reporting/export/collections/email/", {"to": "reports@example.com"}, format="json",
+        )
+        assert response.status_code == 200
+        assert "row limit" in mail.outbox[-1].body and "first 3 rows only" in mail.outbox[-1].body
+    finally:
+        report_builders.ROW_CAP = original
+        report_builders.TRUNCATION_NOTE = f"first {original:,} rows only — narrow the period"
+
+
+@pytest.mark.django_db
+def test_uncapped_export_has_no_banner(admin, agent, customer):
+    Receipt.objects.create(customer=customer, agent=agent, mode="cash", amount=Decimal("1"), received_at=ist(2026, 11, 1))
+    sheet = _xlsx_rows(client_for(admin).get("/api/reporting/export/collections/"))
+    assert sheet[0][0] == "Date"
+
+
+def test_agent_date_indexes_declared():
+    names = {
+        idx.name
+        for model in (SalesOrder, Invoice, Receipt, CreditNote, Expense, Attendance)
+        for idx in model._meta.indexes
+    }
+    assert {
+        "sales_order_agent_date_idx", "sales_invoice_agent_date_idx", "sales_receipt_agent_recv_idx",
+        "sales_cnote_agent_date_idx", "expense_agent_date_idx", "attendance_agent_checkin_idx",
+    } <= names
+
+
+@pytest.mark.django_db
+def test_every_report_builds_with_and_without_period(admin, company):
+    from apps.reporting.report_builders import PERIOD_REPORTS, REPORT_BUILDERS
+
+    period = DateRange(date(2026, 11, 1), date(2026, 11, 9))
+    for key, builder in REPORT_BUILDERS.items():
+        title, headers, rows = builder(period) if key in PERIOD_REPORTS else builder()
+        assert title and headers and isinstance(rows, list), key
+        if key in PERIOD_REPORTS:
+            assert "2026-11-01 to 2026-11-09" in title

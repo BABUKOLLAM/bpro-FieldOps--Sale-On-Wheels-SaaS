@@ -49,11 +49,24 @@ export default async function ApprovalsPage({
 }) {
   const { range, error, context, query } = await readListParams(searchParams);
   const rq = apiRangeQuery(range);
-  const [pendingInvoices, syncLog, pendingExpenses] = await Promise.all([
+  const hasRange = Boolean(range.from || range.to);
+  // With a range set, also count the whole queue (page_size=1: count
+  // only) so items waiting outside the dates aren't silently hidden.
+  const totalCount = (path: string) =>
+    hasRange ? apiGet<Paginated<unknown>>(`${path}&page_size=1`).then((r) => r.count) : Promise.resolve(null);
+  const [pendingInvoices, syncLog, pendingExpenses, allInvoiceCount, allExpenseCount] = await Promise.all([
     apiGet<Paginated<PendingInvoice>>(`/api/sales/invoices/?credit_check_status=pending_review${rq}`),
     apiGet<Paginated<SyncLogEntry>>(`/api/integrations/sync-log/?${rq.slice(1)}`),
     apiGet<Paginated<PendingExpense>>(`/api/expenses/?status=submitted${rq}`),
+    totalCount("/api/sales/invoices/?credit_check_status=pending_review"),
+    totalCount("/api/expenses/?status=submitted"),
   ]);
+  const outsideHint = (all: number | null, shown: number) =>
+    all !== null && all > shown ? (
+      <span className="ml-2 text-xs font-normal text-amber-700 dark:text-amber-400">
+        {all - shown} pending outside these dates
+      </span>
+    ) : null;
 
   return (
     <div className="space-y-10">
@@ -69,6 +82,7 @@ export default async function ApprovalsPage({
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Credit-Block Approval Queue ({pendingInvoices.count})
+          {outsideHint(allInvoiceCount, pendingInvoices.count)}
         </h2>
         <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
@@ -108,6 +122,7 @@ export default async function ApprovalsPage({
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
           Expense Approvals ({pendingExpenses.count})
+          {outsideHint(allExpenseCount, pendingExpenses.count)}
         </h2>
         <div className={`${CARD_CLASS} overflow-x-auto`}>
           <table className="w-full text-sm">
