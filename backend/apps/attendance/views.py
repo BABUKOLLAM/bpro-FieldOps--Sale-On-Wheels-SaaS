@@ -8,6 +8,8 @@ from rest_framework.response import Response
 
 from apps.accounts.constants import PERM_ATTENDANCE_CREATE_OWN, PERM_ATTENDANCE_VIEW_ALL
 
+from apps.core.date_range import DateRangeFilterBackend
+
 from .models import Attendance
 from .serializers import AttendanceSerializer
 
@@ -25,8 +27,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.select_related("agent")
     serializer_class = AttendanceSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["agent"]
+    date_range_field = "check_in_at"
 
     def get_queryset(self):
         if _can_view_all(self.request.user):

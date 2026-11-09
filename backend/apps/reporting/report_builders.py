@@ -9,8 +9,16 @@ from datetime import timedelta
 from django.db.models import Sum
 from django.utils import timezone
 
+from apps.core.date_range import DateRange, apply_date_range
 
-def sales_report():
+NO_PERIOD = DateRange(None, None)
+
+
+def _titled(title: str, period: DateRange) -> str:
+    return f"{title} — {period.label()}" if period.is_set else title
+
+
+def sales_report(period: DateRange = NO_PERIOD):
     from apps.sales.models import Invoice
 
     rows = [
@@ -19,22 +27,34 @@ def sales_report():
             inv.agent.get_full_name() or inv.agent.username, float(inv.grand_total),
             inv.credit_check_status, inv.sync_status,
         ]
-        for inv in Invoice.objects.select_related("customer", "agent").order_by("-invoice_date")[:1000]
+        for inv in apply_date_range(
+            Invoice.objects.select_related("customer", "agent"), "invoice_date", period,
+        ).order_by("-invoice_date")[:1000]
     ]
-    return "Sales Report", ["Date", "Invoice No", "Customer", "Agent", "Amount", "Credit Status", "Sync Status"], rows
+    return (
+        _titled("Sales Report", period),
+        ["Date", "Invoice No", "Customer", "Agent", "Amount", "Credit Status", "Sync Status"],
+        rows,
+    )
 
 
-def collections_report():
+def collections_report(period: DateRange = NO_PERIOD):
     from apps.sales.models import Receipt
 
     rows = [
         [
-            r.received_at.date(), r.receipt_no or str(r.id)[:8], r.customer.name,
+            timezone.localtime(r.received_at).date(), r.receipt_no or str(r.id)[:8], r.customer.name,
             r.agent.get_full_name() or r.agent.username, r.get_mode_display(), float(r.amount), r.reference_no,
         ]
-        for r in Receipt.objects.select_related("customer", "agent").order_by("-received_at")[:1000]
+        for r in apply_date_range(
+            Receipt.objects.select_related("customer", "agent"), "received_at", period,
+        ).order_by("-received_at")[:1000]
     ]
-    return "Collections Report", ["Date", "Receipt No", "Customer", "Agent", "Mode", "Amount", "Reference"], rows
+    return (
+        _titled("Collections Report", period),
+        ["Date", "Receipt No", "Customer", "Agent", "Mode", "Amount", "Reference"],
+        rows,
+    )
 
 
 def outstanding_report():
@@ -54,7 +74,7 @@ def outstanding_report():
     )
 
 
-def returns_report():
+def returns_report(period: DateRange = NO_PERIOD):
     from apps.sales.models import CreditNote
 
     rows = [
@@ -62,16 +82,18 @@ def returns_report():
             cn.note_date, cn.credit_note_no or str(cn.id)[:8], cn.customer.name,
             cn.agent.get_full_name() or cn.agent.username, cn.reason_code, float(cn.grand_total), cn.sync_status,
         ]
-        for cn in CreditNote.objects.select_related("customer", "agent").order_by("-note_date")[:1000]
+        for cn in apply_date_range(
+            CreditNote.objects.select_related("customer", "agent"), "note_date", period,
+        ).order_by("-note_date")[:1000]
     ]
     return (
-        "Returns & Replacements Report",
+        _titled("Returns & Replacements Report", period),
         ["Date", "Credit Note No", "Customer", "Agent", "Reason", "Amount", "Sync Status"],
         rows,
     )
 
 
-def expenses_report():
+def expenses_report(period: DateRange = NO_PERIOD):
     from apps.expenses.models import Expense
 
     rows = [
@@ -79,37 +101,57 @@ def expenses_report():
             e.expense_date, e.agent.get_full_name() or e.agent.username, e.get_category_display(),
             float(e.amount), e.description, e.status,
         ]
-        for e in Expense.objects.select_related("agent").order_by("-expense_date")[:1000]
+        for e in apply_date_range(
+            Expense.objects.select_related("agent"), "expense_date", period,
+        ).order_by("-expense_date")[:1000]
     ]
-    return "Expense Report", ["Date", "Agent", "Category", "Amount", "Description", "Status"], rows
+    return (
+        _titled("Expense Report", period),
+        ["Date", "Agent", "Category", "Amount", "Description", "Status"],
+        rows,
+    )
 
 
-def attendance_report():
+def attendance_report(period: DateRange = NO_PERIOD):
     from apps.attendance.models import Attendance
 
     rows = []
-    for a in Attendance.objects.select_related("agent").order_by("-check_in_at")[:1000]:
+    for a in apply_date_range(
+        Attendance.objects.select_related("agent"), "check_in_at", period,
+    ).order_by("-check_in_at")[:1000]:
         duration = a.duration_minutes()
+        check_in = timezone.localtime(a.check_in_at)
+        check_out = timezone.localtime(a.check_out_at) if a.check_out_at else None
         rows.append([
-            a.check_in_at.date(), a.agent.get_full_name() or a.agent.username,
-            a.check_in_at.strftime("%H:%M"), a.check_out_at.strftime("%H:%M") if a.check_out_at else "—",
+            check_in.date(), a.agent.get_full_name() or a.agent.username,
+            check_in.strftime("%H:%M"), check_out.strftime("%H:%M") if check_out else "—",
             f"{duration // 60}h {duration % 60}m" if duration is not None else "—",
             "Yes" if a.check_in_latitude is not None else "No",
         ])
-    return "Attendance Report", ["Date", "Agent", "Check-In", "Check-Out", "Duration", "Geo-Tagged"], rows
+    return (
+        _titled("Attendance Report", period),
+        ["Date", "Agent", "Check-In", "Check-Out", "Duration", "Geo-Tagged"],
+        rows,
+    )
 
 
-def stock_movement_report():
+def stock_movement_report(period: DateRange = NO_PERIOD):
     from apps.inventory.models import StockLedgerEntry
 
     rows = [
         [
-            e.created_at.date(), e.godown.name, e.item.name, e.get_txn_type_display(),
+            timezone.localtime(e.created_at).date(), e.godown.name, e.item.name, e.get_txn_type_display(),
             float(e.qty), float(e.balance_after),
         ]
-        for e in StockLedgerEntry.objects.select_related("godown", "item").order_by("-created_at")[:1000]
+        for e in apply_date_range(
+            StockLedgerEntry.objects.select_related("godown", "item"), "created_at", period,
+        ).order_by("-created_at")[:1000]
     ]
-    return "Stock Movement Report", ["Date", "Godown", "Item", "Transaction", "Qty", "Balance After"], rows
+    return (
+        _titled("Stock Movement Report", period),
+        ["Date", "Godown", "Item", "Transaction", "Qty", "Balance After"],
+        rows,
+    )
 
 
 def fleet_utilization_report():
@@ -172,17 +214,23 @@ def fleet_maintenance_report():
     )
 
 
-def fleet_odometer_report():
+def fleet_odometer_report(period: DateRange = NO_PERIOD):
     from apps.fleet.models import OdometerLog
 
     rows = [
         [
-            log.recorded_at.date(), log.vehicle.reg_no, log.get_reading_type_display(), float(log.reading),
+            timezone.localtime(log.recorded_at).date(), log.vehicle.reg_no, log.get_reading_type_display(), float(log.reading),
             log.trip_id or "—",
         ]
-        for log in OdometerLog.objects.select_related("vehicle").order_by("-recorded_at")[:1000]
+        for log in apply_date_range(
+            OdometerLog.objects.select_related("vehicle"), "recorded_at", period,
+        ).order_by("-recorded_at")[:1000]
     ]
-    return "Fleet Odometer Log", ["Date", "Vehicle", "Reading Type", "Reading (km)", "Trip"], rows
+    return (
+        _titled("Fleet Odometer Log", period),
+        ["Date", "Vehicle", "Reading Type", "Reading (km)", "Trip"],
+        rows,
+    )
 
 
 def fleet_reverse_logistics_report():
@@ -428,6 +476,14 @@ REPORT_BUILDERS = {
     "missed_visits": missed_visits_report,
     "inactive_agents": inactive_agents_report,
 }
+
+# Reports whose rows are individually dated records, so a From–To period
+# (period_start/period_end on the export endpoints) narrows them. Every
+# other report is a current snapshot or a fixed trailing window (e.g.
+# "last 30 days") and ignores the period — admin-web shows that.
+PERIOD_REPORTS = frozenset({
+    "sales", "collections", "returns", "expenses", "attendance", "stock_movement", "fleet_odometer",
+})
 
 REPORT_LABELS = {
     "sales": "Sales",

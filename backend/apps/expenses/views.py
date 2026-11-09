@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.constants import PERM_EXPENSES_APPROVE, PERM_EXPENSES_CREATE_OWN, PERM_EXPENSES_VIEW_ALL
+from apps.core.date_range import DateRangeFilterBackend
 from apps.notifications.models import MessageTemplate
 from apps.notifications.services import render_template, send_push_notification
 
@@ -26,8 +27,9 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     queryset = Expense.objects.select_related("agent", "trip", "approved_by")
     serializer_class = ExpenseSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["status", "category", "agent"]
+    date_range_field = "expense_date"
 
     def get_queryset(self):
         if _can_view_all_expenses(self.request.user):

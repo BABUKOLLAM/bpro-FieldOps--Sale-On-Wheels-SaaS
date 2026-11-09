@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.constants import PERM_MASTER_SETTINGS_MANAGE, PERM_SALES_VIEW_ALL
 from apps.accounts.permissions import HasRolePermission
+from apps.core.date_range import DateRangeFilterBackend
 from apps.sales.models import Invoice
 
 from .models import PaymentGatewayConnection, PaymentOrder
@@ -26,6 +27,8 @@ class PaymentOrderViewSet(
     only ever moves to STATUS_PAID via a verified gateway webhook."""
 
     queryset = PaymentOrder.objects.select_related("invoice", "receipt")
+    filter_backends = [DateRangeFilterBackend]
+    date_range_field = "created_at"
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):

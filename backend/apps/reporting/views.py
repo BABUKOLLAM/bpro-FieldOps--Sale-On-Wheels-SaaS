@@ -10,6 +10,8 @@ from rest_framework.views import APIView
 from apps.accounts.constants import PERM_REPORTING_DASHBOARD_VIEW
 from apps.accounts.permissions import HasRolePermission
 from apps.attendance.models import Attendance
+from apps.company.models import Company
+from apps.core.date_range import max_span_days, parse_date_range, tenant_timezone
 from apps.fleet.models import LocationPing, Trip, TripCheckpoint
 from apps.integrations.models import SyncLogEntry
 from apps.sales.models import Invoice, Receipt
@@ -19,7 +21,7 @@ from .alerts import exception_alerts_summary
 from .anomaly_insights import dashboard_anomaly_insights
 from .fraud_alerts import fraud_alerts_summary
 from .models import Target
-from .report_builders import REPORT_BUILDERS, REPORT_LABELS
+from .report_builders import PERIOD_REPORTS, REPORT_BUILDERS, REPORT_LABELS
 from .serializers import TargetSerializer
 
 
@@ -154,12 +156,58 @@ class ReportListView(APIView):
     required_permission_code = PERM_REPORTING_DASHBOARD_VIEW
 
     def get(self, request):
-        return Response([{"key": key, "label": label} for key, label in REPORT_LABELS.items()])
+        return Response([
+            {"key": key, "label": label, "supports_period": key in PERIOD_REPORTS}
+            for key, label in REPORT_LABELS.items()
+        ])
+
+
+def _build_report(report_key, builder, params):
+    """Run a builder with the request's period_start/period_end (also
+    accepted as date_from/date_to). Validation errors raise → HTTP 400.
+    Reports outside PERIOD_REPORTS are snapshots and ignore the period."""
+    period = parse_date_range(
+        params, from_keys=("period_start", "date_from"), to_keys=("period_end", "date_to"),
+    )
+    if report_key in PERIOD_REPORTS:
+        title, headers, rows = builder(period)
+    else:
+        title, headers, rows = builder()
+    filename = f"{report_key}-{timezone.localdate().isoformat()}"
+    if report_key in PERIOD_REPORTS and period.is_set:
+        filename = "-".join(
+            [report_key, period.start.isoformat() if period.start else "start",
+             period.end.isoformat() if period.end else "now"]
+        )
+    return filename, title, headers, rows
+
+
+class DateContextView(APIView):
+    """GET /api/reporting/date-context/ — what admin-web's From–To picker
+    needs to compute its presets the way the backend filters: the
+    tenant-local "today", the timezone days are measured in, the
+    financial-year start month (Company.fy_start_month, Indian April
+    default), and the longest span the list APIs accept. Readable by any
+    signed-in user — it exposes no records, only calendar settings."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tz = tenant_timezone(request)
+        company = Company.objects.only("fy_start_month").first()
+        return Response({
+            "today": timezone.localdate(timezone=tz).isoformat(),
+            "timezone": str(tz),
+            "fy_start_month": company.fy_start_month if company else 4,
+            "max_span_days": max_span_days(),
+        })
 
 
 class ReportExportView(APIView):
-    """GET /api/reporting/export/<report_key>/?filetype=xlsx|pdf — downloads
-    the same data shown on-screen elsewhere, as a real spreadsheet or PDF.
+    """GET /api/reporting/export/<report_key>/?filetype=xlsx|pdf
+    [&period_start=YYYY-MM-DD&period_end=YYYY-MM-DD] — downloads the same
+    data shown on-screen elsewhere, as a real spreadsheet or PDF, narrowed
+    to the inclusive period for the reports in PERIOD_REPORTS.
 
     The query param is deliberately named "filetype", not "format": DRF
     reserves "format" as its own content-negotiation override
@@ -177,13 +225,13 @@ class ReportExportView(APIView):
         filetype = request.query_params.get("filetype", "xlsx")
         if filetype not in ("xlsx", "pdf"):
             return Response({"detail": "filetype must be xlsx or pdf."}, status=status.HTTP_400_BAD_REQUEST)
-        title, headers, rows = builder()
-        filename = f"{report_key}-{timezone.localdate().isoformat()}"
+        filename, title, headers, rows = _build_report(report_key, builder, request.query_params)
         return exports.file_response(filetype, filename, title, headers, rows)
 
 
 class ReportEmailView(APIView):
-    """POST /api/reporting/export/<report_key>/email/ {to, filetype} — the
+    """POST /api/reporting/export/<report_key>/email/ {to, filetype,
+    period_start?, period_end?} — the
     "emailable" half of AR-02/FM-13. Without a real SMTP account
     configured (EMAIL_HOST env var), this writes to the console instead
     of actually delivering — see config/settings/base.py."""
@@ -202,8 +250,7 @@ class ReportEmailView(APIView):
         if filetype not in ("xlsx", "pdf"):
             return Response({"detail": "filetype must be xlsx or pdf."}, status=status.HTTP_400_BAD_REQUEST)
 
-        title, headers, rows = builder()
-        filename = f"{report_key}-{timezone.localdate().isoformat()}"
+        filename, title, headers, rows = _build_report(report_key, builder, request.data)
         try:
             exports.email_report(to_email, filetype, filename, title, headers, rows)
         except Exception as exc:  # noqa: BLE001 — surface SMTP/config errors to the caller, not a 500 page

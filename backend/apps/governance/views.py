@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 
 from apps.accounts.constants import PERM_CHANGE_REQUEST_APPROVE, PERM_MASTER_SETTINGS_MANAGE
 from apps.accounts.permissions import HasRolePermission
+from apps.core.date_range import DateRangeFilterBackend
 
 from .models import ChangeRequest
 from .serializers import ChangeRequestCreateSerializer, ChangeRequestReviewSerializer, ChangeRequestSerializer
@@ -27,7 +29,9 @@ class ChangeRequestViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     queryset = ChangeRequest.objects.select_related("content_type", "requested_by", "reviewed_by").all()
     serializer_class = ChangeRequestSerializer
     permission_classes = [HasRolePermission]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["status"]
+    date_range_field = "requested_at"
     required_permission_codes = {
         "list": PERM_MASTER_SETTINGS_MANAGE,
         "retrieve": PERM_MASTER_SETTINGS_MANAGE,

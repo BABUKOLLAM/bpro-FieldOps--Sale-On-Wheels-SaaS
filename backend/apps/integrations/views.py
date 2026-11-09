@@ -10,6 +10,7 @@ from apps.accounts.constants import (
     PERM_INTEGRATIONS_SYNC_RETRY, PERM_INTEGRATIONS_SYNC_VIEW, PERM_INTEGRATIONS_WEBHOOK_MANAGE,
 )
 from apps.accounts.permissions import HasRolePermission
+from apps.core.date_range import DateRangeFilterBackend
 
 from .authentication import ConnectorAPIKeyAuthentication
 from .models import ERPConnection, SyncLogEntry, Webhook, WebhookDeliveryLog
@@ -40,8 +41,9 @@ class SyncLogEntryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     serializer_class = SyncLogEntrySerializer
     permission_classes = [HasRolePermission]
     required_permission_code = PERM_INTEGRATIONS_SYNC_VIEW
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["status", "entity_type"]
+    date_range_field = "created_at"
 
     @action(detail=True, methods=["post"])
     def retry(self, request, pk=None):

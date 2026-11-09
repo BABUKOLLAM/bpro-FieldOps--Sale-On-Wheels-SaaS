@@ -10,6 +10,7 @@ from apps.accounts.constants import (
     PERM_SALES_ORDER_CREATE, PERM_SALES_RECEIPT_CREATE, PERM_SALES_RETURN_CREATE, PERM_SALES_VIEW_ALL,
 )
 from apps.accounts.permissions import HasRolePermission
+from apps.core.date_range import DateRangeFilterBackend
 
 from .eway_bill import eway_bill_pdf_response, generate_eway_bill
 from .invoice_pdf import invoice_pdf_response
@@ -55,8 +56,9 @@ class SalesOrderViewSet(OwnScopedViewSet):
     serializer_class = SalesOrderSerializer
     permission_classes = [IsAuthenticated]
     create_permission_code = PERM_SALES_ORDER_CREATE
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["status", "customer", "agent"]
+    date_range_field = "order_date"
 
 
 class InvoiceViewSet(OwnScopedViewSet):
@@ -64,8 +66,9 @@ class InvoiceViewSet(OwnScopedViewSet):
     serializer_class = InvoiceSerializer
     permission_classes = [IsAuthenticated]
     create_permission_code = PERM_SALES_INVOICE_CREATE
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["payment_status", "credit_check_status", "sync_status", "customer", "agent"]
+    date_range_field = "invoice_date"
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -185,8 +188,9 @@ class ReceiptViewSet(OwnScopedViewSet):
     serializer_class = ReceiptSerializer
     permission_classes = [IsAuthenticated]
     create_permission_code = PERM_SALES_RECEIPT_CREATE
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["mode", "sync_status", "customer", "agent"]
+    date_range_field = "received_at"
 
 
 class CreditNoteViewSet(OwnScopedViewSet):
@@ -194,5 +198,6 @@ class CreditNoteViewSet(OwnScopedViewSet):
     serializer_class = CreditNoteSerializer
     permission_classes = [IsAuthenticated]
     create_permission_code = PERM_SALES_RETURN_CREATE
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, DateRangeFilterBackend]
     filterset_fields = ["sync_status", "customer", "agent"]
+    date_range_field = "note_date"

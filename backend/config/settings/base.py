@@ -164,6 +164,12 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ---- Date-range filters (apps/core/date_range.py) ----
+# Longest From–To span (inclusive days) any list API or report export
+# accepts when both bounds are given. 366 = a full financial year
+# including a leap day.
+DATE_RANGE_MAX_SPAN_DAYS = env.int("DATE_RANGE_MAX_SPAN_DAYS", default=366)
+
 # ---- DRF ----
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
