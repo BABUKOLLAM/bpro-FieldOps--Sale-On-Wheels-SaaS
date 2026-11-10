@@ -203,6 +203,14 @@ export type Dictionary = {
     unsyncedNote: string;
     checkedOutAt: string;
     stillCheckedIn: string;
+    months: string[];
+    statusOpen: string;
+    statusFulfilled: string;
+    statusCancelled: string;
+    statusSubmitted: string;
+    statusApproved: string;
+    statusRejected: string;
+    orderTotalNote: string;
   };
   spotBilling: {
     noCustomerSelected: string;
@@ -466,6 +474,27 @@ export const dictionaries: Record<Locale, Dictionary> = {
       unsyncedNote: 'Entries not yet synced appear here after Sync Now.',
       checkedOutAt: 'Out',
       stillCheckedIn: 'Still checked in',
+      months: [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ],
+      statusOpen: 'Open',
+      statusFulfilled: 'Fulfilled',
+      statusCancelled: 'Cancelled',
+      statusSubmitted: 'Submitted',
+      statusApproved: 'Approved',
+      statusRejected: 'Rejected',
+      orderTotalNote: 'est., before tax/discount',
     },
     spotBilling: {
       noCustomerSelected: 'No customer selected',
@@ -719,6 +748,27 @@ export const dictionaries: Record<Locale, Dictionary> = {
       unsyncedNote: 'സിങ്ക് ചെയ്യാത്ത രേഖകൾ Sync Now-നു ശേഷം ഇവിടെ കാണാം.',
       checkedOutAt: 'ഔട്ട്',
       stillCheckedIn: 'ഇപ്പോഴും ചെക്ക് ഇൻ',
+      months: [
+        'ജനു',
+        'ഫെബ്രു',
+        'മാർ',
+        'ഏപ്രി',
+        'മേയ്',
+        'ജൂൺ',
+        'ജൂലൈ',
+        'ഓഗ',
+        'സെപ്',
+        'ഒക്',
+        'നവം',
+        'ഡിസം',
+      ],
+      statusOpen: 'തുറന്നത്',
+      statusFulfilled: 'പൂർത്തിയായി',
+      statusCancelled: 'റദ്ദാക്കി',
+      statusSubmitted: 'സമർപ്പിച്ചു',
+      statusApproved: 'അംഗീകരിച്ചു',
+      statusRejected: 'നിരസിച്ചു',
+      orderTotalNote: 'ഏകദേശം, നികുതി/ഡിസ്കൗണ്ട് മുമ്പ്',
     },
     spotBilling: {
       noCustomerSelected: 'കസ്റ്റമറെ തിരഞ്ഞെടുത്തിട്ടില്ല',
@@ -976,6 +1026,27 @@ export const dictionaries: Record<Locale, Dictionary> = {
         'ஒத்திசைக்கப்படாத பதிவுகள் Sync Now-க்குப் பிறகு இங்கே தோன்றும்.',
       checkedOutAt: 'வெளியே',
       stillCheckedIn: 'இன்னும் செக் இன்',
+      months: [
+        'ஜன',
+        'பிப்',
+        'மார்',
+        'ஏப்',
+        'மே',
+        'ஜூன்',
+        'ஜூலை',
+        'ஆக',
+        'செப்',
+        'அக்',
+        'நவ',
+        'டிச',
+      ],
+      statusOpen: 'திறந்தது',
+      statusFulfilled: 'நிறைவேற்றப்பட்டது',
+      statusCancelled: 'ரத்து',
+      statusSubmitted: 'சமர்ப்பிக்கப்பட்டது',
+      statusApproved: 'அங்கீகரிக்கப்பட்டது',
+      statusRejected: 'நிராகரிக்கப்பட்டது',
+      orderTotalNote: 'மதிப்பீடு, வரி/தள்ளுபடிக்கு முன்',
     },
     spotBilling: {
       noCustomerSelected: 'வாடிக்கையாளர் தேர்வு செய்யப்படவில்லை',

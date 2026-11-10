@@ -160,20 +160,30 @@ const MONTHS = [
   'Dec',
 ];
 
-/** "9 Nov 2026" */
-export function formatDay(value: string): string {
+/** "9 Nov 2026"; month names from the caller's locale when given.
+ * Missing or malformed values render as "—" rather than throwing. */
+export function formatDay(
+  value: string | null | undefined,
+  months: readonly string[] = MONTHS
+): string {
+  if (!isIsoDate(value)) {
+    return '—';
+  }
   const [y, m, d] = value.split('-').map(Number);
-  return `${d} ${MONTHS[m - 1]} ${y}`;
+  return `${d} ${months[m - 1] ?? MONTHS[m - 1]} ${y}`;
 }
 
 /** India-time "9 Nov 2026, 23:59" for an ISO timestamp from the API. */
-export function formatIstDateTime(iso: string): string {
-  const t = Date.parse(iso);
+export function formatIstDateTime(
+  iso: string | null | undefined,
+  months: readonly string[] = MONTHS
+): string {
+  const t = iso ? Date.parse(iso) : NaN;
   if (Number.isNaN(t)) {
-    return iso;
+    return '—';
   }
   const shifted = new Date(t + IST_OFFSET_MINUTES * 60_000);
   const hh = String(shifted.getUTCHours()).padStart(2, '0');
   const mm = String(shifted.getUTCMinutes()).padStart(2, '0');
-  return `${formatDay(fromUtc(shifted))}, ${hh}:${mm}`;
+  return `${formatDay(fromUtc(shifted), months)}, ${hh}:${mm}`;
 }

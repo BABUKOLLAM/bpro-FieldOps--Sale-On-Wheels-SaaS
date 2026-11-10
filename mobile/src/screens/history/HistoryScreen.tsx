@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -29,6 +30,7 @@ import {
   type HistoryKind,
   type HistoryResult,
   type HistoryRow,
+  AuthExpiredError,
   HISTORY_KINDS,
   OfflineNoCacheError,
   loadHistory,
@@ -42,16 +44,21 @@ import {
  * (which stay fully offline via WatermelonDB).
  */
 export default function HistoryScreen({ route }: any) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
-  const today = todayInIndia();
+  const [today, setToday] = useState(todayInIndia);
 
   const [kind, setKind] = useState<HistoryKind>(
     route?.params?.kind && HISTORY_KINDS.includes(route.params.kind)
       ? route.params.kind
       : 'orders'
   );
-  const [range, setRange] = useState<DateRange>(presetRange('today', today));
+  const [range, setRange] = useState<DateRange>(() =>
+    presetRange('today', todayInIndia())
+  );
+  // The preset the user picked (null = custom). Kept explicitly so that
+  // when the India day rolls over, "Today"/"This week"/... move with it.
+  const [preset, setPreset] = useState<PresetKey | null>('today');
   const [showCustom, setShowCustom] = useState(false);
   const [fromText, setFromText] = useState(range.from);
   const [toText, setToText] = useState(range.to);
@@ -63,12 +70,46 @@ export default function HistoryScreen({ route }: any) {
   const [error, setError] = useState<'offline' | 'failed' | null>(null);
   const requestId = useRef(0);
 
+  // L3: recompute presets when the India day changes (screen left open
+  // past midnight, or the app resumed the next day).
+  useEffect(() => {
+    const check = () => {
+      const now = todayInIndia();
+      setToday((prev) => (prev === now ? prev : now));
+    };
+    const timer = setInterval(check, 60_000);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        check();
+      }
+    });
+    return () => {
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (preset) {
+      const next = presetRange(preset, today);
+      setRange((prev) =>
+        prev.from === next.from && prev.to === next.to ? prev : next
+      );
+      setFromText(next.from);
+      setToText(next.to);
+    }
+  }, [today, preset]);
+
   const load = useCallback(async () => {
     if (!user?.id) {
       return;
     }
     const id = ++requestId.current;
+    // H1: drop the previous tab's/range's rows at once — they are never
+    // rendered through another kind's row layout.
+    setResult(null);
     setLoading(true);
+    setLoadingMore(false);
     setError(null);
     try {
       const next = await loadHistory(kind, range, user.id);
@@ -77,6 +118,11 @@ export default function HistoryScreen({ route }: any) {
       }
     } catch (err) {
       if (id === requestId.current) {
+        if (err instanceof AuthExpiredError) {
+          // Session is gone (refresh already failed) — back to sign-in.
+          logout();
+          return;
+        }
         setResult(null);
         setError(err instanceof OfflineNoCacheError ? 'offline' : 'failed');
       }
@@ -85,28 +131,39 @@ export default function HistoryScreen({ route }: any) {
         setLoading(false);
       }
     }
-  }, [kind, range, user?.id]);
+  }, [kind, range, user?.id, logout]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   async function loadMore() {
-    if (!user?.id || !result || !result.hasMore || result.fromCache) {
+    if (!user?.id || !shown || !shown.hasMore || shown.fromCache) {
       return;
     }
+    const id = requestId.current;
     setLoadingMore(true);
     try {
-      setResult(await loadHistory(kind, range, user.id, result));
-    } catch {
-      // Keep what is already shown; the button stays available to retry.
+      const next = await loadHistory(kind, range, user.id, shown);
+      // Ignore if the tab/range changed (a new load started) meanwhile.
+      if (id === requestId.current) {
+        setResult(next);
+      }
+    } catch (err) {
+      if (id === requestId.current && err instanceof AuthExpiredError) {
+        logout();
+      }
+      // Otherwise keep what is shown; the button stays available to retry.
     } finally {
-      setLoadingMore(false);
+      if (id === requestId.current) {
+        setLoadingMore(false);
+      }
     }
   }
 
   function choosePreset(key: PresetKey) {
     const next = presetRange(key, today);
+    setPreset(key);
     setShowCustom(false);
     setRangeError(null);
     setFromText(next.from);
@@ -119,10 +176,20 @@ export default function HistoryScreen({ route }: any) {
     const problem = validateRange(next);
     setRangeError(problem);
     if (!problem) {
+      setPreset(null);
       setRange(next);
     }
   }
 
+  // Render a result only while it still belongs to the selected tab and
+  // range (H1) — otherwise treat the screen as loading.
+  const shown =
+    result &&
+    result.kind === kind &&
+    result.range.from === range.from &&
+    result.range.to === range.to
+      ? result
+      : null;
   const presetMatch = matchPreset(range, today);
   const activePreset = showCustom ? null : presetMatch;
 
@@ -206,22 +273,26 @@ export default function HistoryScreen({ route }: any) {
 
       <Text style={styles.rangeLabel}>
         {range.from === range.to
-          ? formatDay(range.from)
-          : `${formatDay(range.from)} – ${formatDay(range.to)}`}
-        {result
-          ? `  ·  ${t.history.totalPrefix} ${result.count} ${t.history.recordsSuffix}`
+          ? formatDay(range.from, t.history.months)
+          : `${formatDay(range.from, t.history.months)} – ${formatDay(
+              range.to,
+              t.history.months
+            )}`}
+        {shown
+          ? `  ·  ${t.history.totalPrefix} ${shown.count} ${t.history.recordsSuffix}`
           : ''}
       </Text>
 
-      {result?.fromCache && (
+      {shown?.fromCache && (
         <Text style={styles.offlineBanner}>
           {`${t.history.offlineCachedPrefix} ${formatIstDateTime(
-            new Date(result.fetchedAt).toISOString()
+            new Date(shown.fetchedAt).toISOString(),
+            t.history.months
           )}`}
         </Text>
       )}
 
-      {loading && !result ? (
+      {loading && !shown ? (
         <ActivityIndicator
           style={styles.spinner}
           size="large"
@@ -240,7 +311,7 @@ export default function HistoryScreen({ route }: any) {
         </View>
       ) : (
         <FlatList
-          data={result?.rows || []}
+          data={shown?.rows || []}
           keyExtractor={(row) => row.id}
           renderItem={({ item }) => <Row kind={kind} row={item} t={t} />}
           refreshing={loading}
@@ -250,7 +321,7 @@ export default function HistoryScreen({ route }: any) {
           }
           ListFooterComponent={
             <View>
-              {result?.hasMore && !result.fromCache && (
+              {shown?.hasMore && !shown.fromCache && (
                 <TouchableOpacity
                   style={styles.retryButton}
                   onPress={loadMore}
@@ -312,55 +383,66 @@ function Row({
   row: HistoryRow;
   t: Dictionary;
 }) {
+  const months = t.history.months;
+  const day = (v: unknown) => formatDay(v as string, months);
+  const at = (v: unknown) => formatIstDateTime(v as string, months);
+  const ref = (no: unknown) => (no ? String(no) : String(row.id).slice(0, 8));
   let title = '';
   let meta = '';
   let amount = '';
+  let amountNote = '';
   switch (kind) {
     case 'orders': {
-      const total = (row.lines || []).reduce(
-        (sum: number, l: any) => sum + Number(l.qty) * Number(l.rate),
+      const total = (Array.isArray(row.lines) ? row.lines : []).reduce(
+        (sum: number, l: any) => sum + Number(l?.qty) * Number(l?.rate),
         0
       );
       title = row.customer_name || '—';
-      meta = `${row.order_no || row.id.slice(0, 8)} · ${formatDay(
-        row.order_date
-      )} · ${row.status}`;
+      meta = `${ref(row.order_no)} · ${day(row.order_date)} · ${codeLabel(
+        STATUS_LABELS(t),
+        row.status
+      )}`;
       amount = money(total);
+      // No server-side order total exists; this is qty × rate only.
+      amountNote = t.history.orderTotalNote;
       break;
     }
     case 'receipts':
       title = row.customer_name || '—';
-      meta = `${row.receipt_no || row.id.slice(0, 8)} · ${formatIstDateTime(
-        row.received_at
-      )} · ${String(row.mode).toUpperCase()}`;
+      meta = `${ref(row.receipt_no)} · ${at(row.received_at)} · ${codeLabel(
+        MODE_LABELS(t),
+        row.mode
+      )}`;
       amount = money(row.amount);
       break;
     case 'returns':
       title = row.customer_name || '—';
-      meta = `${row.credit_note_no || row.id.slice(0, 8)} · ${formatDay(
-        row.note_date
-      )} · ${String(row.reason_code).replace(/_/g, ' ')}`;
+      meta = `${ref(row.credit_note_no)} · ${day(row.note_date)} · ${codeLabel(
+        REASON_LABELS(t),
+        row.reason_code
+      )}`;
       amount = money(row.grand_total);
       break;
     case 'expenses':
-      title = String(row.category).replace(/^./, (c) => c.toUpperCase());
-      meta = `${formatDay(row.expense_date)} · ${row.status}${
-        row.description ? ` · ${row.description}` : ''
-      }`;
+      title = codeLabel(CATEGORY_LABELS(t), row.category);
+      meta = `${day(row.expense_date)} · ${codeLabel(
+        STATUS_LABELS(t),
+        row.status
+      )}${row.description ? ` · ${row.description}` : ''}`;
       amount = money(row.amount);
       break;
-    case 'attendance':
-      title = formatIstDateTime(row.check_in_at);
+    case 'attendance': {
+      title = at(row.check_in_at);
       meta = row.check_out_at
-        ? `${t.history.checkedOutAt} ${formatIstDateTime(row.check_out_at)}`
+        ? `${t.history.checkedOutAt} ${at(row.check_out_at)}`
         : t.history.stillCheckedIn;
+      const mins = Number(row.duration_minutes);
       amount =
-        row.duration_minutes != null
-          ? `${Math.floor(row.duration_minutes / 60)}h ${
-              row.duration_minutes % 60
-            }m`
+        row.duration_minutes != null && Number.isFinite(mins)
+          ? `${Math.floor(mins / 60)}h ${mins % 60}m`
           : '';
       break;
+    }
   }
   return (
     <View style={styles.card}>
@@ -372,10 +454,58 @@ function Row({
           {meta}
         </Text>
       </View>
-      {amount ? <Text style={styles.cardAmount}>{amount}</Text> : null}
+      {amount ? (
+        <View style={styles.amountBox}>
+          <Text style={styles.cardAmount}>{amount}</Text>
+          {amountNote ? (
+            <Text style={styles.amountNote}>{amountNote}</Text>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
+
+/** Translated label for a server code, falling back to a readable form
+ * of the code itself (never throws on missing values). */
+function codeLabel(map: Record<string, string>, code: unknown): string {
+  if (code === null || code === undefined || code === '') {
+    return '—';
+  }
+  const key = String(code);
+  return map[key] ?? key.replace(/_/g, ' ');
+}
+
+const STATUS_LABELS = (t: Dictionary): Record<string, string> => ({
+  open: t.history.statusOpen,
+  fulfilled: t.history.statusFulfilled,
+  cancelled: t.history.statusCancelled,
+  submitted: t.history.statusSubmitted,
+  approved: t.history.statusApproved,
+  rejected: t.history.statusRejected,
+});
+
+// Same label maps the entry screens use (Expense/Receipt/Return).
+const CATEGORY_LABELS = (t: Dictionary): Record<string, string> => ({
+  fuel: t.expense.categoryFuel,
+  toll: t.expense.categoryToll,
+  food: t.expense.categoryFood,
+  misc: t.expense.categoryMisc,
+});
+
+const MODE_LABELS = (t: Dictionary): Record<string, string> => ({
+  cash: t.receipt.modeCash,
+  cheque: t.receipt.modeCheque,
+  upi: t.receipt.modeUpi,
+  card: t.receipt.modeCard,
+});
+
+const REASON_LABELS = (t: Dictionary): Record<string, string> => ({
+  damaged_in_transit: t.return.reasonDamagedInTransit,
+  expired_stock: t.return.reasonExpired,
+  wrong_item: t.return.reasonWrongItem,
+  customer_rejection: t.return.reasonCustomerRejection,
+});
 
 function kindLabel(t: Dictionary, kind: HistoryKind): string {
   return {
@@ -475,6 +605,13 @@ const styles = StyleSheet.create({
   },
   cardMeta: { color: colors.textSecondary, fontSize: 13, marginTop: 4 },
   cardAmount: { color: colors.textPrimary, fontSize: 15, fontWeight: '700' },
+  amountBox: { alignItems: 'flex-end', maxWidth: 140 },
+  amountNote: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+    textAlign: 'right',
+  },
   empty: { color: colors.textSecondary, textAlign: 'center', marginTop: 40 },
   retryButton: {
     borderColor: colors.primary,

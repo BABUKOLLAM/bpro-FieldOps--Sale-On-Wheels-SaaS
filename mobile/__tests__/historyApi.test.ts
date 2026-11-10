@@ -55,10 +55,10 @@ describe('historyPath', () => {
 });
 
 describe('loadHistory', () => {
-  const page = (n: number, next: string | null, count = n) => ({
+  const page = (n: number, next: string | null, count = n, start = 0) => ({
     count,
     next,
-    results: Array.from({ length: n }, (_, i) => ({ id: `r${i}` })),
+    results: Array.from({ length: n }, (_, i) => ({ id: `r${start + i}` })),
   });
 
   it('online: fetches, returns fresh rows and caches them', async () => {
@@ -118,7 +118,7 @@ describe('loadHistory', () => {
     apiGet.mockResolvedValueOnce(page(PAGE_SIZE, 'next-url', 60));
     const first = await loadHistory('orders', range, AGENT);
     expect(first.hasMore).toBe(true);
-    apiGet.mockResolvedValueOnce(page(10, null, 60));
+    apiGet.mockResolvedValueOnce(page(10, null, 60, PAGE_SIZE));
     const second = await loadHistory('orders', range, AGENT, first);
     expect(apiGet).toHaveBeenLastCalledWith(
       historyPath('orders', range, AGENT, 2)
@@ -135,5 +135,137 @@ describe('loadHistory', () => {
     await expect(
       loadHistory('orders', range, 'other-agent')
     ).rejects.toBeInstanceOf(OfflineNoCacheError);
+  });
+});
+
+describe('review follow-ups', () => {
+  const rows = (ids: string[]) => ids.map((id) => ({ id }));
+
+  it('401 → AuthExpiredError, never the cache', async () => {
+    const { AuthExpiredError } = require('../src/history/historyApi');
+    online.mockResolvedValue(true);
+    apiGet.mockResolvedValueOnce({
+      count: 1,
+      next: null,
+      results: rows(['a']),
+    });
+    await loadHistory('orders', range, AGENT);
+    apiGet.mockRejectedValueOnce({ status: 401 });
+    await expect(loadHistory('orders', range, AGENT)).rejects.toBeInstanceOf(
+      AuthExpiredError
+    );
+  });
+
+  it('403/404 are real answers; 5xx and network errors use the cache', async () => {
+    online.mockResolvedValue(true);
+    apiGet.mockResolvedValueOnce({
+      count: 1,
+      next: null,
+      results: rows(['a']),
+    });
+    await loadHistory('orders', range, AGENT);
+    apiGet.mockRejectedValueOnce({ status: 403 });
+    await expect(loadHistory('orders', range, AGENT)).rejects.toEqual({
+      status: 403,
+    });
+    apiGet.mockRejectedValueOnce({ status: 503 });
+    expect((await loadHistory('orders', range, AGENT)).fromCache).toBe(true);
+  });
+
+  it('results are tagged with their kind and range', async () => {
+    online.mockResolvedValue(true);
+    apiGet.mockResolvedValueOnce({ count: 0, next: null, results: [] });
+    const fresh = await loadHistory('returns', range, AGENT);
+    expect([fresh.kind, fresh.range]).toEqual(['returns', range]);
+    online.mockResolvedValue(false);
+    const cached = await loadHistory('returns', range, AGENT);
+    expect([cached.kind, cached.range, cached.fromCache]).toEqual([
+      'returns',
+      range,
+      true,
+    ]);
+  });
+
+  it('load more de-duplicates by id and tracks the page', async () => {
+    online.mockResolvedValue(true);
+    apiGet.mockResolvedValueOnce({
+      count: 4,
+      next: 'n',
+      results: rows(['a', 'b', 'c']),
+    });
+    const first = await loadHistory('orders', range, AGENT);
+    apiGet.mockResolvedValueOnce({
+      count: 4,
+      next: null,
+      results: rows(['c', 'd']),
+    });
+    const second = await loadHistory('orders', range, AGENT, first);
+    expect(second.rows.map((r) => r.id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(second.page).toBe(2);
+    apiGet.mockResolvedValueOnce({ count: 4, next: null, results: [] });
+    await loadHistory('orders', range, AGENT, second);
+    expect(apiGet).toHaveBeenLastCalledWith(
+      historyPath('orders', range, AGENT, 3)
+    );
+  });
+
+  it('caps cached rows at MAX_CACHED_ROWS', async () => {
+    const { MAX_CACHED_ROWS } = require('../src/history/historyApi');
+    online.mockResolvedValue(true);
+    const many = Array.from({ length: MAX_CACHED_ROWS + 50 }, (_, i) => ({
+      id: `x${i}`,
+    }));
+    apiGet.mockResolvedValueOnce({
+      count: many.length,
+      next: null,
+      results: many,
+    });
+    const res = await loadHistory('orders', range, AGENT);
+    expect(res.rows).toHaveLength(MAX_CACHED_ROWS + 50); // screen keeps all
+    const stored = JSON.parse(
+      (await AsyncStorage.getItem(cacheKey('orders', range, AGENT)))!
+    );
+    expect(stored.rows).toHaveLength(MAX_CACHED_ROWS);
+  });
+
+  it('keeps only the last MAX_CACHED_RANGES ranges per user', async () => {
+    const { MAX_CACHED_RANGES } = require('../src/history/historyApi');
+    online.mockResolvedValue(true);
+    apiGet.mockResolvedValue({ count: 0, next: null, results: [] });
+    const ranges = Array.from({ length: MAX_CACHED_RANGES + 1 }, (_, i) => ({
+      from: `2026-10-0${i + 1}`,
+      to: `2026-10-0${i + 1}`,
+    }));
+    for (const r of ranges) {
+      await loadHistory('orders', r, AGENT);
+      await loadHistory('receipts', r, AGENT);
+    }
+    // Oldest range evicted for every kind; newest kept.
+    expect(
+      await AsyncStorage.getItem(cacheKey('orders', ranges[0], AGENT))
+    ).toBeNull();
+    expect(
+      await AsyncStorage.getItem(cacheKey('receipts', ranges[0], AGENT))
+    ).toBeNull();
+    expect(
+      await AsyncStorage.getItem(
+        cacheKey('orders', ranges[MAX_CACHED_RANGES], AGENT)
+      )
+    ).not.toBeNull();
+    // Another user's cache is untouched by this user's eviction.
+    expect(
+      (await AsyncStorage.getAllKeys()).filter((k) => k.includes('.orders.'))
+    ).toHaveLength(MAX_CACHED_RANGES);
+  });
+
+  it('clearHistoryCache removes every history key and nothing else', async () => {
+    const { clearHistoryCache } = require('../src/history/historyApi');
+    online.mockResolvedValue(true);
+    apiGet.mockResolvedValue({ count: 0, next: null, results: [] });
+    await loadHistory('orders', range, AGENT);
+    await loadHistory('orders', range, 'other-agent');
+    await AsyncStorage.setItem('vansales.locale', 'ml');
+    await clearHistoryCache();
+    expect(await AsyncStorage.getAllKeys()).toEqual(['vansales.locale']);
   });
 });

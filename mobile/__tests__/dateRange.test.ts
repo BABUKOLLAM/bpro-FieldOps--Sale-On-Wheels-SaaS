@@ -124,3 +124,31 @@ describe('formatting', () => {
     );
   });
 });
+
+describe('robust formatting', () => {
+  it('missing or malformed values render as —', () => {
+    expect(formatDay(undefined)).toBe('—');
+    expect(formatDay(null)).toBe('—');
+    expect(formatDay('2026-02-30')).toBe('—');
+    expect(formatIstDateTime(null)).toBe('—');
+    expect(formatIstDateTime('not a date')).toBe('—');
+  });
+
+  it('uses locale month names when given', () => {
+    const ml = [
+      'ജനു',
+      'ഫെബ്രു',
+      'മാർ',
+      'ഏപ്രി',
+      'മേയ്',
+      'ജൂൺ',
+      'ജൂലൈ',
+      'ഓഗ',
+      'സെപ്',
+      'ഒക്',
+      'നവം',
+      'ഡിസം',
+    ];
+    expect(formatDay('2026-11-09', ml)).toBe('9 നവം 2026');
+  });
+});

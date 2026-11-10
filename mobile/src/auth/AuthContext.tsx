@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import * as Keychain from 'react-native-keychain';
 import { apiPostJson, clearTokens, getTokens, saveTokens } from '../api/client';
+import { clearHistoryCache } from '../history/historyCache';
 
 type User = {
   id: string;
@@ -90,6 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // A shared field phone must not show the next user this user's
+    // cached "My history" results.
+    await clearHistoryCache();
     await clearTokens();
     await Keychain.resetGenericPassword({ service: USER_KEYCHAIN_SERVICE });
     setUser(null);

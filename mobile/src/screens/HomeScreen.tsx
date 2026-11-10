@@ -247,7 +247,9 @@ export default function HomeScreen({ navigation }: any) {
           {syncing ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
-            <Text style={styles.syncButtonText}>{t.home.syncNow}</Text>
+            <Text style={styles.syncButtonText} numberOfLines={1}>
+              {t.home.syncNow}
+            </Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity
