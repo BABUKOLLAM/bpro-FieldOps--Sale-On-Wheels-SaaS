@@ -4,6 +4,7 @@ djangorestframework-simplejwt==5.5.1
 drf-spectacular==0.27.2
 psycopg2-binary==2.9.9
 celery==5.4.0
+kombu==5.6.2  # pinned: kombu 5.7 needs redis-py>=6.1 and broke the worker on a fresh build (2026-11-10)
 redis==5.0.8
 django-cors-headers==4.4.0
 django-filter==24.3
