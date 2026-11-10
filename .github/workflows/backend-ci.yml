@@ -36,9 +36,10 @@ jobs:
         working-directory: backend
 
     steps:
+      - uses: actions/checkout@v4
       - name: Lower-case image path (ghcr.io refuses capitals; the repo name has them)
         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v4
+        working-directory: .
 
       - uses: actions/setup-python@v5
         with:
@@ -282,10 +283,11 @@ jobs:
     # and require reviewers to force a manual approval before this job runs.
     environment: production
     steps:
-      - name: Lower-case image path (ghcr.io refuses capitals; the repo name has them)
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Lower-case image path (ghcr.io refuses capitals; the repo name has them)
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+        working-directory: .
 
       - name: Deploy to VPS (requires secrets)
         uses: appleboy/ssh-action@v0.1.8
