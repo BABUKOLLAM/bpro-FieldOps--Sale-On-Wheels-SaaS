@@ -235,17 +235,30 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.expenseButtonText}>{t.home.logReturn}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.syncButton}
-        onPress={handleSync}
-        disabled={syncing}
-      >
-        {syncing ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : (
-          <Text style={styles.syncButtonText}>{t.home.syncNow}</Text>
-        )}
-      </TouchableOpacity>
+      {/* Sync Now and My History share one row so the home screen keeps
+          the same height for Today's Route (the E2E flow taps route stops
+          on a pixel_5). */}
+      <View style={styles.syncRow}>
+        <TouchableOpacity
+          style={[styles.syncButton, styles.syncRowItem]}
+          onPress={handleSync}
+          disabled={syncing}
+        >
+          {syncing ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Text style={styles.syncButtonText}>{t.home.syncNow}</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.historyButton, styles.syncRowItem]}
+          onPress={() => navigation.navigate('History')}
+        >
+          <Text style={styles.expenseButtonText} numberOfLines={1}>
+            {t.home.myHistory}
+          </Text>
+        </TouchableOpacity>
+      </View>
       {syncMessage && <Text style={styles.syncMessage}>{syncMessage}</Text>}
 
       <Text style={styles.sectionTitle}>{t.home.todaysRoute}</Text>
@@ -438,6 +451,16 @@ const styles = StyleSheet.create({
   failureBannerRetryText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   syncButton: {
     borderColor: colors.primary,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  syncRow: { flexDirection: 'row', gap: 10 },
+  syncRowItem: { flex: 1 },
+  historyButton: {
+    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 10,
     padding: 14,

@@ -16,6 +16,7 @@ export type Dictionary = {
     collection: string;
     order: string;
     return: string;
+    history: string;
   };
   home: {
     signOut: string;
@@ -27,6 +28,7 @@ export type Dictionary = {
     logCollection: string;
     logOrder: string;
     logReturn: string;
+    myHistory: string;
     syncNow: string;
     todaysRoute: string;
     noRoute: string;
@@ -169,6 +171,39 @@ export type Dictionary = {
     tripEndedTitle: string;
     tripEndedBody: string;
   };
+  history: {
+    kindOrders: string;
+    kindReceipts: string;
+    kindReturns: string;
+    kindExpenses: string;
+    kindAttendance: string;
+    presetToday: string;
+    presetYesterday: string;
+    presetThisWeek: string;
+    presetLast7: string;
+    presetMtd: string;
+    presetLastMonth: string;
+    presetLast30: string;
+    custom: string;
+    from: string;
+    to: string;
+    apply: string;
+    errInvalidFrom: string;
+    errInvalidTo: string;
+    errFromAfterTo: string;
+    errTooLong: string;
+    totalPrefix: string;
+    recordsSuffix: string;
+    empty: string;
+    loadMore: string;
+    offlineCachedPrefix: string;
+    offlineNoCache: string;
+    loadFailed: string;
+    retry: string;
+    unsyncedNote: string;
+    checkedOutAt: string;
+    stillCheckedIn: string;
+  };
   spotBilling: {
     noCustomerSelected: string;
     outstandingPrefix: string;
@@ -236,6 +271,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       collection: 'Collection',
       order: 'Order',
       return: 'Return',
+      history: 'My History',
     },
     home: {
       signOut: 'Sign out',
@@ -247,6 +283,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       logCollection: 'Collect Payment',
       logOrder: 'Take Order',
       logReturn: 'Record Return',
+      myHistory: 'My History',
       syncNow: 'Sync Now',
       todaysRoute: "Today's Route",
       noRoute: 'No route assigned. Pull to sync.',
@@ -396,6 +433,40 @@ export const dictionaries: Record<Locale, Dictionary> = {
       tripEndedTitle: 'Trip ended',
       tripEndedBody: 'Saved offline and will sync automatically.',
     },
+    history: {
+      kindOrders: 'Orders',
+      kindReceipts: 'Collections',
+      kindReturns: 'Returns',
+      kindExpenses: 'Expenses',
+      kindAttendance: 'Attendance',
+      presetToday: 'Today',
+      presetYesterday: 'Yesterday',
+      presetThisWeek: 'This week',
+      presetLast7: 'Last 7 days',
+      presetMtd: 'This month to date',
+      presetLastMonth: 'Last month',
+      presetLast30: 'Last 30 days',
+      custom: 'Custom',
+      from: 'From (YYYY-MM-DD)',
+      to: 'To (YYYY-MM-DD)',
+      apply: 'Apply',
+      errInvalidFrom: 'From date must be a real date as YYYY-MM-DD.',
+      errInvalidTo: 'To date must be a real date as YYYY-MM-DD.',
+      errFromAfterTo: 'From date must be on or before To date.',
+      errTooLong: 'Pick 366 days or fewer.',
+      totalPrefix: 'Total',
+      recordsSuffix: 'records',
+      empty: 'Nothing in this date range.',
+      loadMore: 'Load more',
+      offlineCachedPrefix: 'Offline — showing results saved',
+      offlineNoCache:
+        'You are offline and this range has not been loaded before.',
+      loadFailed: 'Could not load your history.',
+      retry: 'Retry',
+      unsyncedNote: 'Entries not yet synced appear here after Sync Now.',
+      checkedOutAt: 'Out',
+      stillCheckedIn: 'Still checked in',
+    },
     spotBilling: {
       noCustomerSelected: 'No customer selected',
       outstandingPrefix: 'Outstanding ₹',
@@ -453,6 +524,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       collection: 'പിരിവ്',
       order: 'ഓർഡർ',
       return: 'റിട്ടേൺ',
+      history: 'എന്റെ ചരിത്രം',
     },
     home: {
       signOut: 'സൈൻ ഔട്ട്',
@@ -464,6 +536,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       logCollection: 'പണം പിരിക്കുക',
       logOrder: 'ഓർഡർ എടുക്കുക',
       logReturn: 'റിട്ടേൺ രേഖപ്പെടുത്തുക',
+      myHistory: 'എന്റെ ചരിത്രം',
       syncNow: 'ഇപ്പോൾ സിങ്ക് ചെയ്യുക',
       todaysRoute: 'ഇന്നത്തെ റൂട്ട്',
       noRoute: 'റൂട്ട് നൽകിയിട്ടില്ല. സിങ്ക് ചെയ്യാൻ വലിച്ചിടുക.',
@@ -613,6 +686,40 @@ export const dictionaries: Record<Locale, Dictionary> = {
       tripEndedTitle: 'ട്രിപ്പ് അവസാനിച്ചു',
       tripEndedBody: 'ഓഫ്‌ലൈനായി സേവ് ചെയ്തു, സ്വയമേവ സിങ്ക് ചെയ്യും.',
     },
+    history: {
+      kindOrders: 'ഓർഡറുകൾ',
+      kindReceipts: 'കളക്ഷനുകൾ',
+      kindReturns: 'റിട്ടേണുകൾ',
+      kindExpenses: 'ചെലവുകൾ',
+      kindAttendance: 'ഹാജർ',
+      presetToday: 'ഇന്ന്',
+      presetYesterday: 'ഇന്നലെ',
+      presetThisWeek: 'ഈ ആഴ്ച',
+      presetLast7: 'കഴിഞ്ഞ 7 ദിവസം',
+      presetMtd: 'ഈ മാസം ഇതുവരെ',
+      presetLastMonth: 'കഴിഞ്ഞ മാസം',
+      presetLast30: 'കഴിഞ്ഞ 30 ദിവസം',
+      custom: 'ഇഷ്ടാനുസൃതം',
+      from: 'മുതൽ (YYYY-MM-DD)',
+      to: 'വരെ (YYYY-MM-DD)',
+      apply: 'പ്രയോഗിക്കുക',
+      errInvalidFrom: 'ആരംഭ തീയതി YYYY-MM-DD ആയി ശരിയായ തീയതി നൽകുക.',
+      errInvalidTo: 'അവസാന തീയതി YYYY-MM-DD ആയി ശരിയായ തീയതി നൽകുക.',
+      errFromAfterTo:
+        'ആരംഭ തീയതി അവസാന തീയതിക്ക് മുമ്പോ അതേ ദിവസമോ ആയിരിക്കണം.',
+      errTooLong: '366 ദിവസമോ അതിൽ കുറവോ തിരഞ്ഞെടുക്കുക.',
+      totalPrefix: 'ആകെ',
+      recordsSuffix: 'രേഖകൾ',
+      empty: 'ഈ തീയതികളിൽ ഒന്നുമില്ല.',
+      loadMore: 'കൂടുതൽ കാണിക്കുക',
+      offlineCachedPrefix: 'ഓഫ്‌ലൈൻ — സംരക്ഷിച്ച ഫലങ്ങൾ കാണിക്കുന്നു',
+      offlineNoCache: 'നിങ്ങൾ ഓഫ്‌ലൈനാണ്; ഈ തീയതികൾ മുമ്പ് ലോഡ് ചെയ്തിട്ടില്ല.',
+      loadFailed: 'ചരിത്രം ലോഡ് ചെയ്യാനായില്ല.',
+      retry: 'വീണ്ടും ശ്രമിക്കുക',
+      unsyncedNote: 'സിങ്ക് ചെയ്യാത്ത രേഖകൾ Sync Now-നു ശേഷം ഇവിടെ കാണാം.',
+      checkedOutAt: 'ഔട്ട്',
+      stillCheckedIn: 'ഇപ്പോഴും ചെക്ക് ഇൻ',
+    },
     spotBilling: {
       noCustomerSelected: 'കസ്റ്റമറെ തിരഞ്ഞെടുത്തിട്ടില്ല',
       outstandingPrefix: 'ബാക്കി ₹',
@@ -671,6 +778,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       collection: 'வசூல்',
       order: 'ஆர்டர்',
       return: 'திருப்பி அனுப்புதல்',
+      history: 'என் வரலாறு',
     },
     home: {
       signOut: 'வெளியேறு',
@@ -682,6 +790,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       logCollection: 'பணம் வசூலிக்கவும்',
       logOrder: 'ஆர்டர் எடுக்கவும்',
       logReturn: 'திருப்பி அனுப்புதலைப் பதிவு செய்யவும்',
+      myHistory: 'என் வரலாறு',
       syncNow: 'இப்போது ஒத்திசைக்கவும்',
       todaysRoute: 'இன்றைய பாதை',
       noRoute: 'பாதை ஒதுக்கப்படவில்லை. ஒத்திசைக்க இழுக்கவும்.',
@@ -831,6 +940,42 @@ export const dictionaries: Record<Locale, Dictionary> = {
       checkedOut: 'செக் அவுட் ஆனது',
       tripEndedTitle: 'பயணம் முடிந்தது',
       tripEndedBody: 'ஆஃப்லைனில் சேமிக்கப்பட்டது, தானாகவே ஒத்திசைக்கப்படும்.',
+    },
+    history: {
+      kindOrders: 'ஆர்டர்கள்',
+      kindReceipts: 'வசூல்கள்',
+      kindReturns: 'திருப்பி அனுப்புதல்கள்',
+      kindExpenses: 'செலவுகள்',
+      kindAttendance: 'வருகை',
+      presetToday: 'இன்று',
+      presetYesterday: 'நேற்று',
+      presetThisWeek: 'இந்த வாரம்',
+      presetLast7: 'கடந்த 7 நாட்கள்',
+      presetMtd: 'இந்த மாதம் இதுவரை',
+      presetLastMonth: 'கடந்த மாதம்',
+      presetLast30: 'கடந்த 30 நாட்கள்',
+      custom: 'தனிப்பயன்',
+      from: 'தொடக்கம் (YYYY-MM-DD)',
+      to: 'முடிவு (YYYY-MM-DD)',
+      apply: 'பயன்படுத்து',
+      errInvalidFrom: 'தொடக்கத் தேதியை YYYY-MM-DD வடிவில் சரியாக உள்ளிடவும்.',
+      errInvalidTo: 'முடிவுத் தேதியை YYYY-MM-DD வடிவில் சரியாக உள்ளிடவும்.',
+      errFromAfterTo:
+        'தொடக்கத் தேதி முடிவுத் தேதிக்கு முன் அல்லது அதே நாளாக இருக்க வேண்டும்.',
+      errTooLong: '366 நாட்கள் அல்லது குறைவாகத் தேர்ந்தெடுக்கவும்.',
+      totalPrefix: 'மொத்தம்',
+      recordsSuffix: 'பதிவுகள்',
+      empty: 'இந்தத் தேதிகளில் எதுவும் இல்லை.',
+      loadMore: 'மேலும் காட்டு',
+      offlineCachedPrefix: 'ஆஃப்லைன் — சேமித்த முடிவுகள்',
+      offlineNoCache:
+        'நீங்கள் ஆஃப்லைனில் உள்ளீர்கள்; இந்தத் தேதிகள் முன்பு ஏற்றப்படவில்லை.',
+      loadFailed: 'உங்கள் வரலாற்றை ஏற்ற முடியவில்லை.',
+      retry: 'மீண்டும் முயற்சி',
+      unsyncedNote:
+        'ஒத்திசைக்கப்படாத பதிவுகள் Sync Now-க்குப் பிறகு இங்கே தோன்றும்.',
+      checkedOutAt: 'வெளியே',
+      stillCheckedIn: 'இன்னும் செக் இன்',
     },
     spotBilling: {
       noCustomerSelected: 'வாடிக்கையாளர் தேர்வு செய்யப்படவில்லை',

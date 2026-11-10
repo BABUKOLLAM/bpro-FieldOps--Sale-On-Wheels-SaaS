@@ -15,6 +15,7 @@ import ReceiptScreen from '../screens/receipts/ReceiptScreen';
 import OrderScreen from '../screens/orders/OrderScreen';
 import ReturnScreen from '../screens/returns/ReturnScreen';
 import AttendanceScreen from '../screens/attendance/AttendanceScreen';
+import HistoryScreen from '../screens/history/HistoryScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -106,6 +107,11 @@ export default function RootNavigator() {
               name="Attendance"
               component={AttendanceScreen}
               options={{ title: t.nav.attendance }}
+            />
+            <Stack.Screen
+              name="History"
+              component={HistoryScreen}
+              options={{ title: t.nav.history }}
             />
           </>
         )}

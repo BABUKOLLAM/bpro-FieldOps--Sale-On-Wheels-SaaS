@@ -39,6 +39,10 @@ jobs:
         working-directory: mobile
         run: npm run lint
 
+      - name: Unit tests
+        working-directory: mobile
+        run: npm test -- --ci
+
       - uses: actions/setup-java@v4
         with:
           distribution: "temurin"
