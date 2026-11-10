@@ -36,6 +36,8 @@ jobs:
         working-directory: backend
 
     steps:
+      - name: Lower-case image path (ghcr.io refuses capitals; the repo name has them)
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
@@ -121,8 +123,8 @@ jobs:
           push: false
           load: true
           tags: |
-            ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/vansales-backend:latest
+            ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LC }}/vansales-backend:latest
 
       - name: Build admin-web image (load for local scan)
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
@@ -133,23 +135,23 @@ jobs:
           push: false
           load: true
           tags: |
-            ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/vansales-admin-web:latest
+            ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:latest
 
       - name: Trivy scan backend image
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.sha }}
 
       - name: Trivy scan admin-web image
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.sha }}
 
       - name: Generate SBOM for backend image
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }} -o cyclonedx-json > sbom-backend.json || true
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.sha }} -o cyclonedx-json > sbom-backend.json || true
 
       - name: Upload backend SBOM
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
@@ -161,7 +163,7 @@ jobs:
       - name: Generate SBOM for admin-web image
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} -o cyclonedx-json > sbom-admin.json || true
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock anchore/syft:latest ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.sha }} -o cyclonedx-json > sbom-admin.json || true
 
       - name: Upload admin-web SBOM
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
@@ -185,41 +187,41 @@ jobs:
       - name: Push backend images
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker push ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository }}/vansales-backend:latest
+          docker push ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.sha }}
+          docker push ghcr.io/${{ env.REPO_LC }}/vansales-backend:latest
 
       - name: Push admin-web images
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          docker push ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository }}/vansales-admin-web:latest
+          docker push ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.sha }}
+          docker push ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:latest
 
       - name: Sign published images with cosign (keyless OIDC)
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }}
-          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-backend:latest
-          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }}
-          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-admin-web:latest
+          cosign sign --yes ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.sha }}
+          cosign sign --yes ghcr.io/${{ env.REPO_LC }}/vansales-backend:latest
+          cosign sign --yes ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.sha }}
+          cosign sign --yes ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:latest
 
       - name: Publish image metadata
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          echo "IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY}/" >> $GITHUB_ENV
+          echo "IMAGE_REGISTRY=ghcr.io/${REPO_LC}/" >> $GITHUB_ENV
           echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: Release tag promotion (tagged refs)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          docker tag ghcr.io/${{ github.repository }}/vansales-backend:${{ github.sha }} ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
-          docker push ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
-          docker tag ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.sha }} ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
-          docker push ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+          docker tag ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.sha }} ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.ref_name }}
+          docker push ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.ref_name }}
+          docker tag ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.sha }} ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.ref_name }}
+          docker push ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.ref_name }}
           # Sign the release-tagged images as well
-          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
-          cosign sign --yes ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+          cosign sign --yes ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.ref_name }}
+          cosign sign --yes ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.ref_name }}
         env:
           COSIGN_EXPERIMENTAL: 1
 
@@ -236,13 +238,13 @@ jobs:
             **Release**: ${{ github.ref_name }}
             **Commit**: ${{ github.sha }}
             **Images**:
-            - `ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}`
-            - `ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}`
+            - `ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.ref_name }}`
+            - `ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.ref_name }}`
             
             All images are signed with Sigstore cosign. Verify with:
             ```bash
-            cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/${{ github.repository }}/vansales-backend:${{ github.ref_name }}
-            cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/${{ github.repository }}/vansales-admin-web:${{ github.ref_name }}
+            cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/${{ env.REPO_LC }}/vansales-backend:${{ github.ref_name }}
+            cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com ghcr.io/${{ env.REPO_LC }}/vansales-admin-web:${{ github.ref_name }}
             ```
             
             SBOMs (Software Bill of Materials) are attached to this release for compliance and vulnerability scanning.
@@ -280,6 +282,8 @@ jobs:
     # and require reviewers to force a manual approval before this job runs.
     environment: production
     steps:
+      - name: Lower-case image path (ghcr.io refuses capitals; the repo name has them)
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -296,9 +300,9 @@ jobs:
             test -f infra/.env
             chmod 600 infra/.env
             if grep -q '^IMAGE_REGISTRY=' infra/.env; then
-              sed -i 's|^IMAGE_REGISTRY=.*|IMAGE_REGISTRY=ghcr.io/${{ github.repository }}/|' infra/.env
+              sed -i 's|^IMAGE_REGISTRY=.*|IMAGE_REGISTRY=ghcr.io/${{ env.REPO_LC }}/|' infra/.env
             else
-              printf '\nIMAGE_REGISTRY=ghcr.io/${{ github.repository }}/\n' >> infra/.env
+              printf '\nIMAGE_REGISTRY=ghcr.io/${{ env.REPO_LC }}/\n' >> infra/.env
             fi
             if grep -q '^IMAGE_TAG=' infra/.env; then
               sed -i 's|^IMAGE_TAG=.*|IMAGE_TAG=${{ github.sha }}|' infra/.env
