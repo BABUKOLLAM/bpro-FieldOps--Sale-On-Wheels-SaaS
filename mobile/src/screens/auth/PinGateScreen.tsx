@@ -3,6 +3,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { usePinLock } from '../../auth/PinLock';
 import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
+import { Icon } from '../../components/IconChip';
+
+// Sentinel for the backspace key (drawn as the Lucide `delete` icon).
+const BACKSPACE = 'backspace';
 
 const PIN_LENGTH = 4;
 
@@ -103,19 +107,26 @@ export default function PinGateScreen() {
       </View>
 
       <View style={styles.pad}>
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map(
+        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', BACKSPACE].map(
           (key, i) => (
             <TouchableOpacity
               key={i}
               style={styles.key}
               disabled={key === ''}
+              accessibilityLabel={
+                key === BACKSPACE ? t.pinGate.deleteDigit : undefined
+              }
               onPress={() =>
-                key === '⌫'
+                key === BACKSPACE
                   ? setEntry(entry.slice(0, -1))
                   : key && handleDigit(key)
               }
             >
-              <Text style={styles.keyText}>{key}</Text>
+              {key === BACKSPACE ? (
+                <Icon name="backspace" size={26} color={colors.textPrimary} />
+              ) : (
+                <Text style={styles.keyText}>{key}</Text>
+              )}
             </TouchableOpacity>
           )
         )}

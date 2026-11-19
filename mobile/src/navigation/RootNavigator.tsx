@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../auth/AuthContext';
@@ -17,6 +17,7 @@ import ReturnScreen from '../screens/returns/ReturnScreen';
 import AttendanceScreen from '../screens/attendance/AttendanceScreen';
 import HistoryScreen from '../screens/history/HistoryScreen';
 import { colors } from '../theme/colors';
+import { Spinner } from '../components/IconChip';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,7 +35,7 @@ export default function RootNavigator() {
           justifyContent: 'center',
         }}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <Spinner size="large" color={colors.primary} />
       </View>
     );
   }

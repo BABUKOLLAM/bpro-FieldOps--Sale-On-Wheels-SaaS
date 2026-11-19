@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 import { useAuth } from '../../auth/AuthContext';
 import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
+import { Spinner } from '../../components/IconChip';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -71,7 +71,7 @@ export default function LoginScreen() {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color={colors.onPrimary} />
+          <Spinner color={colors.onPrimary} />
         ) : (
           <Text style={styles.buttonText}>{t.login.signIn}</Text>
         )}

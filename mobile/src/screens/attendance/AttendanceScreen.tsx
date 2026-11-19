@@ -1,12 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Q } from '@nozbe/watermelondb';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,6 +11,7 @@ import { apiPostJson, ApiError } from '../../api/client';
 import { getCurrentLocation } from '../../location/geo';
 import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
+import { Spinner } from '../../components/IconChip';
 
 /**
  * FR-16 Attendance Check-In/Check-Out: daily start/end capture with a
@@ -130,7 +124,7 @@ export default function AttendanceScreen() {
             disabled={checkingOut}
           >
             {checkingOut ? (
-              <ActivityIndicator color="#fff" />
+              <Spinner color="#fff" />
             ) : (
               <Text style={styles.checkOutButtonText}>
                 {t.attendance.checkOut}
@@ -150,7 +144,7 @@ export default function AttendanceScreen() {
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color={colors.onPrimary} />
+              <Spinner color={colors.onPrimary} />
             ) : (
               <Text style={styles.checkInButtonText}>
                 {t.attendance.checkIn}

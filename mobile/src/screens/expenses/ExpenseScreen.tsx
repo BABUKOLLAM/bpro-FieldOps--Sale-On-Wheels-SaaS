@@ -21,6 +21,7 @@ import { SYNC_PENDING } from '../../db/models/Invoice';
 import { synchronize } from '../../sync/synchronize';
 import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme/colors';
+import { Icon } from '../../components/IconChip';
 
 /**
  * Field expense capture (BRD FR-06): category, amount, and a receipt
@@ -155,7 +156,12 @@ export default function ExpenseScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
       {receiptUri && (
-        <Text style={styles.receiptAttached}>{t.expense.receiptAttached}</Text>
+        <View style={styles.receiptAttachedRow}>
+          <Icon name="done" size={16} color={colors.success} />
+          <Text style={styles.receiptAttached}>
+            {t.expense.receiptAttached}
+          </Text>
+        </View>
       )}
 
       <TouchableOpacity
@@ -218,7 +224,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   receiptButtonText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-  receiptAttached: { color: colors.success, fontSize: 13, marginTop: 8 },
+  receiptAttachedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  receiptAttached: { color: colors.success, fontSize: 13 },
   saveButton: {
     backgroundColor: colors.primary,
     borderRadius: 10,

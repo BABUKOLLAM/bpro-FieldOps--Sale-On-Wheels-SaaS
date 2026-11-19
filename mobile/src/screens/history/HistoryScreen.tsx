@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   AppState,
   FlatList,
   ScrollView,
@@ -14,6 +13,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useTranslation } from '../../i18n/LanguageContext';
 import type { Dictionary } from '../../i18n/locales';
 import { colors } from '../../theme/colors';
+import { Spinner } from '../../components/IconChip';
 import {
   type DateRange,
   type PresetKey,
@@ -293,11 +293,7 @@ export default function HistoryScreen({ route }: any) {
       )}
 
       {loading && !shown ? (
-        <ActivityIndicator
-          style={styles.spinner}
-          size="large"
-          color={colors.primary}
-        />
+        <Spinner style={styles.spinner} size="large" color={colors.primary} />
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.empty}>
@@ -328,7 +324,7 @@ export default function HistoryScreen({ route }: any) {
                   disabled={loadingMore}
                 >
                   {loadingMore ? (
-                    <ActivityIndicator color={colors.primary} />
+                    <Spinner color={colors.primary} />
                   ) : (
                     <Text style={styles.retryButtonText}>
                       {t.history.loadMore}

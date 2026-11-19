@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   StyleSheet,
@@ -21,6 +20,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useTranslation } from '../i18n/LanguageContext';
 import { LOCALE_LABELS, type Locale } from '../i18n/locales';
 import { colors } from '../theme/colors';
+import IconChip, { ChipButton, Icon, RiseIn } from '../components/IconChip';
 
 const LOCALE_ORDER: Locale[] = ['en', 'ml', 'ta'];
 
@@ -147,9 +147,11 @@ export default function HomeScreen({ navigation }: any) {
             onPress={() => setShowLanguagePicker(true)}
             accessibilityLabel={t.home.language}
           >
+            <Icon name="language" size={14} color={colors.textSecondary} />
             <Text style={styles.languagePillText}>{LOCALE_LABELS[locale]}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={logout}>
+          <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+            <Icon name="signOut" size={16} color={colors.danger} />
             <Text style={styles.logout}>{t.home.signOut}</Text>
           </TouchableOpacity>
         </View>
@@ -157,6 +159,9 @@ export default function HomeScreen({ navigation }: any) {
 
       {syncFailures.count > 0 && (
         <View style={styles.failureBanner}>
+          <View style={styles.failureBannerIcon}>
+            <IconChip name="syncFailure" accent="alerts" size={28} />
+          </View>
           <View style={styles.failureBannerText}>
             <Text style={styles.failureBannerTitle}>
               {syncFailures.count} {t.home.notSynced}
@@ -179,112 +184,130 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       )}
 
-      <TouchableOpacity
+      <ChipButton
+        icon="checkedIn"
+        accent="people"
+        label={checkedIn ? t.home.checkedInCheckOut : t.home.checkIn}
         style={[
           styles.attendanceButton,
           checkedIn && styles.attendanceButtonActive,
         ]}
+        textStyle={[
+          styles.attendanceButtonText,
+          checkedIn && styles.attendanceButtonTextActive,
+        ]}
+        chipTone={checkedIn ? ON_SOLID_LIGHT : undefined}
         onPress={() => navigation.navigate('Attendance')}
-      >
-        <Text
-          style={[
-            styles.attendanceButtonText,
-            checkedIn && styles.attendanceButtonTextActive,
-          ]}
-        >
-          {checkedIn ? t.home.checkedInCheckOut : t.home.checkIn}
-        </Text>
-      </TouchableOpacity>
+      />
 
-      <TouchableOpacity
+      <ChipButton
+        icon="fleet"
+        accent="fleet"
+        label={activeTrip ? t.home.tripInProgress : t.home.startTrip}
         style={styles.tripButton}
+        textStyle={styles.tripButtonText}
+        chipTone={ON_SOLID_DARK}
         onPress={() =>
           navigation.navigate('Trip', { activeTripId: activeTrip?.id })
         }
-      >
-        <Text style={styles.tripButtonText}>
-          {activeTrip ? t.home.tripInProgress : t.home.startTrip}
-        </Text>
-      </TouchableOpacity>
+      />
 
-      <TouchableOpacity
+      <ChipButton
+        icon="expense"
+        accent="money"
+        label={t.home.logExpense}
         style={styles.expenseButton}
+        textStyle={styles.expenseButtonText}
         onPress={() => navigation.navigate('Expense')}
-      >
-        <Text style={styles.expenseButtonText}>{t.home.logExpense}</Text>
-      </TouchableOpacity>
+      />
 
-      <TouchableOpacity
+      <ChipButton
+        icon="collections"
+        accent="money"
+        label={t.home.logCollection}
         style={styles.expenseButton}
+        textStyle={styles.expenseButtonText}
         onPress={() => navigation.navigate('Receipt')}
-      >
-        <Text style={styles.expenseButtonText}>{t.home.logCollection}</Text>
-      </TouchableOpacity>
+      />
 
-      <TouchableOpacity
+      <ChipButton
+        icon="orders"
+        accent="sales"
+        label={t.home.logOrder}
         style={styles.expenseButton}
+        textStyle={styles.expenseButtonText}
         onPress={() => navigation.navigate('Order')}
-      >
-        <Text style={styles.expenseButtonText}>{t.home.logOrder}</Text>
-      </TouchableOpacity>
+      />
 
-      <TouchableOpacity
+      <ChipButton
+        icon="returns"
+        accent="sales"
+        label={t.home.logReturn}
         style={styles.expenseButton}
+        textStyle={styles.expenseButtonText}
         onPress={() => navigation.navigate('Return')}
-      >
-        <Text style={styles.expenseButtonText}>{t.home.logReturn}</Text>
-      </TouchableOpacity>
+      />
 
       {/* Sync Now and My History share one row so the home screen keeps
           the same height for Today's Route (the E2E flow taps route stops
           on a pixel_5). */}
       <View style={styles.syncRow}>
-        <TouchableOpacity
+        <ChipButton
+          icon="sync"
+          accent="brand"
+          label={t.home.syncNow}
+          compact
           style={[styles.syncButton, styles.syncRowItem]}
-          onPress={handleSync}
+          textStyle={styles.syncButtonText}
+          numberOfLines={1}
+          loading={syncing}
+          spinnerColor={colors.primary}
           disabled={syncing}
-        >
-          {syncing ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Text style={styles.syncButtonText} numberOfLines={1}>
-              {t.home.syncNow}
-            </Text>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
+          onPress={handleSync}
+        />
+        <ChipButton
+          icon="history"
+          accent="insights"
+          label={t.home.myHistory}
+          compact
           style={[styles.historyButton, styles.syncRowItem]}
+          textStyle={styles.expenseButtonText}
+          numberOfLines={1}
           onPress={() => navigation.navigate('History')}
-        >
-          <Text style={styles.expenseButtonText} numberOfLines={1}>
-            {t.home.myHistory}
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
       {syncMessage && <Text style={styles.syncMessage}>{syncMessage}</Text>}
 
-      <Text style={styles.sectionTitle}>{t.home.todaysRoute}</Text>
+      <View style={styles.sectionTitleRow}>
+        <Icon name="route" size={16} color={colors.primary} />
+        <Text style={styles.sectionTitle}>{t.home.todaysRoute}</Text>
+      </View>
       <FlatList
         data={stops}
         keyExtractor={(item) => item.beatCustomer.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.stopCard}
-            disabled={!item.customer}
-            onPress={() =>
-              navigation.navigate('SpotBilling', {
-                customerServerId: item.customer?.serverId,
-              })
-            }
-          >
-            <Text style={styles.stopName}>
-              {item.customer?.name || t.home.unknownCustomer}
-            </Text>
-            <Text style={styles.stopMeta}>
-              {item.customer?.code} · {t.home.outstanding} ₹
-              {item.customer?.outstandingBalance ?? 0}
-            </Text>
-          </TouchableOpacity>
+        renderItem={({ item, index }) => (
+          <RiseIn index={index}>
+            <TouchableOpacity
+              style={styles.stopCard}
+              disabled={!item.customer}
+              onPress={() =>
+                navigation.navigate('SpotBilling', {
+                  customerServerId: item.customer?.serverId,
+                })
+              }
+            >
+              <IconChip name="visit" accent="brand" size={32} />
+              <View style={styles.stopText}>
+                <Text style={styles.stopName}>
+                  {item.customer?.name || t.home.unknownCustomer}
+                </Text>
+                <Text style={styles.stopMeta}>
+                  {item.customer?.code} · {t.home.outstanding} ₹
+                  {item.customer?.outstandingBalance ?? 0}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </RiseIn>
         )}
         ListEmptyComponent={<Text style={styles.empty}>{t.home.noRoute}</Text>}
       />
@@ -330,6 +353,11 @@ export default function HomeScreen({ navigation }: any) {
   );
 }
 
+// Chips that sit on a solid-coloured button take the button's own text
+// colour instead of an accent (an accent tint would vanish on the fill).
+const ON_SOLID_DARK = { fg: colors.onPrimary, bg: 'rgba(10,10,10,0.14)' };
+const ON_SOLID_LIGHT = { fg: '#fff', bg: 'rgba(255,255,255,0.2)' };
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: 20 },
   header: {
@@ -342,6 +370,9 @@ const styles = StyleSheet.create({
   role: { color: colors.textSecondary, fontSize: 13 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   languagePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 999,
@@ -383,12 +414,14 @@ const styles = StyleSheet.create({
   languageOptionTextActive: {
     color: '#fff',
   },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   logout: { color: colors.danger, fontSize: 14 },
   attendanceButton: {
     borderColor: colors.primary,
     borderWidth: 1,
     borderRadius: 10,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -405,7 +438,8 @@ const styles = StyleSheet.create({
   tripButton: {
     backgroundColor: colors.primary,
     borderRadius: 10,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -414,7 +448,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 10,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -433,6 +468,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
   },
+  failureBannerIcon: { marginRight: 10 },
   failureBannerText: { flex: 1, marginRight: 10 },
   failureBannerTitle: {
     color: colors.danger,
@@ -455,7 +491,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     borderWidth: 1,
     borderRadius: 10,
-    padding: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     marginBottom: 8,
   },
@@ -465,7 +502,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 10,
-    padding: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     marginBottom: 8,
   },
@@ -476,19 +514,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 13,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   sectionTitle: {
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 8,
-    marginBottom: 8,
   },
   stopCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 16,
     marginBottom: 10,
   },
+  stopText: { flex: 1 },
   stopName: { color: colors.textPrimary, fontSize: 17, fontWeight: '600' },
   stopMeta: { color: colors.textSecondary, fontSize: 13, marginTop: 4 },
   empty: { color: colors.textSecondary, textAlign: 'center', marginTop: 40 },

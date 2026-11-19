@@ -62,6 +62,7 @@ export type Dictionary = {
     incorrectPin: string;
     genericError: string;
     useBiometricPrefix: string;
+    deleteDigit: string;
   };
   login: {
     subtitle: string;
@@ -327,6 +328,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       incorrectPin: 'Incorrect PIN.',
       genericError: 'Something went wrong. Try again.',
       useBiometricPrefix: 'Use',
+      deleteDigit: 'Delete last digit',
     },
     login: {
       subtitle: 'Field agent sign in',
@@ -364,7 +366,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       receiptPhotoOptional: 'Receipt photo (optional)',
       takePhoto: 'Take Photo',
       chooseFromGallery: 'Choose from Gallery',
-      receiptAttached: 'Receipt attached ✓',
+      receiptAttached: 'Receipt attached',
       invalidAmount: 'Enter a valid amount.',
       saved: 'Expense saved',
       save: 'Save Expense',
@@ -601,6 +603,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       incorrectPin: 'തെറ്റായ പിൻ.',
       genericError: 'എന്തോ കുഴപ്പം സംഭവിച്ചു. വീണ്ടും ശ്രമിക്കുക.',
       useBiometricPrefix: 'ഉപയോഗിക്കുക',
+      deleteDigit: 'അവസാന അക്കം മായ്ക്കുക',
     },
     login: {
       subtitle: 'ഫീൽഡ് ഏജന്റ് സൈൻ ഇൻ',
@@ -638,7 +641,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       receiptPhotoOptional: 'രസീത് ഫോട്ടോ (ഐച്ഛികം)',
       takePhoto: 'ഫോട്ടോ എടുക്കുക',
       chooseFromGallery: 'ഗാലറിയിൽ നിന്ന് തിരഞ്ഞെടുക്കുക',
-      receiptAttached: 'രസീത് ചേർത്തു ✓',
+      receiptAttached: 'രസീത് ചേർത്തു',
       invalidAmount: 'ശരിയായ തുക നൽകുക.',
       saved: 'ചെലവ് സേവ് ചെയ്തു',
       save: 'ചെലവ് സേവ് ചെയ്യുക',
@@ -877,6 +880,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       incorrectPin: 'தவறான பின்.',
       genericError: 'ஏதோ தவறு நடந்தது. மீண்டும் முயற்சிக்கவும்.',
       useBiometricPrefix: 'பயன்படுத்து',
+      deleteDigit: 'கடைசி இலக்கத்தை நீக்கு',
     },
     login: {
       subtitle: 'கள முகவர் உள்நுழைவு',
@@ -914,7 +918,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       receiptPhotoOptional: 'ரசீது புகைப்படம் (விருப்பம்)',
       takePhoto: 'புகைப்படம் எடு',
       chooseFromGallery: 'கேலரியில் இருந்து தேர்வு செய்',
-      receiptAttached: 'ரசீது இணைக்கப்பட்டது ✓',
+      receiptAttached: 'ரசீது இணைக்கப்பட்டது',
       invalidAmount: 'சரியான தொகையை உள்ளிடவும்.',
       saved: 'செலவு சேமிக்கப்பட்டது',
       save: 'செலவைச் சேமி',
