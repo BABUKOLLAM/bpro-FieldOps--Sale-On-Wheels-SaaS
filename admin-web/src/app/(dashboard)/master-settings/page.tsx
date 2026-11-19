@@ -5,6 +5,7 @@ import WebhookCreateForm from "./WebhookCreateForm";
 import WebhookActions from "./WebhookActions";
 import LogoUploadForm from "./LogoUploadForm";
 import { CARD_CLASS } from "@/components/ui/Card";
+import IconChip from "@/components/icons/IconChip";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -98,7 +99,8 @@ export default async function MasterSettingsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Master Settings</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="settings" accent="settings" size="md" />Master Settings</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Company profile, GST registrations, ERP/payment connections, webhooks, and notification gateways — every
           edit here goes through the same Super Admin/Admin/IT Head approval as Roles.

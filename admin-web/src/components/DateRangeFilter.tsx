@@ -10,6 +10,7 @@ import {
   type DateContext,
   type DateRange,
 } from "@/lib/dateRange";
+import IconChip, { Icon } from "@/components/icons/IconChip";
 
 /**
  * Shared From–To date picker for dated list pages and Reports. State
@@ -104,7 +105,10 @@ function DateRangeFilterInner({ value, context, query = {}, error, label = "Date
       className="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 sm:flex-row sm:flex-wrap sm:items-end"
     >
       <label className="flex flex-col gap-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-        {label}
+        <span className="flex items-center gap-1.5">
+          <IconChip name="calendar" accent="brand" size="xs" />
+          {label}
+        </span>
         <select value={mode} onChange={(e) => onPreset(e.target.value)} className={`${inputClass} sm:w-48`}>
           <option value="all">All dates</option>
           {presets.map((p) => (
@@ -164,7 +168,14 @@ function DateRangeFilterInner({ value, context, query = {}, error, label = "Date
         )}
       </div>
       <p className="text-xs text-neutral-500 dark:text-neutral-400 sm:ml-auto sm:self-center" aria-live="polite">
-        {pending ? "Loading…" : describeRange(value)}
+        {pending ? (
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="loading" spin className="h-3.5 w-3.5" />
+            Loading…
+          </span>
+        ) : (
+          describeRange(value)
+        )}
       </p>
       {shownError && (
         <p role="alert" className="w-full text-xs text-red-600 dark:text-red-400">

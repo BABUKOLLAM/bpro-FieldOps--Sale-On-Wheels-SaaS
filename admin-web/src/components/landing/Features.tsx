@@ -1,51 +1,61 @@
+import IconChip from "@/components/icons/IconChip";
+import type { Accent, IconName } from "@/components/icons/registry";
 const FEATURES = [
   {
     title: "Spot billing, on or offline",
     description:
       "GST-compliant tax invoices generated at the point of sale from van stock — full billing, orders, collections and returns work with zero connectivity.",
-    icon: BillingIcon,
+    icon: "invoices" as IconName,
+    accent: "money" as Accent,
   },
   {
     title: "Real-time Tally Prime sync",
     description:
       "Every invoice, receipt, and credit note posts to Tally automatically, with duplicate-safe idempotent sync and a live monitor for any exceptions.",
-    icon: SyncIcon,
+    icon: "sync" as IconName,
+    accent: "brand" as Accent,
   },
   {
     title: "Credit-limit control",
     description:
       "Outstanding balances and credit limits enforced at the point of sale, with a supervisor approval queue for anything over the line.",
-    icon: ShieldIcon,
+    icon: "approvals" as IconName,
+    accent: "people" as Accent,
   },
   {
     title: "Live fleet & GPS tracking",
     description:
       "Trip start/end, odometer & fuel logs, maintenance schedules, and vehicle-level inventory — a fleet dashboard for every van on the road.",
-    icon: TruckIcon,
+    icon: "fleet" as IconName,
+    accent: "fleet" as Accent,
   },
   {
     title: "Route & beat planning",
     description:
       "Assign outlet visit sequences per agent, track check-in/check-out, and see route adherence live from the back office.",
-    icon: MapIcon,
+    icon: "route" as IconName,
+    accent: "sales" as Accent,
   },
   {
     title: "Live back-office dashboard",
     description:
       "Today's sales, collections, active trips, and sync health in one screen — role-based access for supervisors, finance, and fleet managers.",
-    icon: DashboardIcon,
+    icon: "dashboard" as IconName,
+    accent: "brand" as Accent,
   },
   {
     title: "Fraud & anomaly detection",
     description:
       "Statistical outlier alerts on the day's headline numbers, plus rule-based checks for discount abuse, return patterns, and GPS-spoofed check-ins — explainable, not a black box.",
-    icon: AlertIcon,
+    icon: "fraud" as IconName,
+    accent: "alerts" as Accent,
   },
   {
     title: "Governed back-office changes",
     description:
       "Sensitive settings — roles, GST details, payment gateways, integrations — go through a propose-and-approve workflow instead of a direct edit, with a full audit trail.",
-    icon: LockIcon,
+    icon: "governed" as IconName,
+    accent: "settings" as Accent,
   },
 ];
 
@@ -64,14 +74,13 @@ export default function Features() {
       </div>
 
       <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map(({ title, description, icon: Icon }) => (
+        {FEATURES.map(({ title, description, icon, accent }, i) => (
           <div
             key={title}
-            className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6"
+            className="ic-host ic-rise rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6"
+            style={{ "--ic-i": i } as React.CSSProperties}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400">
-              <Icon />
-            </div>
+            <IconChip name={icon} accent={accent} size="lg" />
             <h3 className="mt-4 text-base font-semibold text-neutral-900 dark:text-white">{title}</h3>
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{description}</p>
           </div>
@@ -79,66 +88,5 @@ export default function Features() {
       </div>
     </div>
     </section>
-  );
-}
-
-function iconProps() {
-  return { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.75, className: "h-5 w-5" } as const;
-}
-
-function BillingIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-6 4h4M6 3h9l3 3v15H6z" />
-    </svg>
-  );
-}
-function SyncIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114-4M20 15a8 8 0 01-14 4" />
-    </svg>
-  );
-}
-function ShieldIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
-    </svg>
-  );
-}
-function TruckIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h11v9H3zM14 10h4l3 3v3h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM18 19a2 2 0 100-4 2 2 0 000 4z" />
-    </svg>
-  );
-}
-function MapIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-6-3V4l6 3 6-3 6 3v13l-6-3-6 3zM9 7v13M15 4v13" />
-    </svg>
-  );
-}
-function DashboardIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 13h6V4H4zM14 20h6v-9h-6zM14 4v3h6V4zM4 20h6v-3H4z" />
-    </svg>
-  );
-}
-function AlertIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-    </svg>
-  );
-}
-function LockIcon() {
-  return (
-    <svg {...iconProps()}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 11V7a6 6 0 1112 0v4M5 11h14v9H5z" />
-    </svg>
   );
 }

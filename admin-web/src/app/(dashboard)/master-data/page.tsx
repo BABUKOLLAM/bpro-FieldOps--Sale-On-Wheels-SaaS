@@ -10,6 +10,7 @@ import BeatTemplateStopForm from "./BeatTemplateStopForm";
 import RemoveTemplateStopButton from "./RemoveTemplateStopButton";
 import InstantiateTemplateForm from "./InstantiateTemplateForm";
 import { CARD_CLASS } from "@/components/ui/Card";
+import IconChip from "@/components/icons/IconChip";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -83,7 +84,8 @@ export default async function MasterDataPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Master Data</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="masterData" accent="settings" size="md" />Master Data</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">Customers and items — the data field agents bill against.</p>
       </div>
 

@@ -4,6 +4,7 @@ import DocumentForm from "./DocumentForm";
 import GeofenceForm from "./GeofenceForm";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
+import IconChip from "@/components/icons/IconChip";
 
 type VehicleEntry = {
   vehicle_id: string;
@@ -130,7 +131,8 @@ export default async function FleetPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Fleet</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="fleet" accent="fleet" size="md" />Fleet</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Vehicle utilization, maintenance alerts, fuel cost, reverse-logistics reconciliation, document
           compliance, and geofencing (FM-12/FM-13/FM-14/FM-16).

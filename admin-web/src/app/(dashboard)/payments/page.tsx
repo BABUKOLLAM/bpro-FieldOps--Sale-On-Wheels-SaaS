@@ -3,6 +3,7 @@ import Pager from "@/components/Pager";
 import { fetchDatedList, readListParams } from "@/lib/listPage";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import IconChip from "@/components/icons/IconChip";
 
 type PaymentOrder = {
   id: string;
@@ -23,7 +24,8 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">UPI/Card Payments</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="payments" accent="alerts" size="md" />UPI/Card Payments</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Gateway-ready scaffolding (BRD §18). With no real gateway configured, every order below is tagged{" "}
           <span className="font-mono">mock</span> and can never be marked paid except by an explicit,

@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "@/components/icons/IconChip";
+
 /** Client-side CSV export from data already on the page — a practical
  * substitute for FM-13's "exportable to Excel/PDF and emailable," which
  * would need real server-side document generation + email delivery
@@ -33,8 +35,9 @@ export default function ExportCsvButton({
     <button
       onClick={handleExport}
       disabled={data.length === 0}
-      className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40"
+      className="ic-host inline-flex items-center gap-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40"
     >
+      <Icon name="download" className="ic-glyph h-3.5 w-3.5" />
       Export CSV
     </button>
   );

@@ -5,6 +5,7 @@ import DeleteUserButton from "./DeleteUserButton";
 import RoleAssignments from "./RoleAssignments";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import IconChip from "@/components/icons/IconChip";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -35,7 +36,8 @@ export default async function UsersPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Users</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="users" accent="people" size="md" />Users</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Create field, supervisor, and back-office accounts and assign roles (AR-06).
         </p>

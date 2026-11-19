@@ -94,7 +94,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       password: "Password",
       signIn: "Sign in",
       signingIn: "Signing in…",
-      backToHome: "← Back to bpro FieldOps home",
+      backToHome: "Back to bpro FieldOps home",
     },
     common: {
       save: "Save",
@@ -139,7 +139,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       password: "പാസ്‌വേഡ്",
       signIn: "സൈൻ ഇൻ ചെയ്യുക",
       signingIn: "സൈൻ ഇൻ ചെയ്യുന്നു…",
-      backToHome: "← bpro FieldOps ഹോമിലേക്ക് മടങ്ങുക",
+      backToHome: "bpro FieldOps ഹോമിലേക്ക് മടങ്ങുക",
     },
     common: {
       save: "സേവ് ചെയ്യുക",
@@ -184,7 +184,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       password: "கடவுச்சொல்",
       signIn: "உள்நுழை",
       signingIn: "உள்நுழைகிறது…",
-      backToHome: "← bpro FieldOps முகப்புக்குத் திரும்பு",
+      backToHome: "bpro FieldOps முகப்புக்குத் திரும்பு",
     },
     common: {
       save: "சேமி",

@@ -3,6 +3,8 @@ import EwayBillCell from "./EwayBillCell";
 import WhatsAppNotifyButton from "./WhatsAppNotifyButton";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
+import IconChip from "@/components/icons/IconChip";
+import type { Accent, IconName } from "@/components/icons/registry";
 
 type AnomalyInsight = {
   metric: string;
@@ -85,7 +87,21 @@ type DashboardData = {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-function StatCard({ label, value, tone }: { label: string; value: string | number; tone?: "warn" | "danger" }) {
+function StatCard({
+  label,
+  value,
+  tone,
+  icon,
+  accent,
+  index,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "warn" | "danger";
+  icon: IconName;
+  accent: Accent;
+  index: number;
+}) {
   const toneClass =
     tone === "danger"
       ? "text-red-600 dark:text-red-400"
@@ -93,8 +109,11 @@ function StatCard({ label, value, tone }: { label: string; value: string | numbe
         ? "text-orange-600 dark:text-orange-400"
         : "text-neutral-900 dark:text-neutral-50";
   return (
-    <div className={`${CARD_CLASS} p-5`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
+    <div className={`${CARD_CLASS} ic-host ic-rise p-5`} style={{ "--ic-i": index } as React.CSSProperties}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
+        <IconChip name={icon} accent={accent} size="md" />
+      </div>
       <p className={`mt-2 text-2xl font-semibold ${toneClass}`}>{value}</p>
     </div>
   );
@@ -174,23 +193,25 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Live Dashboard</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="dashboard" accent="brand" size="md" />Live Dashboard</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">{data.date}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Today's Sales" value={`₹${Number(data.todays_sales_total).toLocaleString("en-IN")}`} />
-        <StatCard label="Invoices Today" value={data.todays_sales_count} />
-        <StatCard label="Collections Today" value={`₹${Number(data.todays_collections_total).toLocaleString("en-IN")}`} />
-        <StatCard label="Active Trips" value={data.active_trips_count} />
-        <StatCard label="Checked In Today" value={data.checked_in_today_count} />
-        <StatCard label="Pending Credit Review" value={data.pending_credit_review_count} tone={data.pending_credit_review_count > 0 ? "warn" : undefined} />
-        <StatCard label="Sync Failures" value={data.sync_failure_count} tone={data.sync_failure_count > 0 ? "danger" : undefined} />
+        <StatCard index={0} icon="sales" accent="sales" label="Today's Sales" value={`₹${Number(data.todays_sales_total).toLocaleString("en-IN")}`} />
+        <StatCard index={1} icon="invoices" accent="sales" label="Invoices Today" value={data.todays_sales_count} />
+        <StatCard index={2} icon="collections" accent="money" label="Collections Today" value={`₹${Number(data.todays_collections_total).toLocaleString("en-IN")}`} />
+        <StatCard index={3} icon="fleet" accent="fleet" label="Active Trips" value={data.active_trips_count} />
+        <StatCard index={4} icon="checkedIn" accent="people" label="Checked In Today" value={data.checked_in_today_count} />
+        <StatCard index={5} icon="approvals" accent="money" label="Pending Credit Review" value={data.pending_credit_review_count} tone={data.pending_credit_review_count > 0 ? "warn" : undefined} />
+        <StatCard index={6} icon="syncFailure" accent="alerts" label="Sync Failures" value={data.sync_failure_count} tone={data.sync_failure_count > 0 ? "danger" : undefined} />
       </div>
 
       <div className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+            <IconChip name="anomaly" accent="insights" size="xs" />
             Anomaly Insights {insights.length > 0 && `(${insights.length})`}
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -211,7 +232,8 @@ export default async function DashboardPage() {
 
       <div className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+            <IconChip name="fraud" accent="alerts" size="xs" />
             Fraud &amp; Exception Alerts {fraudAlertCount > 0 && `(${fraudAlertCount})`}
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -293,7 +315,10 @@ export default async function DashboardPage() {
 
       <div className={CARD_CLASS}>
         <div className="border-b border-neutral-200 dark:border-neutral-800 px-5 py-3">
-          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Recent Invoices</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+            <IconChip name="invoices" accent="sales" size="xs" />
+            Recent Invoices
+          </h2>
         </div>
         <table className="w-full text-sm">
           <thead>

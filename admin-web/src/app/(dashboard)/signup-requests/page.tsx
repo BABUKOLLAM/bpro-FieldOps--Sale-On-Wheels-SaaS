@@ -2,6 +2,7 @@ import { apiGet } from "@/lib/api";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import SignupRequestActions from "./SignupRequestActions";
+import IconChip from "@/components/icons/IconChip";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -49,7 +50,8 @@ export default async function SignupRequestsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Signup Requests</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="signupRequests" accent="people" size="md" />Signup Requests</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Self-service access requests from the public sign-up page. Approving one creates a real
           account and emails the person a one-time link to set their own password — nothing is

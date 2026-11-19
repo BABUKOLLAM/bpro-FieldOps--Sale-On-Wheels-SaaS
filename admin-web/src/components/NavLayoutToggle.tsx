@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/icons/IconChip";
 import { useEffect, useState } from "react";
 
 export default function NavLayoutToggle() {
@@ -27,20 +28,10 @@ export default function NavLayoutToggle() {
       onClick={toggle}
       title={isColumn ? "Switch menu to top row" : "Switch menu to side column"}
       aria-label={isColumn ? "Switch menu to top row" : "Switch menu to side column"}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 hover:text-amber-600 dark:hover:bg-neutral-800 dark:hover:text-amber-400"
+      className="ic-host flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 hover:text-amber-600 dark:hover:bg-neutral-800 dark:hover:text-amber-400"
     >
-      {isColumn === null ? null : isColumn ? (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4">
-          <rect x="3" y="4" width="18" height="4.5" rx="1" />
-          <rect x="3" y="10.75" width="18" height="4.5" rx="1" />
-          <rect x="3" y="17.5" width="18" height="4.5" rx="1" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4">
-          <rect x="3" y="3" width="4.5" height="18" rx="1" />
-          <rect x="9.75" y="3" width="4.5" height="18" rx="1" />
-          <rect x="16.5" y="3" width="4.5" height="18" rx="1" />
-        </svg>
+      {isColumn === null ? null : (
+        <Icon name={isColumn ? "layoutRows" : "layoutColumns"} className="ic-glyph h-4 w-4" />
       )}
     </button>
   );

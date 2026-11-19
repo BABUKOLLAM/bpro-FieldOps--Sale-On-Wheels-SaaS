@@ -7,6 +7,7 @@ import ExpenseApproveButton from "./ExpenseApproveButton";
 import ExpenseRejectButton from "./ExpenseRejectButton";
 import SyncActions from "./SyncActions";
 import { CARD_CLASS } from "@/components/ui/Card";
+import IconChip from "@/components/icons/IconChip";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -71,7 +72,8 @@ export default async function ApprovalsPage({
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Approvals &amp; Sync Monitor</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="approvals" accent="fleet" size="md" />Approvals &amp; Sync Monitor</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Credit-blocked invoices and field expenses awaiting supervisor approval, and the Tally sync health of every transaction.
         </p>

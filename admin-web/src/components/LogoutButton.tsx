@@ -1,5 +1,7 @@
 "use client";
 
+import IconChip from "@/components/icons/IconChip";
+
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/i18n/LanguageContext";
 
@@ -15,9 +17,11 @@ export default function LogoutButton() {
 
   return (
     <button
+      type="button"
       onClick={handleLogout}
-      className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
+      className="ic-host flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
     >
+      <IconChip name="signOut" accent="alerts" size="xs" />
       {t.common.logout}
     </button>
   );

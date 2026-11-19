@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROLE_LABELS } from "@/lib/roleLabels";
+import { Icon } from "@/components/icons/IconChip";
 
 type Assignment = { id: string; role_id: string; role_name: string };
 type Role = { id: string; name: string };
@@ -75,9 +76,10 @@ export default function RoleAssignments({
               onClick={() => handleRemove(a.id)}
               disabled={submitting}
               title="Remove this role"
-              className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-100 disabled:opacity-60"
+              aria-label="Remove this role"
+              className="ic-host inline-flex items-center text-amber-500 hover:text-amber-700 dark:hover:text-amber-100 disabled:opacity-60"
             >
-              ×
+              <Icon name="close" className="ic-glyph h-3 w-3" />
             </button>
           </span>
         ))}

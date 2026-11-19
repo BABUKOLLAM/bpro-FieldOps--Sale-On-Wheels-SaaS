@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import DateRangeFilter from "@/components/DateRangeFilter";
 import { apiRangeQuery } from "@/lib/dateRange";
 import { readListParams } from "@/lib/listPage";
+import IconChip from "@/components/icons/IconChip";
 
 type ReportEntry = { key: string; label: string; supports_period?: boolean };
 
@@ -45,7 +46,8 @@ export default async function ReportsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Reports</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="reports" accent="insights" size="md" />Reports</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Every report below exports to Excel or PDF, or can be emailed directly (AR-02, FM-13).
           The period applies to dated reports; snapshot and fixed-window reports are marked.

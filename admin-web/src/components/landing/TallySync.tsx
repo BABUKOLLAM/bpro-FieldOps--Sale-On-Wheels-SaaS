@@ -1,3 +1,4 @@
+import { Icon } from "@/components/icons/IconChip";
 const OFFLINE_STEPS = [
   {
     title: "Bill offline",
@@ -61,9 +62,11 @@ export default function TallySync() {
             </div>
 
             <div className="flex justify-center text-neutral-300 dark:text-neutral-700">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8 rotate-90 sm:rotate-0">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114-4M20 15a8 8 0 01-14 4" />
-              </svg>
+              <span className="rotate-90 sm:rotate-0" aria-hidden="true">
+                <span data-accent="brand" className="ic-chip ic-chip--lg">
+                  <Icon name="sync" />
+                </span>
+              </span>
             </div>
 
             <div>

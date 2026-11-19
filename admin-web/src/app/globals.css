@@ -25,3 +25,144 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ------------------------------------------------------------------
+ * Icon system (icon refresh, Nov 2026) — Lucide icons in duotone chips.
+ * Accents derive from the Yellow & Gray brand (amber) plus the status
+ * hues Badge/Button already use. Light strokes are 600/700 shades and
+ * dark strokes 400 shades so stroke-vs-chip contrast stays >= 3:1.
+ * Concept -> icon table: docs/ICONS.md.
+ * ------------------------------------------------------------------ */
+:root {
+  --ic-brand: #b45309;    /* amber-700 */
+  --ic-sales: #047857;    /* emerald-700 */
+  --ic-money: #b45309;    /* amber-700 */
+  --ic-stock: #6d28d9;    /* violet-700 */
+  --ic-fleet: #4f46e5;    /* indigo-600 */
+  --ic-people: #2563eb;   /* blue-600 */
+  --ic-alerts: #e11d48;   /* rose-600 */
+  --ic-settings: #475569; /* slate-600 */
+  --ic-insights: #7c3aed; /* violet-600 */
+  --ic-on: #ffffff;       /* stroke on a filled (active) chip */
+}
+
+.dark {
+  --ic-brand: #fbbf24;
+  --ic-sales: #34d399;
+  --ic-money: #fbbf24;
+  --ic-stock: #a78bfa;
+  --ic-fleet: #818cf8;
+  --ic-people: #60a5fa;
+  --ic-alerts: #fb7185;
+  --ic-settings: #94a3b8;
+  --ic-insights: #a78bfa;
+  --ic-on: #0a0a0a;
+}
+
+[data-accent="brand"] { --ic: var(--ic-brand); }
+[data-accent="sales"] { --ic: var(--ic-sales); }
+[data-accent="money"] { --ic: var(--ic-money); }
+[data-accent="stock"] { --ic: var(--ic-stock); }
+[data-accent="fleet"] { --ic: var(--ic-fleet); }
+[data-accent="people"] { --ic: var(--ic-people); }
+[data-accent="alerts"] { --ic: var(--ic-alerts); }
+[data-accent="settings"] { --ic: var(--ic-settings); }
+[data-accent="insights"] { --ic: var(--ic-insights); }
+
+.ic-chip {
+  --ic-size: 1.75rem;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--ic-size);
+  height: var(--ic-size);
+  border-radius: 0.5rem;
+  color: var(--ic, var(--ic-brand));
+  background-color: color-mix(in srgb, var(--ic, var(--ic-brand)) 14%, transparent);
+  transition:
+    transform 180ms ease-out,
+    box-shadow 180ms ease-out,
+    background-color 180ms ease-out,
+    color 180ms ease-out;
+}
+.ic-chip > svg {
+  width: 60%;
+  height: 60%;
+  transition: transform 180ms ease-out;
+}
+.ic-chip--xs { --ic-size: 1.25rem; border-radius: 0.375rem; }
+.ic-chip--sm { --ic-size: 1.625rem; }
+.ic-chip--md { --ic-size: 2rem; }
+.ic-chip--lg { --ic-size: 2.5rem; border-radius: 0.625rem; }
+
+.ic-host:hover .ic-chip,
+.ic-host:focus-visible .ic-chip,
+.ic-host:active .ic-chip {
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--ic, var(--ic-brand)) 55%, transparent);
+}
+.ic-host:hover .ic-chip > svg,
+.ic-host:focus-visible .ic-chip > svg,
+.ic-host:active .ic-chip > svg {
+  transform: scale(1.08);
+}
+
+/* Bare icons inside small controls (theme/layout toggles, export, back). */
+.ic-glyph { transition: transform 180ms ease-out; }
+.ic-host:hover .ic-glyph,
+.ic-host:focus-visible .ic-glyph,
+.ic-host:active .ic-glyph { transform: scale(1.08); }
+
+/* Active / selected: filled chip + one gentle pulse when it becomes active. */
+.ic-chip[data-active="true"] {
+  color: var(--ic-on);
+  background-color: var(--ic, var(--ic-brand));
+  animation: ic-pulse 650ms ease-out 1;
+}
+.ic-chip[data-disabled="true"] {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* Tiles/cards: fade + 4px rise, staggered 40ms per item, capped at 280ms. */
+.ic-rise {
+  animation: ic-rise 320ms ease-out both;
+  animation-delay: calc(min(var(--ic-i, 0), 7) * 40ms);
+}
+
+.ic-spin { animation: ic-spin 0.9s linear infinite; }
+
+@keyframes ic-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ic, var(--ic-brand)) 55%, transparent); }
+  100% { box-shadow: 0 0 0 7px transparent; }
+}
+@keyframes ic-rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ic-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ic-chip,
+  .ic-chip > svg,
+  .ic-rise,
+  .ic-spin,
+  .ic-glyph,
+  .ic-host:hover .ic-glyph,
+  .ic-host:focus-visible .ic-glyph,
+  .ic-host:active .ic-glyph,
+  .ic-host:hover .ic-chip,
+  .ic-host:focus-visible .ic-chip,
+  .ic-host:active .ic-chip,
+  .ic-host:hover .ic-chip > svg,
+  .ic-host:focus-visible .ic-chip > svg,
+  .ic-host:active .ic-chip > svg {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  .ic-rise { opacity: 1; }
+}

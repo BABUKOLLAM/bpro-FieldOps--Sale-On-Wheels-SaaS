@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import { CARD_CLASS } from "@/components/ui/Card";
+import IconChip from "@/components/icons/IconChip";
 
 type NotificationLog = {
   id: string;
@@ -20,7 +21,8 @@ export default async function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Push Notifications</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="notifications" accent="alerts" size="md" />Push Notifications</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Every push notification the system has attempted (FR-18). Without an FCM server key configured, these are
           delivered to the server console instead of a real device — visible below either way.

@@ -1,6 +1,7 @@
 import { apiGet } from "@/lib/api";
 import RoleRow from "./RoleRow";
 import ChangeRequestRow, { type ChangeRequest } from "./ChangeRequestRow";
+import IconChip from "@/components/icons/IconChip";
 
 type Paginated<T> = { count: number; results: T[] };
 type Role = { id: string; name: string; permissions: string[]; is_active: boolean };
@@ -22,7 +23,8 @@ export default async function RolesPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Roles</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="roles" accent="people" size="md" />Roles</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Roles are seeded per deployment. Permission changes go through Master Settings approval — Super Admin,
           Admin, and IT Head may propose; only Super Admin and Admin may approve (AR-06).

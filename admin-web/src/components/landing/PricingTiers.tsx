@@ -1,3 +1,4 @@
+import { Icon } from "@/components/icons/IconChip";
 import { formatINR, rateFor, TIER_FEATURES, TIERS } from "@/lib/pricing";
 
 export default function PricingTiers() {
@@ -41,13 +42,9 @@ export default function PricingTiers() {
             <ul className="mt-6 space-y-2.5 text-sm text-neutral-600 dark:text-neutral-300 flex-1">
               {TIER_FEATURES[tier].map((feature) => (
                 <li key={feature} className="flex gap-2">
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <span className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400">
+                    <Icon name="check" className="h-4 w-4" />
+                  </span>
                   <span>{feature}</span>
                 </li>
               ))}

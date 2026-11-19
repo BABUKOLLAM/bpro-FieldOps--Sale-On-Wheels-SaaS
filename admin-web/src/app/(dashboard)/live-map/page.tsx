@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import LiveMapLoader from "./LiveMapLoader";
+import IconChip from "@/components/icons/IconChip";
 
 type Stop = {
   customer_id: string;
@@ -29,7 +30,8 @@ export default async function LiveMapPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Live Map</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="liveMap" accent="brand" size="md" />Live Map</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Real-time agent locations and route adherence (AR-03) — {data.agents.length} agent
           {data.agents.length === 1 ? "" : "s"} currently on a trip.

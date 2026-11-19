@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import EntityImportExportCard, { type EntityInfo, type ImportJob } from "./EntityImportExportCard";
+import IconChip from "@/components/icons/IconChip";
 
 export default async function ImportExportPage() {
   const entities = await apiGet<EntityInfo[]>("/api/dataio/entities/");
@@ -9,7 +10,8 @@ export default async function ImportExportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">Import / Export</h1>
+        <h1 className="flex items-center gap-2.5 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="importExport" accent="settings" size="md" />Import / Export</h1>
         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           Bulk-load or download master data as a spreadsheet — products, price lists, staff, routes, customers,
           vehicles, and godowns. Download a template, fill it in, and upload it back; existing records are matched

@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "@/components/icons/IconChip";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -61,7 +63,10 @@ export default function LoginPage() {
       <div className="relative flex flex-1 flex-col items-center justify-center px-4 py-10">
         <Link href="/" className="mb-8 flex flex-col items-center gap-3">
           <BrandLogo height={40} />
-          <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{t.login.backToHome}</span>
+          <span className="ic-host flex items-center gap-1.5 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            <Icon name="back" className="ic-glyph h-4 w-4" />
+            {t.login.backToHome}
+          </span>
         </Link>
 
         <div className="w-full max-w-sm rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 shadow-lg shadow-neutral-900/5">

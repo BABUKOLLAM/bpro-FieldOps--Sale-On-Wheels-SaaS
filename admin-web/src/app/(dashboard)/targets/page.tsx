@@ -1,6 +1,7 @@
 import { apiGet } from "@/lib/api";
 import TargetForm from "./TargetForm";
 import { CARD_CLASS } from "@/components/ui/Card";
+import IconChip from "@/components/icons/IconChip";
 
 type Paginated<T> = { count: number; results: T[] };
 
@@ -35,7 +36,8 @@ export default async function TargetsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Targets</h1>
+        <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="targets" accent="insights" size="md" />Targets</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Set sales/collection targets per agent and route, and track achievement in real time (AR-07).
         </p>

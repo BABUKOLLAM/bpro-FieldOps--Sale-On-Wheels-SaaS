@@ -5,6 +5,7 @@ import { rangedFilename } from "@/lib/dateRange";
 import { CARD_CLASS } from "@/components/ui/Card";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import ExportCsvButton from "@/components/ExportCsvButton";
+import IconChip from "@/components/icons/IconChip";
 
 type Receipt = {
   id: string;
@@ -38,7 +39,8 @@ export default async function CollectionsPage({ searchParams }: { searchParams: 
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <h1 className="flex items-center gap-2.5 text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+          <IconChip name="collections" accent="sales" size="md" />
             Collections
           </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
